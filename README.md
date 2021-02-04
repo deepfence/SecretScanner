@@ -19,19 +19,19 @@ For quick try, you can install docker and then build a container using following
 
 `docker run -dit --name=deepfence-secretscanner --privileged=true -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest:latest`
 
-`docker exec -it deepfence-secretscanner ./SecretScanner -local /home/deepfence/test`
+`docker exec -it deepfence-secretscanner /root/.go/bin/SecretScanner -config-path /root/.go/src/github.com/deepfence/SecretScanner/ -local /root/.go/src/github.com/deepfence/SecretScanner/test`
 
-`docker exec -it deepfence-secretscanner ./SecretScanner -image-name node:8.11`
+`docker exec -it deepfence-secretscanner ./SecretScanner -config-path src/SecretScanner -local /home/deepfence/src/SecretScanner -image-name node:8.11`
 
-It will create a json file with details of all the secrets found in the current working directory. In this case, output json file will be in the working directory (/home/deepfence) inside the container. 
+It will create json files with the details of all the secrets found in the current working directory. In this case, output json files will be in the working directory (/home/deepfence) inside the container.
 
 # Instructions to Run
 
 `./SecretScanner --help`
 
-`./SecretScanner -local test`
+`./SecretScanner -config-path /path/to/config.yaml/dir -local test`
 
-`./SecretScanner -image-name node:8.11`
+`./SecretScanner -config-path /path/to/config.yaml/dir -image-name node:8.11`
 
 # Options
 ```

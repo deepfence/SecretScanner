@@ -24,6 +24,10 @@ ENV GOPATH=/root/.go \
 RUN go get "github.com/flier/gohs/hyperscan" "gopkg.in/yaml.v3" "github.com/fatih/color"
 RUN go get "github.com/deepfence/SecretScanner"
 
-RUN mkdir -p /home/deepfence
+RUN mkdir -p /home/deepfence/src
+WORKDIR /home/deepfence/src
+RUN git clone https://github.com/deepfence/SecretScanner.git
+WORKDIR /home/deepfence/src/SecretScanner
+RUN go build -v -i
 WORKDIR /home/deepfence
-RUN cp /root/.go/bin/SecretScanner .
+RUN cp src/SecretScanner/SecretScanner .
