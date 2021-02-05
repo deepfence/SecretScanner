@@ -7,25 +7,25 @@ Deepfence SecretScanner helps users to scan their container images or local dire
 3. Install go for your platform (version 1.14)
 4. Install go modules, if needed: gohs, yaml.v3 and color
 5. `go get github.com/deepfence/SecretScanner` will download and build SecretScanner automatically in ~/.go/bin directory. Or, you can clone this repository and run `go build -v -i` to build the executable in current directory.
-6. Edit your config.yaml file ass needed and run the secret scanner. Please find help on usage below.
+6. Edit your config.yaml file as needed and run the secret scanner with the appropriate config file directory. Please find more help on the usage below.
 
 For reference, [Install file](https://github.com/deepfence/SecretScanner/blob/master/Install.Ubuntu) has the commands to build on ubuntu
 
 # Docker Installations
 
-For quick try, you can install docker and then build a container using following instruction
+For quick try, you can install docker and then run SecretScanner on a container image using following instructions
 
 `docker build --rm=true --tag=deepfenceio/secretscanning:latest -f Dockerfile .`
 
-`docker run -dit --name=deepfence-secretscanner --privileged=true -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest:latest`
+`docker pull node:8.11`
 
-`docker exec -it deepfence-secretscanner /root/.go/bin/SecretScanner -config-path /root/.go/src/github.com/deepfence/SecretScanner/ -local /root/.go/src/github.com/deepfence/SecretScanner/test`
+`docker run -it --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -local /home/deepfence/src/SecretScanner/test -image-name node:8.11`
 
-`docker exec -it deepfence-secretscanner ./SecretScanner -config-path src/SecretScanner -local /home/deepfence/src/SecretScanner -image-name node:8.11`
+`docker cp deepfence-secretscanner:/home/deepfence/output temp-output/`
 
-It will create json files with the details of all the secrets found in the current working directory. In this case, output json files will be in the working directory (/home/deepfence) inside the container.
+SecretScanner will create json files with the details of all the secrets found in the current working directory. In this case, output json files will be in the working directory (/home/deepfence/output) inside the container.
 
-# Instructions to Run
+# Instructions to Run on Host
 
 `./SecretScanner --help`
 
