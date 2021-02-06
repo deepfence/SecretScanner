@@ -6,7 +6,7 @@ Deepfence SecretScanner helps users to scan their container images or local dire
 2. Install Hyperscan
 3. Install go for your platform (version 1.14)
 4. Install go modules, if needed: gohs, yaml.v3 and color
-5. `go get github.com/deepfence/SecretScanner` will download and build SecretScanner automatically in ~/.go/bin directory. Or, you can clone this repository and run `go build -v -i` to build the executable in current directory.
+5. `go get github.com/deepfence/SecretScanner` will download and build SecretScanner automatically in $GOPATH/bin or $HOME/go/bin directory. Or, you can clone this repository and run `go build -v -i` to build the executable in current directory.
 6. Edit your config.yaml file as needed and run the secret scanner with the appropriate config file directory. Please find more help on the usage below.
 
 For reference, [Install file](https://github.com/deepfence/SecretScanner/blob/master/Install.Ubuntu) has the commands to build on ubuntu
