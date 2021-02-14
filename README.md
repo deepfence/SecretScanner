@@ -32,15 +32,15 @@ Usage of ./SecretScanner:
 
 # Quickly Try Using Docker Installation
 
-For quick try, you can install docker and then run SecretScanner on a container image using following instructions
+For quick try, you can install docker and then run SecretScanner on a container image using following instructions:
 
-Build ScreteScanner: `docker build --rm=true --tag=deepfenceio/secretscanning:latest -f Dockerfile .`
+* Build ScreteScanner: `docker build --rm=true --tag=deepfenceio/secretscanning:latest -f Dockerfile .`
 
-Pull a container image for scanning:`docker pull node:8.11`
+* Pull a container image for scanning:`docker pull node:8.11`
 
-Run ScreteScanner: `docker run -it --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -local /home/deepfence/src/SecretScanner/test -image-name node:8.11`
+* Run ScreteScanner: `docker run -it --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -local /home/deepfence/src/SecretScanner/test -image-name node:8.11`
 
-Copy the JSON output: `docker cp deepfence-secretscanner:/home/deepfence/output temp-output/`
+* Optionally, copy the JSON output: `docker cp deepfence-secretscanner:/home/deepfence/output temp-output/`
 
 SecretScanner will create json files with the details of all the secrets found in the current working directory. In this case, output json files will be in the working directory (/home/deepfence/output) inside the container.
 
@@ -73,6 +73,6 @@ We have built upon the configuration file from [shhgit](https://github.com/eth0i
 
 # Disclaimer
 
-This tool is not meant to be used for hacking. Please use it only for legitimate purposes like detecting secrets on the infrastructure you own, not on others' infrastructure.
+This tool is not meant to be used for hacking. Please use it only for legitimate purposes like detecting secrets on the infrastructure you own, not on others' infrastructure. DEEPFENCE shall not be liable for loss of profit, loss of business, other financial loss, or any other loss or damage which may be caused, directly or indirectly, by the inadequacy of SecretScanner for any purpose or use thereof or by any defect or deficiency therein.
 
 
