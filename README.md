@@ -1,4 +1,4 @@
-Deepfence SecretScanner helps users to scan their container images or local directories for finding secrets like passwords, keys and tokens which are left inadvertently. It outputs a json file with details of all the secrets found.
+Deepfence SecretScanner helps users scan their container images or local directories on hosts for finding sensitive secrets like passwords, keys and tokens which are left inadvertently. It outputs a json file with details of all the secrets found.
 
 # Build Instructions
 
@@ -11,7 +11,7 @@ Deepfence SecretScanner helps users to scan their container images or local dire
 
 For reference, [Install file](https://github.com/deepfence/SecretScanner/blob/master/Install.Ubuntu) has the commands to build on ubuntu
 
-# Docker Installations
+# Docker Installation
 
 For quick try, you can install docker and then run SecretScanner on a container image using following instructions
 
