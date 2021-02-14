@@ -34,7 +34,7 @@ Usage of ./SecretScanner:
 
 For quick try, you can install docker and then run SecretScanner on a container image using following instructions:
 
-* Build ScreteScanner: `docker build --rm=true --tag=deepfenceio/secretscanning:latest -f Dockerfile .`
+* Build ScreteScanner: `docker build --rm=true --tag=deepfenceio/secretscanning:latest -f Dockerfile .` Or, you can just pull the latest build from the docker hub: `docker pull deepfenceio/secretscanning`
 
 * Pull a container image for scanning:`docker pull node:8.11`
 
