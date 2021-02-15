@@ -1,3 +1,5 @@
+![Deepfence Logo](images/Deepfence-Logo_Black.jpg)
+
 # What are Secrets?
 
 Secrets are any kind of sensitive or private data which gives authorized users permission to access their infrastructure (such as accounts, devices, network, cloud based services), applications, storage, databases and other kinds of critical data. For example, passwords, AWS access IDs, AWS secret access keys, Google OAuth Key etc. are secrets. Secrets should be strictly kept private. However, sometimes attackers can easily access secrets due to flawed security policies or inadvertent mistakes by developers. Sometimes developers use default secrets or leave hard-coded secrets such as passwords, API keys, encryption keys, SSH keys, tokens etc. in container images, especially during rapid development and deployments cycles in CI/CD pipeline. Sometimes users store passwords in plain text. Leakage of secrets to unauthorized entities can put your organization and infrastructure into serious security risk.
