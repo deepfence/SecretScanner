@@ -67,6 +67,7 @@ func main() {
 	// Scan local directory for secrets
 	if len(*session.Options.Local) > 0 {
 		fmt.Printf("[*] Scanning local directory: %s\n", color.BlueString(*session.Options.Local))
+		// output.PrintDirJsonHeader(*session.Options.Local)
 
 		secrets, err := scanSecretsInDir("", "", *session.Options.Local)
 		if err != nil {

@@ -259,8 +259,8 @@ func matchString(part string, input string, completeFilename string, layerID str
 				core.GetSession().Log.Debug("matchString: Skipping matches containing blacklisted strings")
 				continue
 			}
-			fmt.Println(signature.Name, signature.Part, signature.Match, signature.Regex, signature.Severity, signature.ID)
-			fmt.Printf("Sensitive file %s found with matching %s of %s\n", completeFilename, part, color.RedString(input))
+			core.GetSession().Log.Info("Simple Signature %s %s %s %s %s %d\n",signature.Name, signature.Part, signature.Match, signature.Regex, signature.Severity, signature.ID)
+			core.GetSession().Log.Info("Sensitive file %s found with matching %s of %s\n", completeFilename, part, color.RedString(input))
 
 			secret := output.SecretFound{
 				LayerID: layerID,
@@ -380,9 +380,13 @@ func printMatchedSignatures(sid int, from, to int, hsIOData HsInputOutputData) (
 
 	updatedSeverity, updatedScore := calculateSeverity(inputData[from:to], signatureIDMap[sid].Severity, signatureIDMap[sid].SeverityScore)
 
-	fmt.Println(signatureIDMap[sid].Name, signatureIDMap[sid].Part, signatureIDMap[sid].Match, signatureIDMap[sid].Regex,
-		signatureIDMap[sid].RegexType, updatedSeverity, updatedScore, signatureIDMap[sid].ID)
-	fmt.Println("Secret found in", signatureIDMap[sid].Part, "of", completeFilename, "withing bytes", from, "and", to)
+	core.GetSession().Log.Info("Pattern Signature %s %s %s %s %s %s %.2f %d", signatureIDMap[sid].Name, signatureIDMap[sid].Part,
+						signatureIDMap[sid].Match, signatureIDMap[sid].Regex, signatureIDMap[sid].RegexType,
+						updatedSeverity, updatedScore, signatureIDMap[sid].ID)
+	// fmt.Println(signatureIDMap[sid].Name, signatureIDMap[sid].Part, signatureIDMap[sid].Match, signatureIDMap[sid].Regex,
+	//	signatureIDMap[sid].RegexType, updatedSeverity, updatedScore, signatureIDMap[sid].ID)
+	core.GetSession().Log.Info("Secret found in %s of %s within bytes %d and %d", signatureIDMap[sid].Part, completeFilename, from, to)
+	// fmt.Println("Secret found in", signatureIDMap[sid].Part, "of", completeFilename, "withing bytes", from, "and", to)
 
 	start := Max(0, bytes.LastIndexByte(inputData[:from], '\n')) // Avoid -ve value from IndexByte
 	end := to + Max(0, bytes.IndexByte(inputData[to:], '\n'))    // Avoid -ve value from IndexByte
@@ -394,8 +398,10 @@ func printMatchedSignatures(sid int, from, to int, hsIOData HsInputOutputData) (
 	// Display max 50 bytes before and after the maching string
 	start = Max(start, from-50)
 	end = Min(end, to+50)
+	coloredMatch := fmt.Sprintf("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
 
-	fmt.Printf("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
+	//core.GetSession().Log.Info("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
+	core.GetSession().Log.Info(coloredMatch)
 	
 	secret := output.SecretFound{
 		LayerID: layerID,
@@ -403,8 +409,10 @@ func printMatchedSignatures(sid int, from, to int, hsIOData HsInputOutputData) (
 		Severity: updatedSeverity, SeverityScore: updatedScore,
 		CompleteFilename: completeFilename,
 		MatchFromByte:    from, MatchToByte: to,
-		MatchedContents: string(inputData[from:end]),
+		MatchedContents: string(inputData[from:to]),
 	}
+
+	// output.PrintJsonSecret(secret)
 
 	return secret, nil
 }
