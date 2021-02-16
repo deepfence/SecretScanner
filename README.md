@@ -64,7 +64,7 @@ Usage of ./SecretScanner:
 
 ```
 
-# Quick Try Using Docker
+# Quickly Try Using Docker
 
 Install docker and run SecretScanner on a container image using the following instructions:
 
@@ -72,7 +72,7 @@ Install docker and run SecretScanner on a container image using the following in
 
 `docker build --rm=true --tag=deepfenceio/secretscanning:latest -f Dockerfile .` 
 
-Or, pull the latest build from docker hub by doing: 
+* Or, pull the latest build from docker hub by doing: 
 
 `docker pull deepfenceio/secretscanning`
 
@@ -83,13 +83,17 @@ Or, pull the latest build from docker hub by doing:
 * Run SecretScanner: 
   * Scan a container image: 
 
-    `docker run -it --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -image-name node:8.11`
+    ```
+    docker run -it --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -image-name node:8.11
+    ```
   
   * Scan a local directory: 
 
-    `docker run -it --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -local /home/deepfence/src/SecretScanner/test`
+    ```
+    docker run -it --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -local /home/deepfence/src/SecretScanner/test
+    ```
 
-SecretScanner will also create json files with details of all the secrets found in the current working directory. In this case, output json files will be in the directory (/home/deepfence/output) inside the container.
+SecretScanner will also create json files with details of all the secrets found in the current working directory. In this case, output json files will be in the directory (`/home/deepfence/output`) inside the container.
 
 # Build Instructions
 
@@ -97,10 +101,10 @@ SecretScanner will also create json files with details of all the secrets found 
 2. Install Hyperscan
 3. Install go for your platform (version 1.14)
 4. Install go modules, if needed: `gohs`, `yaml.v3` and `color`
-5. `go get github.com/deepfence/SecretScanner` will download and build SecretScanner automatically in `$GOPATH/bin` or `$HOME/go/bin` directory. Or, you can clone this repository and run `go build -v -i` to build the executable in the current directory.
-6. Edit your config.yaml file as needed and run the secret scanner with the appropriate config file directory.
+5. `go get github.com/deepfence/SecretScanner` will download and build SecretScanner automatically in `$GOPATH/bin` or `$HOME/go/bin` directory. Or, clone this repository and run `go build -v -i` to build the executable in the current directory.
+6. Edit config.yaml file as needed and run the secret scanner with the appropriate config file directory.
 
-For reference, [Install file](https://github.com/deepfence/SecretScanner/blob/master/Install.Ubuntu) has the commands to build on ubuntu
+For reference, the [Install file](https://github.com/deepfence/SecretScanner/blob/master/Install.Ubuntu) has commands to build on an ubuntu system.
 
 # Instructions to Run on Local Host
 
