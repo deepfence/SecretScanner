@@ -9,8 +9,36 @@ Deepfence SecretScanner helps users scan their container images or local directo
 Check our [blog](https://medium.com/deepfence-cloud-native-security/detecting-secrets-to-reduce-attack-surface-3405ee6329b5) for more details.
 
 # Options
+
 ```
-Usage of ./SecretScanner:
+You can pull the public image:
+
+$ docker run -it --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest
+
+Usage of /home/deepfence/src/SecretScanner/SecretScanner:
+  -config-path string
+    	Searches for config.yaml from given directory. If not set, tries to find it from SecretScanner binary's and current directory
+  -debug-level string
+    	Debug levels are one of FATAL, ERROR, IMPORTANT, WARN, INFO, DEBUG. Only levels higher than the debug-level are displayed (default "ERROR")
+  -image-name string
+    	Name of the image along with tag to scan for secrets
+  -local string
+    	Specify local directory (absolute path) which to scan. Scans only given directory recursively.
+  -max-multi-match uint
+    	Maximum number of matches of same pattern in one file. This is used only when multi-match option is enabled. (default 3)
+  -maximum-file-size uint
+    	Maximum file size to process in KB (default 256)
+  -multi-match
+    	Output multiple matches of same pattern in one file. By default, only one match of a pattern is output for a file for better performance
+  -temp-directory string
+    	Directory to process and store repositories/matches (default "/tmp/Deepfence/SecretScanning")
+  -threads int
+    	Number of concurrent threads (default number of logical CPUs)
+
+```
+
+```
+Usage of on host ./SecretScanner:
   -config-path string
     	Searches for config.yaml from given directory. If not set, tries to find it from SecretScanner binary's and current directory
   -debug-level string
