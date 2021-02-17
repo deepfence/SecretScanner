@@ -116,9 +116,9 @@ For reference, the [Install file](https://github.com/deepfence/SecretScanner/blo
 ./SecretScanner -config-path /path/to/config.yaml/dir -image-name node:8.11
 ```
 
-# Sample Secrets Json Output
+# Sample SecretScanner Output
 
-![SampleJsonOutput](images/SampleJsonSecretsOutput.png)
+![SampleJsonOutput](images/SampleSecretsOutput.png)
 
 # Credits
 
