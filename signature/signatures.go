@@ -135,7 +135,8 @@ func MatchPatternSignatures(contents []byte, path string, filename string, exten
 		}
 		err := RunHyperscan(hyperscanBlockDbMap[matchingPart], hsIOData)
 		if err != nil {
-			core.GetSession().Log.Info("part: %s, path: %s, filename: %s, extenstion: %s, layerID: %s", part, path, filename, extension, layerID)
+			core.GetSession().Log.Info("part: %s, path: %s, filename: %s, extenstion: %s, layerID: %s", part, path, filename,
+															extension, layerID)
 			core.GetSession().Log.Warn("MatchPatternSignatures: %s", err)
 			return tempSecretsFound, err
 		}
@@ -168,7 +169,8 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 				signature.SeverityScore = 2.5
 			}
 
-			core.GetSession().Log.Debug("Simple Signature %s %s %s %s %d", signature.Name, signature.Part, signature.Match, signature.Severity, signature.ID)
+			core.GetSession().Log.Debug("Simple Signature %s %s %s %s %d", signature.Name, signature.Part, signature.Match,
+													signature.Severity, signature.ID)
 			
 			switch signature.Part {
 			case ContentsPart:
@@ -191,7 +193,8 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 				}
 			}
 
-			core.GetSession().Log.Debug("Pattern Signature %s %s %s %s %s %s %d", signature.Name, signature.Part, signature.Match, signature.Regex, signature.RegexType, signature.Severity, signature.ID)
+			core.GetSession().Log.Debug("Pattern Signature %s %s %s %s %s %s %d", signature.Name, signature.Part, signature.Match,
+									signature.Regex, signature.RegexType, signature.Severity, signature.ID)
 			
 			signature.CompiledRegex = regexp.MustCompile(signature.Regex)
 
@@ -259,15 +262,18 @@ func matchString(part string, input string, completeFilename string, layerID str
 				core.GetSession().Log.Debug("matchString: Skipping matches containing blacklisted strings")
 				continue
 			}
-			core.GetSession().Log.Info("Simple Signature %s %s %s %s %s %d\n",signature.Name, signature.Part, signature.Match, signature.Regex, signature.Severity, signature.ID)
+			core.GetSession().Log.Info("Simple Signature %s %s %s %s %s %d\n",signature.Name, signature.Part, signature.Match,
+												signature.Regex, signature.Severity, signature.ID)
 			core.GetSession().Log.Info("Sensitive file %s found with matching %s of %s\n", completeFilename, part, color.RedString(input))
 
 			secret := output.SecretFound{
 				LayerID: layerID,
-				RuleID:  signature.ID, RuleName: signature.Name, PartToMatch: signature.Part, Match: signature.Match, Regex: signature.Regex,
+				RuleID:  signature.ID, RuleName: signature.Name,
+				PartToMatch: signature.Part, Match: signature.Match, Regex: signature.Regex,
 				Severity: signature.Severity, SeverityScore: signature.SeverityScore,
 				CompleteFilename: completeFilename,
-				// MatchFromByte: from, MatchToByte: to,
+				MatchFromByte: 0,
+				MatchToByte: len(input),
 				MatchedContents: input,
 			}
 			tempSecretsFound = append(tempSecretsFound, secret)
@@ -391,25 +397,26 @@ func printMatchedSignatures(sid int, from, to int, hsIOData HsInputOutputData) (
 	start := Max(0, bytes.LastIndexByte(inputData[:from], '\n')) // Avoid -ve value from IndexByte
 	end := to + Max(0, bytes.IndexByte(inputData[to:], '\n'))    // Avoid -ve value from IndexByte
 
-	if !(0 <= start && start <= end && end <= len(inputData)) {
-		return output.SecretFound{}, errors.New("index out of bound while printing matched signatures")
-	}
-	
 	// Display max 50 bytes before and after the maching string
 	start = Max(start, from-50)
 	end = Min(end, to+50)
-	coloredMatch := fmt.Sprintf("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
 
+	if !(0 <= start && start <= from && from <= to && to <=end && end <= len(inputData)) {
+		return output.SecretFound{}, errors.New("index out of bound while printing matched signatures")
+	}
+
+	coloredMatch := fmt.Sprintf("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
 	//core.GetSession().Log.Info("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
 	core.GetSession().Log.Info(coloredMatch)
 	
 	secret := output.SecretFound{
 		LayerID: layerID,
-		RuleID:  sid, RuleName: signatureIDMap[sid].Name, PartToMatch: signatureIDMap[sid].Part, Match: signatureIDMap[sid].Match, Regex: signatureIDMap[sid].Regex,
+		RuleID:  sid, RuleName: signatureIDMap[sid].Name,
+		PartToMatch: signatureIDMap[sid].Part, Match: signatureIDMap[sid].Match, Regex: signatureIDMap[sid].Regex,
 		Severity: updatedSeverity, SeverityScore: updatedScore,
 		CompleteFilename: completeFilename,
-		MatchFromByte:    from, MatchToByte: to,
-		MatchedContents: string(inputData[from:to]),
+		PrintBufferStartIndex: start, MatchFromByte:    from-start, MatchToByte: to-start,
+		MatchedContents: string(inputData[start:end]),
 	}
 
 	// output.PrintJsonSecret(secret)

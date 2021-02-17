@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"sync"
         "strings"
@@ -66,7 +65,7 @@ func (l *Logger) Log(level int, format string, args ...interface{}) {
 	}
 
 	if level == FATAL {
-		os.Exit(1)
+		panic(fmt.Sprintf("\r"+format+"\n", args...))
 	}
 }
 

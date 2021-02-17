@@ -28,71 +28,81 @@ type manifestItem struct {
 }
 
 var (
-	imageManifest          manifestItem
 	imageTarFileName       = "save-output.tar"
 	extractedImageFilesDir = "extracted-files"
 )
 
-// High level function to retrieve contents of container images and scan for secrets
-// file by file
+type ImageScan struct {
+	imageName     string
+	imageId       string
+	outputDir     string
+	imageManifest manifestItem
+}
+
+// Function to retrieve contents of container images layer by layer
 // @parameters
-// imageName - Name of the container image to scan (e.g. "alpine:3.5")
+// imageScan - Structure with details of the container image to scan
 // @returns
 // Error - Errors, if any. Otherwise, returns nil
-func scanImage(imageName string) error {
-	// var scanId string
-	var outputDir string
-	var outputErr error
-	var tempSecretsFound []output.SecretFound
+func (imageScan *ImageScan) extractImage() (error) {
+	imageName := imageScan.imageName
+	outputDir := imageScan.outputDir
 
-	outputDir, outputErr = getTmpDir(imageName) // ("Deepfence/SecretScanning/" + scanId)
-	if outputErr != nil {
-		return outputErr
-	}
-	defer deleteTmpDir(outputDir)
-
-	err := SaveImageData(outputDir, imageName)
+	err := imageScan.saveImageData()
 	if err != nil {
-		core.GetSession().Log.Error("scanImage: %s", err)
+		core.GetSession().Log.Error("scanImage: Could save container image %s", err)
 		return err
 	}
 
-	_, err = ExtractTarFile(imageName, path.Join(outputDir, imageTarFileName), outputDir)
+	_, err = extractTarFile(imageName, path.Join(outputDir, imageTarFileName), outputDir)
 	if err != nil {
-		core.GetSession().Log.Error("scanImage: %s", err)
+		core.GetSession().Log.Error("scanImage: Could not extract image tar file %s", err)
 		return err
 	}
 
-	tempSecretsFound, err = ProcessImageLayers(outputDir, path.Join(outputDir, extractedImageFilesDir))
+	imageManifest, err := extractDetailsFromManifest(outputDir)
 	if err != nil {
-		core.GetSession().Log.Error("scanImage: %s", err)
+		core.GetSession().Log.Error("ProcessImageLayers: Could not get image's history: %s," +
+						" please specify repo:tag and check disk space \n", err.Error())
 		return err
 	}
 
+	imageScan.imageManifest = imageManifest
 	// reading image id from imanifest file json path and tripping off extension
-	imageId := strings.TrimSuffix(imageManifest.Config, ".json")
-
-	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ImageName: imageName, Secrets: tempSecretsFound}
-	jsonImageSecretsOutput.SetTime()
-	jsonImageSecretsOutput.SetImageId(imageId)
-	err = jsonImageSecretsOutput.WriteSecrets(getSanitizedString(imageName) + "-secrets.json")
-	if err != nil {
-		core.GetSession().Log.Error("scanImage: %s", err)
-		return err
-	}
+	imageScan.imageId = strings.TrimSuffix(imageScan.imageManifest.Config, ".json")
 
 	return nil
+}
+
+// Function to scan extracted layers of container images for secrets file by file
+// @parameters
+// imageScan - Structure with details of the container image to scan
+// @returns
+// []output.SecretFound - List of all secrets found
+// Error - Errors, if any. Otherwise, returns nil
+func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
+	outputDir := imageScan.outputDir
+	// defer deleteTmpDir(outputDir)
+
+	tempSecretsFound, err := imageScan.processImageLayers(outputDir, path.Join(outputDir, extractedImageFilesDir))
+	if err != nil {
+		core.GetSession().Log.Error("scanImage: %s", err)
+		return tempSecretsFound, err
+	}
+
+	return tempSecretsFound, nil
 }
 
 // Scans a given directory recursively to find all secrets inside any file in the dir
 // @parameters
 // layer - layer ID, if we are scanning directory inside container image
 // baseDir - Parent directory
-// fullDir - Complete path of the directory
+// fullDir - Complete path of the directory to be scanned
+// isFirstSecret - indicates if some secrets are already printed, used to properly format json
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func scanSecretsInDir(layer string, baseDir string, fullDir string) ([]output.SecretFound, error) {
+func scanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecret *bool) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
 
 	if layer != "" {
@@ -130,16 +140,18 @@ func scanSecretsInDir(layer string, baseDir string, fullDir string) ([]output.Se
 		} else {
 			// fmt.Println(relPath, file.Filename, file.Extension, layer)
 			secrets, err := signature.MatchPatternSignatures(contents, relPath, file.Filename, file.Extension, layer)
-			tempSecretsFound = append(tempSecretsFound, secrets...)
 			if err != nil {
 				core.GetSession().Log.Info("relPath: %s, Filename: %s, Extension: %s, layer: %s",
 										relPath, file.Filename, file.Extension, layer)
 				core.GetSession().Log.Error("scanSecretsInDir: %s", err)
 				// return tempSecretsFound, err
 			}
+			output.PrintColoredSecrets(secrets, isFirstSecret)
+			tempSecretsFound = append(tempSecretsFound, secrets...)
 		}
 
 		secrets := signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer)
+		output.PrintColoredSecrets(secrets, isFirstSecret)
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 		// Reset the matched Rule IDs to enable matched signatures for next file
 		signature.ClearMatchedRuleSet()
@@ -150,24 +162,19 @@ func scanSecretsInDir(layer string, baseDir string, fullDir string) ([]output.Se
 
 // Extract all the layers of the container image and then find secrets in each layer one by one
 // @parameters
+// imageScan - Structure with details of the container image to scan
 // imageManifestPath - Complete path of directory where manifest of image has been extracted
 // extractPath - Base directory where all the layers should be extracted to
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func ProcessImageLayers(imageManifestPath string, extractPath string) ([]output.SecretFound, error) {
+func (imageScan *ImageScan) processImageLayers(imageManifestPath string, extractPath string) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
 	var err error
 
-	manifestItem, err := historyFromManifest(imageManifestPath)
-	if err != nil {
-		core.GetSession().Log.Error("ProcessImageLayers: Could not get image's history: %s," +
-						" please specify repo:tag and check disk space \n", err.Error())
-		return nil, err
-	}
-
-	layerIDs := manifestItem.LayerIds
-	layerPaths := manifestItem.Layers
+	var isFirstSecret bool = true
+	layerIDs := imageScan.imageManifest.LayerIds
+	layerPaths := imageScan.imageManifest.Layers
 
 	loopCntr := len(layerPaths)
 	for i := 0; i < loopCntr; i++ {
@@ -185,14 +192,14 @@ func ProcessImageLayers(imageManifestPath string, extractPath string) ([]output.
 			return tempSecretsFound, err
 		}
 
-		_, error := ExtractTarFile("", completeLayerPath, targetDir)
+		_, error := extractTarFile("", completeLayerPath, targetDir)
 		if error != nil {
 			core.GetSession().Log.Error("ProcessImageLayers: Unable to extract image layer. Reason = %s", error.Error())
 			// Don't stop. Print error and continue with remaning extracted files and other layers
 			// return tempSecretsFound, error
 		}
 		core.GetSession().Log.Debug("Analyzing dir: %s", targetDir)
-		secrets, err := scanSecretsInDir(layerIDs[i], extractPath, targetDir)
+		secrets, err := scanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret)
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 		if err != nil {
 			core.GetSession().Log.Error("ProcessImageLayers: %s", err)
@@ -205,24 +212,19 @@ func ProcessImageLayers(imageManifestPath string, extractPath string) ([]output.
 
 // Save container image as tar file in specified directory
 // @parameters 
-// imageId - Image ID of the container image
-// outputDir - Directory where the tar file will be saved
+// imageScan - Structure with details of the container image to scan
 // @returns
 // Error - Errors if any. Otherwise, returns nil
-func SaveImageData(outputDir string, imageId string) error {
-
-	outputParam := path.Join(outputDir, imageTarFileName)
-	// _, errVal := exec.Command("docker", "save", imageId, "-o", outputParam).Output()
-	// if errVal != nil {
-	//	return errVal
-	// }
-	_, stdErr, retVal := runCommand("docker", "save", imageId, "-o", outputParam)
+func (imageScan *ImageScan) saveImageData() error {
+	imageName := imageScan.imageName
+	outputParam := path.Join(imageScan.outputDir, imageTarFileName)
+	_, stdErr, retVal := runCommand("docker", "save", imageName, "-o", outputParam)
 	if retVal != 0 {
 		// fmt.Println(stdErr)
 		return errors.New(stdErr)
 	}
 
-	core.GetSession().Log.Info("Image %s saved in %s", imageId, outputDir)
+	core.GetSession().Log.Info("Image %s saved in %s", imageName, imageScan.outputDir)
 	return nil
 }
 
@@ -244,6 +246,7 @@ func deleteFiles(path string, wildCard string) {
 // outputDir - Directory which need to be deleted
 func deleteTmpDir(outputDir string) {
 	core.GetSession().Log.Info("Deleting temporary dir %s", outputDir)
+	// Output dir will be empty string in case of error, don't delete
 	if outputDir != "" {
 		deleteFiles(outputDir+"/", "*")
 		os.Remove(outputDir)
@@ -287,7 +290,7 @@ func getSanitizedString(imageName string) string {
 // @parameters 
 // imageName - Name of the container image
 // @returns
-// String - Complete path of the based directory where image will be extracted
+// String - Complete path of the based directory where image will be extracted, empty string if error
 // Error - Errors if any. Otherwise, returns nil
 func getTmpDir(imageName string) (string, error) {
 
@@ -302,6 +305,11 @@ func getTmpDir(imageName string) (string, error) {
 	completeTempPath := path.Join(tempPath, extractedImageFilesDir)
 
 	err := createRecursiveDir(completeTempPath)
+
+	if err != nil {
+		core.GetSession().Log.Error("getTmpDir: Could not create temp dir%s", err)
+		return "", err
+	}
 
 	return tempPath, err
 }
@@ -335,18 +343,10 @@ func isSymLink(path string) bool {
 // @returns
 // string - directory where contents of image are extracted
 // Error - Errors, if any. Otherwise, returns nil
-func ExtractTarFile(imageName, imageTarPath string, extractPath string) (string, error) {
+func extractTarFile(imageName, imageTarPath string, extractPath string) (string, error) {
 	core.GetSession().Log.Debug("Started extracting tar file %s", imageTarPath)
 
 	path := extractPath
-
-	// Save the image as tar file if it is not saved alrady
-	if imageTarPath == "" {
-		err := SaveImageData(extractPath, imageName)
-		if err != nil {
-			return path, err
-		}
-	}
 
 	// Extract the contents of image from tar file
 	_, stdErr, retVal := runCommand("tar", "-xf", imageTarPath, "--warning=none", "-C"+path)
@@ -361,22 +361,22 @@ func ExtractTarFile(imageName, imageTarPath string, extractPath string) (string,
 
 // Extract all the details from image manifest
 // @parameters
-// path - Complete path of image contents are extracted
+// path - Complete path where image contents are extracted
 // @returns
-// *manifestItem - Address of the manifestItem containing details about image layers
+// manifestItem - The manifestItem containing details about image layers
 // Error - Errors, if any. Otherwise, returns nil
-func historyFromManifest(path string) (*manifestItem, error) {
+func extractDetailsFromManifest(path string) (manifestItem, error) {
 	mf, err := os.Open(path + "/manifest.json")
 	if err != nil {
-		return nil, err
+		return manifestItem{}, err
 	}
 	defer mf.Close()
 
 	var manifest []manifestItem
 	if err = json.NewDecoder(mf).Decode(&manifest); err != nil {
-		return nil, err
+		return manifestItem{}, err
 	} else if len(manifest) != 1 {
-		return nil, err
+		return manifestItem{}, err
 	}
 	var layerIds []string
 	for _, layer := range manifest[0].Layers {
@@ -386,8 +386,8 @@ func historyFromManifest(path string) (*manifestItem, error) {
 		layerIds = append(layerIds, trimmedLayerId)
 	}
 	manifest[0].LayerIds = layerIds
-	imageManifest = manifest[0]
-	return &manifest[0], nil
+	// ImageScan.imageManifest = manifest[0]
+	return manifest[0], nil
 }
 
 // Execute the specified command and return the output

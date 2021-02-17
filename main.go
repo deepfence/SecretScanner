@@ -42,12 +42,73 @@ var session = core.GetSession()
 // @returns
 // Error, if any. Otherwise, returns nil
 func findSecretsInImage(image string) error {
-	// Save the image as tar
-	err := scanImage(image)
+	var tempSecretsFound []output.SecretFound
+
+	outputDir, err := getTmpDir(image) // ("Deepfence/SecretScanning/" + scanId)
 	if err != nil {
-		core.GetSession().Log.Fatal("findSecretsInImage: %s", err)
+		core.GetSession().Log.Error("findSecretsInImage: Could not create temp dir%s", err)
 		return err
 	}
+	defer deleteTmpDir(outputDir)
+
+	imageScan := ImageScan{imageName: image, imageId: "", outputDir: outputDir}
+	err = imageScan.extractImage()
+
+	if err != nil {
+		core.GetSession().Log.Error("findSecretsInImage: %s", err)
+		return err
+	}
+
+	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ImageName: image}
+	jsonImageSecretsOutput.SetTime()
+	jsonImageSecretsOutput.SetImageId(imageScan.imageId)
+	jsonImageSecretsOutput.PrintJsonHeader()
+
+	tempSecretsFound, err = imageScan.scan()
+
+	if err != nil {
+		core.GetSession().Log.Error("findSecretsInImage: %s", err)
+		return err
+	}
+
+	jsonImageSecretsOutput.PrintJsonFooter()
+
+	jsonImageSecretsOutput.SetSecrets(tempSecretsFound)
+	err = jsonImageSecretsOutput.WriteSecrets(getSanitizedString(image) + "-secrets.json")
+	if err != nil {
+		core.GetSession().Log.Error("findSecretsInImage: %s", err)
+		return err
+	}
+
+	return nil
+}
+
+// Scan a container image for secrets layer by layer
+// @parameters
+// dir - Complete path of the directory to be scanned
+// @returns
+// Error, if any. Otherwise, returns nil
+func findSecretsInDir(dir string) error {
+	var isFirstSecret bool = true
+	jsonDirSecretsOutput := output.JsonDirSecretsOutput{DirName: *session.Options.Local}
+	jsonDirSecretsOutput.SetTime()
+	jsonDirSecretsOutput.PrintJsonHeader()
+
+	secrets, err := scanSecretsInDir("", "", *session.Options.Local, &isFirstSecret)
+	if err != nil {
+		core.GetSession().Log.Error("findSecretsInDir: %s", err)
+		return err
+	}
+
+	jsonDirSecretsOutput.PrintJsonFooter()
+
+	jsonDirSecretsOutput.SetSecrets(secrets)
+	err = jsonDirSecretsOutput.WriteSecrets(getSanitizedString(*session.Options.Local) + "-secrets.json")
+	if err != nil {
+		core.GetSession().Log.Error("findSecretsInDir: %s", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -61,21 +122,18 @@ func main() {
 	// Scan container image for secrets
 	if len(*session.Options.ImageName) > 0 {
 		fmt.Printf("Scanning image %s for secrets...\n", *session.Options.ImageName)
-		findSecretsInImage(*session.Options.ImageName)
+		err := findSecretsInImage(*session.Options.ImageName)
+		if err != nil {
+			core.GetSession().Log.Fatal("main: error while scanning image: %s", err)
+		}
 	}
 
 	// Scan local directory for secrets
 	if len(*session.Options.Local) > 0 {
 		fmt.Printf("[*] Scanning local directory: %s\n", color.BlueString(*session.Options.Local))
-		// output.PrintDirJsonHeader(*session.Options.Local)
-
-		secrets, err := scanSecretsInDir("", "", *session.Options.Local)
+		err := findSecretsInDir(*session.Options.Local)
 		if err != nil {
-			core.GetSession().Log.Fatal("scanSecretsInDir: %s", err)			
+			core.GetSession().Log.Fatal("main: error while scanning dir: %s", err)
 		}
-
-		jsonDirSecretsOutput := output.JsonDirSecretsOutput{DirName: *session.Options.Local, Secrets: secrets}
-		jsonDirSecretsOutput.SetTime()
-		jsonDirSecretsOutput.WriteSecrets(getSanitizedString(*session.Options.Local) + "-secrets.json")
 	}
 }
