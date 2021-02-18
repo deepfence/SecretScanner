@@ -99,7 +99,8 @@ func MatchSimpleSignatures(path string, filename string, extension string, layer
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func MatchPatternSignatures(contents []byte, path string, filename string, extension string, layerID string, numSecrets *uint) ([]output.SecretFound, error) {
+func MatchPatternSignatures(contents []byte, path string, filename string, extension string, layerID string,
+								numSecrets *uint) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
 	var hsIOData HsInputOutputData
 	var matchingPart string
@@ -137,8 +138,8 @@ func MatchPatternSignatures(contents []byte, path string, filename string, exten
 		}
 		err := RunHyperscan(hyperscanBlockDbMap[matchingPart], hsIOData)
 		if err != nil {
-			core.GetSession().Log.Info("part: %s, path: %s, filename: %s, extenstion: %s, layerID: %s", part, path, filename,
-															extension, layerID)
+			core.GetSession().Log.Info("part: %s, path: %s, filename: %s, extenstion: %s, layerID: %s",
+										part, path, filename, extension, layerID)
 			core.GetSession().Log.Warn("MatchPatternSignatures: %s", err)
 			return tempSecretsFound, err
 		}
@@ -171,8 +172,8 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 				signature.SeverityScore = 2.5
 			}
 
-			core.GetSession().Log.Debug("Simple Signature %s %s %s %s %d", signature.Name, signature.Part, signature.Match,
-													signature.Severity, signature.ID)
+			core.GetSession().Log.Debug("Simple Signature %s %s %s %s %d", signature.Name,
+							signature.Part, signature.Match, signature.Severity, signature.ID)
 			
 			switch signature.Part {
 			case ContentsPart:
@@ -195,8 +196,8 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 				}
 			}
 
-			core.GetSession().Log.Debug("Pattern Signature %s %s %s %s %s %s %d", signature.Name, signature.Part, signature.Match,
-									signature.Regex, signature.RegexType, signature.Severity, signature.ID)
+			core.GetSession().Log.Debug("Pattern Signature %s %s %s %s %s %s %d", signature.Name, signature.Part,
+					signature.Match, signature.Regex, signature.RegexType, signature.Severity, signature.ID)
 			
 			signature.CompiledRegex = regexp.MustCompile(signature.Regex)
 
@@ -255,7 +256,8 @@ func ClearMatchedRuleSet() {
 // layerID - layer ID of this file in the container image
 // @returns
 // []output.SecretFound - List of all secrets found
-func matchString(part string, input string, completeFilename string, layerID string, numSecrets *uint) []output.SecretFound {
+func matchString(part string, input string, completeFilename string, layerID string,
+								numSecrets *uint) []output.SecretFound {
 	var tempSecretsFound []output.SecretFound
 
 	for _, signature := range simpleSignatureMap[part] {
@@ -270,9 +272,10 @@ func matchString(part string, input string, completeFilename string, layerID str
 				core.GetSession().Log.Debug("matchString: Skipping matches containing blacklisted strings")
 				continue
 			}
-			core.GetSession().Log.Info("Simple Signature %s %s %s %s %s %d\n",signature.Name, signature.Part, signature.Match,
-												signature.Regex, signature.Severity, signature.ID)
-			core.GetSession().Log.Info("Sensitive file %s found with matching %s of %s\n", completeFilename, part, color.RedString(input))
+			core.GetSession().Log.Info("Simple Signature %s %s %s %s %s %d\n",signature.Name, signature.Part,
+							signature.Match, signature.Regex, signature.Severity, signature.ID)
+			core.GetSession().Log.Info("Sensitive file %s found with matching %s of %s\n",
+							completeFilename, part, color.RedString(input))
 
 			secret := output.SecretFound{
 				LayerID: layerID,

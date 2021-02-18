@@ -8,6 +8,7 @@ import (
 	"time"
 	// "strings"
 	"github.com/fatih/color"
+	"github.com/deepfence/SecretScanner/core"
 )
 
 const (
@@ -88,13 +89,13 @@ func (dirOutput JsonDirSecretsOutput) WriteSecrets(outputFilename string) error 
 func printSecretsToJsonFile(secretsJson interface{}, outputFilename string) error {
 	file, err := json.MarshalIndent(secretsJson, "", Indent)
 	if err != nil {
-		fmt.Println("Couldn't format json output", err)
+		core.GetSession().Log.Error("printSecretsToJsonFile: Couldn't format json output: %s", err)
 		return err
 	}
 
 	err = ioutil.WriteFile(outputFilename, file, os.ModePerm)
 	if err != nil {
-		fmt.Println("Couldn't write json output to file", err)
+		core.GetSession().Log.Error("printSecretsToJsonFile: Couldn't write json output to file: %s", err)
 		return err
 	}
 

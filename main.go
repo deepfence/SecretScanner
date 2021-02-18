@@ -44,14 +44,14 @@ var session = core.GetSession()
 func findSecretsInImage(image string) error {
 	var tempSecretsFound []output.SecretFound
 
-	outputDir, err := core.GetTmpDir(image) // ("Deepfence/SecretScanning/" + scanId)
+	tempDir, err := core.GetTmpDir(image) // ("Deepfence/SecretScanning/" + scanId)
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInImage: Could not create temp dir: %s", err)
 		return err
 	}
-	defer core.DeleteTmpDir(outputDir)
+	defer core.DeleteTmpDir(tempDir)
 
-	imageScan := ImageScan{imageName: image, imageId: "", outputDir: outputDir}
+	imageScan := ImageScan{imageName: image, imageId: "", tempDir: tempDir}
 	err = imageScan.extractImage()
 
 	if err != nil {
@@ -74,7 +74,12 @@ func findSecretsInImage(image string) error {
 	jsonImageSecretsOutput.PrintJsonFooter()
 
 	jsonImageSecretsOutput.SetSecrets(tempSecretsFound)
-	err = jsonImageSecretsOutput.WriteSecrets(core.GetSanitizedString(image) + "-secrets.json")
+	jsonFilename, err := core.GetJsonFilepath(image)
+	if err != nil {
+		core.GetSession().Log.Error("findSecretsInImage: %s", err)
+		return err
+	}
+	err = jsonImageSecretsOutput.WriteSecrets(jsonFilename)
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInImage: %s", err)
 		return err
@@ -96,7 +101,7 @@ func findSecretsInDir(dir string) error {
 	jsonDirSecretsOutput.SetTime()
 	jsonDirSecretsOutput.PrintJsonHeader()
 
-	secrets, err := scanSecretsInDir("", "", *session.Options.Local, &isFirstSecret, &numSecrets)
+	secrets, err := scanSecretsInDir("", "", dir, &isFirstSecret, &numSecrets)
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInDir: %s", err)
 		return err
@@ -105,7 +110,12 @@ func findSecretsInDir(dir string) error {
 	jsonDirSecretsOutput.PrintJsonFooter()
 
 	jsonDirSecretsOutput.SetSecrets(secrets)
-	err = jsonDirSecretsOutput.WriteSecrets(core.GetSanitizedString(*session.Options.Local) + "-secrets.json")
+	jsonFilename, err := core.GetJsonFilepath(dir)
+	if err != nil {
+		core.GetSession().Log.Error("findSecretsInDir: %s", err)
+		return err
+	}
+	err = jsonDirSecretsOutput.WriteSecrets(jsonFilename)
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInDir: %s", err)
 		return err

@@ -23,12 +23,14 @@ func CreateRecursiveDir(completePath string) error {
 		if err != nil {
 			GetSession().Log.Error("createRecursiveDir %q: %s", completePath, err)
 		}
-	} else {
-		GetSession().Log.Error("createRecursiveDir %q: %s", completePath, err)
+		return err
+	} else if err != nil {
+		GetSession().Log.Error("createRecursiveDir %q: %s. Deleting temp dir", completePath, err)
 		DeleteTmpDir(completePath)
+		return err
 	}
 
-	return err
+	return nil
 }
 
 // Create a sanitized string from image name which can used as a filename
@@ -36,13 +38,38 @@ func CreateRecursiveDir(completePath string) error {
 // imageName - Name of the container image
 // @returns
 // string - Sanitized string which can used as part of filename
-func GetSanitizedString(imageName string) string {
+func getSanitizedString(imageName string) string {
 	reg, err := regexp.Compile("[^A-Za-z0-9]+")
 	if err != nil {
 		return "error"
 	}
 	sanitizedName := reg.ReplaceAllString(imageName, "")
 	return sanitizedName
+}
+
+
+// Return complete path and filename for json output file
+// @parameters
+// image - Name of the container image or dir, for which json filename and path will be created
+// @returns
+// string - Sanitized string which can used as path and filename of json output file
+// Error - Errors if path can't be created. Otherwise, returns nil
+func GetJsonFilepath(input string) (string,error) {
+	outputDir := *GetSession().Options.OutputPath
+	JsonFilename := *GetSession().Options.JsonFilename
+	if !PathExists(outputDir) {
+		err := CreateRecursiveDir(outputDir)
+		if err != nil {
+			GetSession().Log.Error("GetJsonFilepath: Could not create output dir: %s", err)
+			return "", err
+		}
+	}
+	if JsonFilename == "" {
+		JsonFilename = getSanitizedString(input) + "-secrets.json"
+	}
+	jsonFilePath := filepath.Join(outputDir, JsonFilename)
+	GetSession().Log.Info("Complete json file path and name: %s", jsonFilePath)
+	return jsonFilePath, nil
 }
 
 
@@ -54,7 +81,7 @@ func GetSanitizedString(imageName string) string {
 // Error - Errors if any. Otherwise, returns nil
 func GetTmpDir(imageName string) (string, error) {
 
-	var scanId string = "df_" + GetSanitizedString(imageName)
+	var scanId string = "df_" + getSanitizedString(imageName)
 
 	dir := *session.Options.TempDirectory
 	tempPath := filepath.Join(dir, "Deepfence", TempDirSuffix, scanId)

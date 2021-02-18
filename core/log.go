@@ -65,7 +65,7 @@ func (l *Logger) Log(level int, format string, args ...interface{}) {
 	}
 
 	if level == FATAL {
-		panic(fmt.Sprintf("\r"+format+"\n", args...))
+		panic("Fatal error....")
 	}
 }
 
