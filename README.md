@@ -20,6 +20,8 @@ Usage of ./SecretScanner:
     	Debug levels are one of FATAL, ERROR, IMPORTANT, WARN, INFO, DEBUG. Only levels higher than the debug-level are displayed (default "ERROR")
   -image-name string
     	Name of the image along with tag to scan for secrets
+  -json-filename string
+    	Output json file name. If not set, it will automatically create a filename based on image or dir name
   -local string
     	Specify local directory (absolute path) which to scan. Scans only given directory recursively.
   -max-multi-match uint
@@ -31,7 +33,7 @@ Usage of ./SecretScanner:
   -multi-match
     	Output multiple matches of same pattern in one file. By default, only one match of a pattern is output for a file for better performance
   -output-path string
-    	Outputs json file with secrets to this dir/file. If not set, it will output to a default filename in current directory
+    	Output directory where json file will be stored. If not set, it will output to current directory
   -temp-directory string
     	Directory to process and store repositories/matches (default "/tmp")
   -threads int
