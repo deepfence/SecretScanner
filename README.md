@@ -84,16 +84,16 @@ Install docker and run SecretScanner on a container image using the following in
   * Scan a container image: 
 
     ```
-    docker run -it --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -image-name node:8.11
+    docker run -it --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -image-name node:8.11
     ```
   
   * Scan a local directory: 
 
     ```
-    docker run -it --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -local /home/deepfence/src/SecretScanner/test
+    docker run -it --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -local /home/deepfence/src/SecretScanner/test
     ```
 
-SecretScanner will also create json files with details of all the secrets found in the current working directory. In this case, output json files will be in the directory (`/home/deepfence/output`) inside the container.
+SecretScanner will also create json files with details of all the secrets found, in the current working directory. 
 
 # Build Instructions
 
