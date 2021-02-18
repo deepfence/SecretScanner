@@ -10,37 +10,8 @@ Check out our [blog](https://medium.com/deepfence-cloud-native-security/detectin
 
 # Command line options
 
-## Running as a container
-
 ```
-$ docker run -it --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest
-
-Usage of /home/deepfence/src/SecretScanner/SecretScanner:
-  -config-path string
-    	Searches for config.yaml from given directory. If not set, tries to find it from SecretScanner binary's and current directory
-  -debug-level string
-    	Debug levels are one of FATAL, ERROR, IMPORTANT, WARN, INFO, DEBUG. Only levels higher than the debug-level are displayed (default "ERROR")
-  -image-name string
-    	Name of the image along with tag to scan for secrets
-  -local string
-    	Specify local directory (absolute path) which to scan. Scans only given directory recursively.
-  -max-multi-match uint
-    	Maximum number of matches of same pattern in one file. This is used only when multi-match option is enabled. (default 3)
-  -maximum-file-size uint
-    	Maximum file size to process in KB (default 256)
-  -multi-match
-    	Output multiple matches of same pattern in one file. By default, only one match of a pattern is output for a file for better performance
-  -temp-directory string
-    	Directory to process and store repositories/matches (default "/tmp/Deepfence/SecretScanning")
-  -threads int
-    	Number of concurrent threads (default number of logical CPUs)
-
-```
-
-## Running on host
-
-```
-$ ./SecretScanner
+$ ./SecretScanner --help
 
 Usage of ./SecretScanner:
   -config-path string
@@ -53,12 +24,16 @@ Usage of ./SecretScanner:
     	Specify local directory (absolute path) which to scan. Scans only given directory recursively.
   -max-multi-match uint
     	Maximum number of matches of same pattern in one file. This is used only when multi-match option is enabled. (default 3)
+  -max-secrets uint
+    	Maximum number of secrets to find in one container image or file system. (default 1000)
   -maximum-file-size uint
     	Maximum file size to process in KB (default 256)
   -multi-match
     	Output multiple matches of same pattern in one file. By default, only one match of a pattern is output for a file for better performance
+  -output-path string
+    	Outputs json file with secrets to this dir/file. If not set, it will output to a default filename in current directory
   -temp-directory string
-    	Directory to process and store repositories/matches (default "/tmp/Deepfence/SecretScanning")
+    	Directory to process and store repositories/matches (default "/tmp")
   -threads int
     	Number of concurrent threads (default number of logical CPUs)
 
@@ -93,7 +68,7 @@ Install docker and run SecretScanner on a container image using the following in
     docker run -it --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker deepfenceio/secretscanning:latest -local /home/deepfence/src/SecretScanner/test
     ```
 
-SecretScanner will also create json files with details of all the secrets found, in the current working directory. 
+By default, SecretScanner will also create json files with details of all the secrets found in the current working directory.
 
 # Build Instructions
 

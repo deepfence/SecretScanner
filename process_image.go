@@ -13,8 +13,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
-	"runtime"
 	"strings"
 	"syscall"
 )
@@ -29,7 +27,6 @@ type manifestItem struct {
 
 var (
 	imageTarFileName       = "save-output.tar"
-	extractedImageFilesDir = "extracted-files"
 )
 
 type ImageScan struct {
@@ -37,6 +34,7 @@ type ImageScan struct {
 	imageId       string
 	outputDir     string
 	imageManifest manifestItem
+	numSecrets    uint
 }
 
 // Function to retrieve contents of container images layer by layer
@@ -47,6 +45,7 @@ type ImageScan struct {
 func (imageScan *ImageScan) extractImage() (error) {
 	imageName := imageScan.imageName
 	outputDir := imageScan.outputDir
+	imageScan.numSecrets = 0
 
 	err := imageScan.saveImageData()
 	if err != nil {
@@ -84,7 +83,7 @@ func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
 	outputDir := imageScan.outputDir
 	// defer deleteTmpDir(outputDir)
 
-	tempSecretsFound, err := imageScan.processImageLayers(outputDir, path.Join(outputDir, extractedImageFilesDir))
+	tempSecretsFound, err := imageScan.processImageLayers(outputDir)
 	if err != nil {
 		core.GetSession().Log.Error("scanImage: %s", err)
 		return tempSecretsFound, err
@@ -102,7 +101,7 @@ func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func scanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecret *bool) ([]output.SecretFound, error) {
+func scanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecret *bool, numSecrets *uint) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
 
 	if layer != "" {
@@ -121,7 +120,7 @@ func scanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 
 		// No need to scan sym links. This avoids hangs when scanning stderr, stdour or special file descriptors
 		// Also, the pointed files will anyway be scanned directly
-		if isSymLink(file.Path) {
+		if core.IsSymLink(file.Path) {
 			continue
 		}
 
@@ -139,7 +138,7 @@ func scanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			// return tempSecretsFound, err
 		} else {
 			// fmt.Println(relPath, file.Filename, file.Extension, layer)
-			secrets, err := signature.MatchPatternSignatures(contents, relPath, file.Filename, file.Extension, layer)
+			secrets, err := signature.MatchPatternSignatures(contents, relPath, file.Filename, file.Extension, layer, numSecrets)
 			if err != nil {
 				core.GetSession().Log.Info("relPath: %s, Filename: %s, Extension: %s, layer: %s",
 										relPath, file.Filename, file.Extension, layer)
@@ -150,11 +149,16 @@ func scanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			tempSecretsFound = append(tempSecretsFound, secrets...)
 		}
 
-		secrets := signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer)
+		secrets := signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, numSecrets)
 		output.PrintColoredSecrets(secrets, isFirstSecret)
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 		// Reset the matched Rule IDs to enable matched signatures for next file
 		signature.ClearMatchedRuleSet()
+
+		// Don't report secrets if number of secrets exceeds MAX value
+		if *numSecrets >= *core.GetSession().Options.MaxSecrets {
+			return tempSecretsFound, nil
+		}
 	}
 
 	return tempSecretsFound, nil
@@ -164,15 +168,16 @@ func scanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 // @parameters
 // imageScan - Structure with details of the container image to scan
 // imageManifestPath - Complete path of directory where manifest of image has been extracted
-// extractPath - Base directory where all the layers should be extracted to
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func (imageScan *ImageScan) processImageLayers(imageManifestPath string, extractPath string) ([]output.SecretFound, error) {
+func (imageScan *ImageScan) processImageLayers(imageManifestPath string) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
 	var err error
-
 	var isFirstSecret bool = true
+
+	// extractPath - Base directory where all the layers should be extracted to
+	extractPath := path.Join(imageManifestPath, core.ExtractedImageFilesDir)
 	layerIDs := imageScan.imageManifest.LayerIds
 	layerPaths := imageScan.imageManifest.Layers
 
@@ -185,7 +190,7 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string, extract
 		targetDir := path.Join(extractPath, layerIDs[i])
 		core.GetSession().Log.Info("Complete layer path: %s", completeLayerPath)
 		core.GetSession().Log.Info("Extracted to directory: %s", targetDir)
-		err = createRecursiveDir(targetDir)
+		err = core.CreateRecursiveDir(targetDir)
 		if err != nil {
 			core.GetSession().Log.Error("ProcessImageLayers: Unable to create target directory" +
 										" to extract image layers... %s", err)
@@ -199,11 +204,16 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string, extract
 			// return tempSecretsFound, error
 		}
 		core.GetSession().Log.Debug("Analyzing dir: %s", targetDir)
-		secrets, err := scanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret)
+		secrets, err := scanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret, &imageScan.numSecrets)
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 		if err != nil {
 			core.GetSession().Log.Error("ProcessImageLayers: %s", err)
 			// return tempSecretsFound, err
+		}
+
+		// Don't report secrets if number of secrets exceeds MAX value
+		if imageScan.numSecrets >= *core.GetSession().Options.MaxSecrets {
+			return tempSecretsFound, nil
 		}
 	}
 
@@ -226,113 +236,6 @@ func (imageScan *ImageScan) saveImageData() error {
 
 	core.GetSession().Log.Info("Image %s saved in %s", imageName, imageScan.outputDir)
 	return nil
-}
-
-// Delete all the files and dirs recursively in specified directory
-// @parameters 
-// path - Directory whose contents need to be deleted
-// wildcard - patterns to match the filenames (e.g. '*')
-func deleteFiles(path string, wildCard string) {
-
-	var val string
-	files, _ := filepath.Glob(path + wildCard)
-	for _, val = range files {
-		os.RemoveAll(val)
-	}
-}
-
-// Delete the temporary directory
-// @parameters 
-// outputDir - Directory which need to be deleted
-func deleteTmpDir(outputDir string) {
-	core.GetSession().Log.Info("Deleting temporary dir %s", outputDir)
-	// Output dir will be empty string in case of error, don't delete
-	if outputDir != "" {
-		deleteFiles(outputDir+"/", "*")
-		os.Remove(outputDir)
-	}
-}
-
-// Create directory structure recursively, if they do not exist
-// @parameters 
-// completePath - Complete path of directory which needs to be created
-// @returns
-// Error - Errors if any. Otherwise, returns nil
-func createRecursiveDir(completePath string) error {
-	_, err := os.Stat(completePath)
-	if os.IsNotExist(err) {
-		core.GetSession().Log.Debug("Folder does not exist. Creating folder... %s", completePath)
-		err = os.MkdirAll(completePath, os.ModePerm)
-		if err != nil {
-			core.GetSession().Log.Error("MkdirAll %q: %s", completePath, err)
-		}
-	}
-
-	return err
-}
-
-// Create a sanitized string from image name which can used as a filename
-// @parameters 
-// imageName - Name of the container image
-// @returns
-// string - Sanitized string which can used as part of filename
-func getSanitizedString(imageName string) string {
-	reg, err := regexp.Compile("[^A-Za-z0-9]+")
-	if err != nil {
-		return "error"
-	}
-	sanitizedName := reg.ReplaceAllString(imageName, "")
-	return sanitizedName
-}
-
-
-// Create a temporrary directory to extract the conetents of container image
-// @parameters 
-// imageName - Name of the container image
-// @returns
-// String - Complete path of the based directory where image will be extracted, empty string if error
-// Error - Errors if any. Otherwise, returns nil
-func getTmpDir(imageName string) (string, error) {
-
-	var scanId string = "df_" + getSanitizedString(imageName)
-
-	tempPath := filepath.Join(os.TempDir(), core.TempDirName, scanId) 
-	
-	if runtime.GOOS == "windows" {
-		tempPath = "C:/ProgramData/Deepfence/temp/find_secrets/df_" + scanId
-	}
-
-	completeTempPath := path.Join(tempPath, extractedImageFilesDir)
-
-	err := createRecursiveDir(completeTempPath)
-
-	if err != nil {
-		core.GetSession().Log.Error("getTmpDir: Could not create temp dir%s", err)
-		return "", err
-	}
-
-	return tempPath, err
-}
-
-// Check if input is a symLink, not normal file/dir
-// @returns
-// bool - Return true if input is a symLink
-func isSymLink(path string) bool {
-	// can handle symbolic link, but will no follow the link
-	fileInfo, err := os.Lstat(path)
-
-	if err != nil {
-		// panic(err)
-		return false
-	}
-
-	// --- check if file is a symlink
-	if fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
-		// fmt.Println("File is a symbolic link")
-		return true
-	}
-
-	return false
 }
 
 // Extract the contents of container image and save it in specified dir

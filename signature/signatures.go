@@ -34,6 +34,7 @@ type HsInputOutputData struct {
 	completeFilename    string
 	layerID             string
 	secretsFound        *[]output.SecretFound
+	numSecrets          *uint
 }
 
 // Different map data structures to map to appropriate signatures, DBs etc.
@@ -63,7 +64,7 @@ func init() {
 // layerID - layer ID of this file in the container image
 // @returns
 // []output.SecretFound - List of all secrets found
-func MatchSimpleSignatures(path string, filename string, extension string, layerID string) []output.SecretFound {
+func MatchSimpleSignatures(path string, filename string, extension string, layerID string, numSecrets *uint) []output.SecretFound {
 	var tempSecretsFound []output.SecretFound
 	var matchingPart string
 	var matchingStr string
@@ -81,7 +82,7 @@ func MatchSimpleSignatures(path string, filename string, extension string, layer
 			matchingStr = extension
 		}
 
-		secrets := matchString(matchingPart, matchingStr, path, layerID)
+		secrets := matchString(matchingPart, matchingStr, path, layerID, numSecrets)
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 	}
 
@@ -98,7 +99,7 @@ func MatchSimpleSignatures(path string, filename string, extension string, layer
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func MatchPatternSignatures(contents []byte, path string, filename string, extension string, layerID string) ([]output.SecretFound, error) {
+func MatchPatternSignatures(contents []byte, path string, filename string, extension string, layerID string, numSecrets *uint) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
 	var hsIOData HsInputOutputData
 	var matchingPart string
@@ -132,6 +133,7 @@ func MatchPatternSignatures(contents []byte, path string, filename string, exten
 			completeFilename: path,
 			layerID: layerID,
 			secretsFound: &tempSecretsFound,
+			numSecrets: numSecrets,
 		}
 		err := RunHyperscan(hyperscanBlockDbMap[matchingPart], hsIOData)
 		if err != nil {
@@ -253,10 +255,16 @@ func ClearMatchedRuleSet() {
 // layerID - layer ID of this file in the container image
 // @returns
 // []output.SecretFound - List of all secrets found
-func matchString(part string, input string, completeFilename string, layerID string) []output.SecretFound {
+func matchString(part string, input string, completeFilename string, layerID string, numSecrets *uint) []output.SecretFound {
 	var tempSecretsFound []output.SecretFound
 
 	for _, signature := range simpleSignatureMap[part] {
+		// Don't report secrets if number of secrets exceeds MAX value
+		if *numSecrets >= *core.GetSession().Options.MaxSecrets {
+			core.GetSession().Log.Debug("MAX secrets exceeded: %d", *numSecrets)
+			return tempSecretsFound
+		}
+
 		if signature.Match == input {
 			if core.ContainsBlacklistedString([]byte(input)) {
 				core.GetSession().Log.Debug("matchString: Skipping matches containing blacklisted strings")
@@ -277,6 +285,7 @@ func matchString(part string, input string, completeFilename string, layerID str
 				MatchedContents: input,
 			}
 			tempSecretsFound = append(tempSecretsFound, secret)
+			*numSecrets = *numSecrets + 1
 		}
 	}
 
@@ -297,6 +306,12 @@ func processHsRegexMatch(id uint, from, to uint64, flags uint, context interface
 	var start int
 	hsIOData := context.(HsInputOutputData)
 	secrets := hsIOData.secretsFound
+
+	// Don't report secrets if number of secrets exceeds MAX value
+	if *hsIOData.numSecrets >= *core.GetSession().Options.MaxSecrets {
+		core.GetSession().Log.Debug("MAX secrets exceeded: %d", *hsIOData.numSecrets)
+		return nil
+	}
 
 	sid := int(id)
 	start = int(from)
@@ -332,6 +347,7 @@ func processHsRegexMatch(id uint, from, to uint64, flags uint, context interface
 		return nil
 	}
 	*secrets = append(*secrets, secret)
+	*hsIOData.numSecrets = *hsIOData.numSecrets + 1
 
 	return nil
 }
@@ -418,8 +434,6 @@ func printMatchedSignatures(sid int, from, to int, hsIOData HsInputOutputData) (
 		PrintBufferStartIndex: start, MatchFromByte:    from-start, MatchToByte: to-start,
 		MatchedContents: string(inputData[start:end]),
 	}
-
-	// output.PrintJsonSecret(secret)
 
 	return secret, nil
 }

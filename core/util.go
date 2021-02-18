@@ -5,20 +5,127 @@ import (
 	"encoding/hex"
 	"math"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
+	"regexp"
 )
 
-func GetTempDir(suffix string) string {
-	dir := filepath.Join(*session.Options.TempDirectory, suffix)
-
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		os.MkdirAll(dir, os.ModePerm)
+// Create directory structure recursively, if they do not exist
+// @parameters
+// completePath - Complete path of directory which needs to be created
+// @returns
+// Error - Errors if any. Otherwise, returns nil
+func CreateRecursiveDir(completePath string) error {
+	if _, err := os.Stat(completePath); os.IsNotExist(err) {
+		GetSession().Log.Debug("Folder does not exist. Creating folder... %s", completePath)
+		err = os.MkdirAll(completePath, os.ModePerm)
+		if err != nil {
+			GetSession().Log.Error("createRecursiveDir %q: %s", completePath, err)
+		}
 	} else {
-		os.RemoveAll(dir)
+		GetSession().Log.Error("createRecursiveDir %q: %s", completePath, err)
+		DeleteTmpDir(completePath)
 	}
 
-	return dir
+	return err
+}
+
+// Create a sanitized string from image name which can used as a filename
+// @parameters
+// imageName - Name of the container image
+// @returns
+// string - Sanitized string which can used as part of filename
+func GetSanitizedString(imageName string) string {
+	reg, err := regexp.Compile("[^A-Za-z0-9]+")
+	if err != nil {
+		return "error"
+	}
+	sanitizedName := reg.ReplaceAllString(imageName, "")
+	return sanitizedName
+}
+
+
+// Create a temporrary directory to extract the conetents of container image
+// @parameters
+// imageName - Name of the container image
+// @returns
+// String - Complete path of the based directory where image will be extracted, empty string if error
+// Error - Errors if any. Otherwise, returns nil
+func GetTmpDir(imageName string) (string, error) {
+
+	var scanId string = "df_" + GetSanitizedString(imageName)
+
+	dir := *session.Options.TempDirectory
+	tempPath := filepath.Join(dir, "Deepfence", TempDirSuffix, scanId)
+
+	//if runtime.GOOS == "windows" {
+	//	tempPath = dir + "\temp\Deepfence\SecretScanning\df_" + scanId
+	//}
+
+	completeTempPath := path.Join(tempPath, ExtractedImageFilesDir)
+
+	err := CreateRecursiveDir(completeTempPath)
+	if err != nil {
+		GetSession().Log.Error("getTmpDir: Could not create temp dir%s", err)
+		return "", err
+	}
+
+	return tempPath, err
+}
+
+// Delete the temporary directory
+// @parameters
+// outputDir - Directory which need to be deleted
+// @returns
+// Error - Errors if any. Otherwise, returns nil
+func DeleteTmpDir(outputDir string) error {
+	GetSession().Log.Info("Deleting temporary dir %s", outputDir)
+	// Output dir will be empty string in case of error, don't delete
+	if outputDir != "" {
+		// deleteFiles(outputDir+"/", "*")
+		err := os.RemoveAll(outputDir)
+		if err != nil {
+			GetSession().Log.Error("deleteTmpDir: Could not delete temp dir: %s", err)
+			return err
+		}
+	}
+	return nil
+}
+
+// Delete all the files and dirs recursively in specified directory
+// @parameters
+// path - Directory whose contents need to be deleted
+// wildcard - patterns to match the filenames (e.g. '*')
+func DeleteFiles(path string, wildCard string) {
+
+	var val string
+	files, _ := filepath.Glob(path + wildCard)
+	for _, val = range files {
+		os.RemoveAll(val)
+	}
+}
+
+// Check if input is a symLink, not normal file/dir
+// path - Pathname which needs to be checked for symbolic link
+// @returns
+// bool - Return true if input is a symLink
+func IsSymLink(path string) bool {
+	// can handle symbolic link, but will no follow the link
+	fileInfo, err := os.Lstat(path)
+
+	if err != nil {
+		// panic(err)
+		return false
+	}
+
+	// --- check if file is a symlink
+	if fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
+		// fmt.Println("File is a symbolic link")
+		return true
+	}
+
+	return false
 }
 
 func PathExists(path string) bool {
