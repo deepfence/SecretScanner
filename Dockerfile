@@ -22,8 +22,6 @@ ENV GOPATH=/root/.go \
     CGO_CFLAGS="-I/usr/local/include/hyperscan/src" \
     LD_LIBRARY_PATH=/usr/local/lib:/usr/local/include/hs/lib:$LD_LIBRARY_PATH \
     PATH=/usr/local/go-1.14.2/bin:~/.go/bin:$PATH
-RUN go get "github.com/flier/gohs/hyperscan" "gopkg.in/yaml.v3" "github.com/fatih/color"
-RUN go get "github.com/deepfence/SecretScanner"
 
 WORKDIR /home/deepfence/src/SecretScanner
 COPY . .
