@@ -33,7 +33,7 @@ func ParseOptions() (*Options, error) {
 		TempDirectory:       flag.String("temp-directory", os.TempDir(), "Directory to process and store repositories/matches"),
 		Local:               flag.String("local", "", "Specify local directory (absolute path) which to scan. Scans only given directory recursively."),
 		ConfigPath:          flag.String("config-path", "", "Searches for config.yaml from given directory. If not set, tries to find it from SecretScanner binary's and current directory"),
-		OutputPath:          flag.String("output-path", "", "Output directory where json file will be stored. If not set, it will output to current directory"),
+		OutputPath:          flag.String("output-path", ".", "Output directory where json file will be stored. If not set, it will output to current directory"),
 		JsonFilename:        flag.String("json-filename", "", "Output json file name. If not set, it will automatically create a filename based on image or dir name"),
 		ImageName:           flag.String("image-name", "", "Name of the image along with tag to scan for secrets"),
 		MultipleMatch:       flag.Bool("multi-match", false, "Output multiple matches of same pattern in one file. By default, only one match of a pattern is output for a file for better performance"),

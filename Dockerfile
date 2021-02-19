@@ -2,12 +2,13 @@
 FROM ubuntu:bionic
 MAINTAINER DeepFence
 
-RUN apt-get update && apt-get install -y git gcc cmake make build-essential python2.7 pkg-config ragel libboost-dev wget nano
+RUN apt-get update && apt-get install -y git gcc cmake make build-essential python2.7 pkg-config ragel libboost-dev wget nano && apt-get -y clean && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /usr/local/include/ && \
     cd /usr/local/include/ && \
     git clone https://github.com/intel/hyperscan.git && \
     mkdir /usr/local/include/hs && \
     cd /usr/local/include/hs && \
+    export MAKEFLAGS=-j$(nproc) && \
     cmake -DBUILD_STATIC_AND_SHARED=1 /usr/local/include/hyperscan && \
     echo "/usr/local/lib" | tee --append /etc/ld.so.conf.d/usrlocal.conf && \
     cd /usr/local/include/hs && make && make install
@@ -24,10 +25,8 @@ ENV GOPATH=/root/.go \
 RUN go get "github.com/flier/gohs/hyperscan" "gopkg.in/yaml.v3" "github.com/fatih/color"
 RUN go get "github.com/deepfence/SecretScanner"
 
-RUN mkdir -p /home/deepfence/src /home/deepfence/output
-WORKDIR /home/deepfence/src
-RUN git clone https://github.com/deepfence/SecretScanner.git
 WORKDIR /home/deepfence/src/SecretScanner
+COPY . .
 RUN go build -v -i
 WORKDIR /home/deepfence/output
 
