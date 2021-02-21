@@ -1,4 +1,4 @@
-![Deepfence Logo](images/Deepfence-Logo_Black.jpg)
+Deepfence SecretScanner can find any potential secrets in container images or file systems.
 
 # What are Secrets?
 
