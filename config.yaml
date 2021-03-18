@@ -473,3 +473,13 @@ signatures:
   - part:  'path'
     regex: '\.?mozilla[\\\/]firefox[\\\/]logins.json$'
     name: 'Firefox saved password collection (can be decrypted using keys4.db)'
+    
+  - part:  'filename'
+    match: 'wallet.dat'
+    name: 'Bitcoin Core wallet'
+  - part:  'filename'
+    match: 'onion_v3_private_key'
+    name: 'Private key for Bitcoin Core onion service'
+  - part:  'filename'
+    match: 'bitcoin.conf'
+    name: 'Bitcoin Core config'
