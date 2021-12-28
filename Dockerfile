@@ -1,11 +1,14 @@
 FROM ubuntu:focal
 MAINTAINER DeepFence
 
-ENV DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true
-
-RUN echo 'tzdata tzdata/Areas select Etc' | debconf-set-selections; \
-    echo 'tzdata tzdata/Zones/Etc select UTC' | debconf-set-selections; \
-    apt-get update && apt-get install -y git gcc cmake make build-essential libltdl7 python3.9 pkg-config ragel libboost-dev wget nano && apt-get -y clean && rm -rf /var/lib/apt/lists/*
+RUN echo 'tzdata tzdata/Areas select Etc' | debconf-set-selections \
+    && echo 'tzdata tzdata/Zones/Etc select UTC' | debconf-set-selections \
+    && apt-get update \
+    && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get install -y git \
+    && apt-get install -y --no-install-recommends gcc cmake make python3.9 build-essential libltdl7 pkg-config ragel libboost-dev wget nano \
+    && apt-get -y clean \
+    && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /usr/local/include/ && \
     cd /usr/local/include/ && \
     git clone https://github.com/intel/hyperscan.git && \
@@ -28,7 +31,11 @@ ENV GOPATH=/root/.go \
 
 WORKDIR /home/deepfence/src/SecretScanner
 COPY . .
-RUN go build -v -i
+RUN go build -v -i \
+    && mv /home/deepfence/src/SecretScanner/SecretScanner /home/deepfence/src/SecretScanner/config.yaml /tmp \
+    && rm -rf /home/deepfence/src/SecretScanner/* \
+    && mv /tmp/SecretScanner /tmp/config.yaml /home/deepfence/src/SecretScanner \
+    && rm -rf /usr/local/go-1.17.5
 WORKDIR /home/deepfence/output
 
 ENTRYPOINT ["/home/deepfence/src/SecretScanner/SecretScanner", "-config-path", "/home/deepfence/src/SecretScanner"]
