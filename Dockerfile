@@ -1,16 +1,20 @@
 FROM golang:1.17-alpine3.13 AS builder
 MAINTAINER DeepFence
 
-RUN apk update && apk add --upgrade hyperscan-dev gcc musl-dev pkgconfig g++
+RUN apk update && apk add --upgrade hyperscan-dev gcc musl-dev pkgconfig g++ make git protoc
 ENV GOPATH=/root/.go \
     PKG_CONFIG_PATH=/usr/local/include/hs/ \
     CGO_CFLAGS="-I/usr/local/include/hyperscan/src" \
     LD_LIBRARY_PATH=/usr/local/lib:/usr/local/include/hs/lib:$LD_LIBRARY_PATH \
-    PATH=/usr/local/go-1.17.5/bin:~/.go/bin:$PATH
+    PATH=/usr/local/go-1.17.5/bin:/root/.go/bin:$PATH
+
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 
 WORKDIR /home/deepfence/src/SecretScanner
 COPY . .
-RUN go build -v -i
+RUN make clean
+RUN make
 
 FROM alpine:3.13
 MAINTAINER DeepFence

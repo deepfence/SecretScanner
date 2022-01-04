@@ -1,4 +1,4 @@
-package main
+package scan
 
 import (
 	"bytes"
@@ -101,7 +101,7 @@ func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func scanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecret *bool,
+func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecret *bool,
 								numSecrets *uint) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
 
@@ -206,7 +206,7 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string) ([]outp
 			// return tempSecretsFound, error
 		}
 		core.GetSession().Log.Debug("Analyzing dir: %s", targetDir)
-		secrets, err := scanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret, &imageScan.numSecrets)
+		secrets, err := ScanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret, &imageScan.numSecrets)
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 		if err != nil {
 			core.GetSession().Log.Error("ProcessImageLayers: %s", err)
@@ -336,4 +336,31 @@ func runCommand(name string, args ...string) (stdout string, stderr string, exit
 		exitCode = ws.ExitStatus()
 	}
 	return
+}
+
+type ImageExtractionResult struct {
+	Secrets []output.SecretFound
+	ImageId string
+}
+
+func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
+	tempDir, err := core.GetTmpDir(image)
+	if err != nil {
+		return nil, err
+	}
+	defer core.DeleteTmpDir(tempDir)
+
+	imageScan := ImageScan{imageName: image, imageId: "", tempDir: tempDir}
+	err = imageScan.extractImage()
+
+	if err != nil {
+		return nil, err
+	}
+
+	secrets, err := imageScan.scan()
+
+	if err != nil {
+		return nil, err
+	}
+	return &ImageExtractionResult{ ImageId: imageScan.imageId, Secrets: secrets}, nil
 }
