@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM ubuntu:focal AS builder
 MAINTAINER DeepFence
 
 RUN echo 'tzdata tzdata/Areas select Etc' | debconf-set-selections \
@@ -31,12 +31,16 @@ ENV GOPATH=/root/.go \
 
 WORKDIR /home/deepfence/src/SecretScanner
 COPY . .
-RUN go build -v -i \
-    && mv /home/deepfence/src/SecretScanner/SecretScanner /home/deepfence/src/SecretScanner/config.yaml /tmp \
-    && rm -rf /home/deepfence/src/SecretScanner/* \
-    && mv /tmp/SecretScanner /tmp/config.yaml /home/deepfence/src/SecretScanner \
-    && rm -rf /usr/local/go-1.17.5
+RUN go build -v -i
+
+FROM ubuntu:focal
+MAINTAINER DeepFence
+
+WORKDIR /home/deepfence/usr
+COPY --from=builder /home/deepfence/src/SecretScanner/SecretScanner .
+COPY --from=builder /home/deepfence/src/SecretScanner/config.yaml .
+COPY --from=builder /usr/local/lib/libhs.so.5 /lib
 WORKDIR /home/deepfence/output
 
-ENTRYPOINT ["/home/deepfence/src/SecretScanner/SecretScanner", "-config-path", "/home/deepfence/src/SecretScanner"]
+ENTRYPOINT ["/home/deepfence/usr/SecretScanner", "-config-path", "/home/deepfence/usr"]
 CMD ["-h"]
