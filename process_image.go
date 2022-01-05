@@ -131,8 +131,8 @@ func scanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			if err != nil {
 				core.GetSession().Log.Error("scanSecretsInDir changine file permission: %s", err)
 			}
-		}		
-						
+		}
+
 		contents, err := ioutil.ReadFile(file.Path)
 		if err != nil {
 			core.GetSession().Log.Error("scanSecretsInDir reading file: %s", err)
@@ -223,7 +223,7 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string) ([]outp
 }
 
 // Save container image as tar file in specified directory
-// @parameters 
+// @parameters
 // imageScan - Structure with details of the container image to scan
 // @returns
 // Error - Errors if any. Otherwise, returns nil
@@ -243,7 +243,7 @@ func (imageScan *ImageScan) saveImageData() error {
 // Extract the contents of container image and save it in specified dir
 // @parameters
 // imageName - Name of the container image to save
-// imageTarPath - Complete path where tarball of the image is stored 
+// imageTarPath - Complete path where tarball of the image is stored
 // extractPath - Complete path of directory where contents of image are to be extracted
 // @returns
 // string - directory where contents of image are extracted
@@ -254,7 +254,7 @@ func extractTarFile(imageName, imageTarPath string, extractPath string) (string,
 	path := extractPath
 
 	// Extract the contents of image from tar file
-	_, stdErr, retVal := runCommand("tar", "-xf", imageTarPath, "--warning=none", "-C"+path)
+	_, stdErr, retVal := runCommand("tar", "-xf", imageTarPath, "-C"+path)
 	if retVal != 0 {
 		// fmt.Println(stdErr)
 		return "", errors.New(stdErr)
