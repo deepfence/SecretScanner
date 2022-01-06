@@ -41,7 +41,7 @@ const (
 )
 
 var (
-	socket_path = flag.String("socket-path", "", "The server port")
+	socket_path = flag.String("socket-path", "", "The gRPC server unix socket path")
 )
 
 // Read the regex signatures from config file, options etc.

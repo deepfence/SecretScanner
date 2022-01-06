@@ -38,6 +38,8 @@ Usage of ./SecretScanner:
     	Directory to process and store repositories/matches (default "/tmp")
   -threads int
     	Number of concurrent threads (default number of logical CPUs)
+  -socket-path string
+  		The gRPC server socket path
 
 ```
 
@@ -57,7 +59,7 @@ Install docker and run SecretScanner on a container image using the following in
 
 `docker pull node:8.11`
 
-* Run SecretScanner:
+* Run SecretScanner as a standalone:
   * Scan a container image:
 
     ```
@@ -70,20 +72,42 @@ Install docker and run SecretScanner on a container image using the following in
     docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock deepfenceio/secretscanning -local /home/deepfence/src/SecretScanner/test
     ```
 
+* Or run SecretScanner as a gRPC server:
+	```
+	docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/sock:/tmp/sock deepfenceio -socket-path /tmp/sock/s.sock
+
+	```
+  * Scan a container image:
+
+    ```
+	grpcurl -plaintext -import-path ./agent-plugins-grpc/proto -proto secret_scanner.proto -d '{"image": {"name": "node:8.11"}}' -unix '/tmp/sock.sock' secret_scanner.SecretScanner/FindSecretInfo
+
+    ```
+
+  * Scan a local directory:
+
+    ```
+	grpcurl -plaintext -import-path ./agent-plugins-grpc/proto -proto secret_scanner.proto -d '{"path": "/tmp"}' -unix '/tmp/sock.sock' secret_scanner.SecretScanner/FindSecretInfo
+
+    ```
+
 By default, SecretScanner will also create json files with details of all the secrets found in the current working directory. You can explicitly specify the output directory and json filename using the appropriate options.
 
 # Build Instructions
 
-1. Install Docker
-2. Install Hyperscan
-3. Install go for your platform (version 1.14)
-4. Install go modules, if needed: `gohs`, `yaml.v3` and `color`
-5. `go get github.com/deepfence/SecretScanner` will download and build SecretScanner automatically in `$GOPATH/bin` or `$HOME/go/bin` directory. Or, clone this repository and run `go build -v -i` to build the executable in the current directory.
-6. Edit config.yaml file as needed and run the secret scanner with the appropriate config file directory.
+1. Run boostrap.sh
+2. Install Docker
+3. Install Hyperscan
+4. Install go for your platform (version 1.14)
+5. Install go modules, if needed: `gohs`, `yaml.v3` and `color`
+6. `go get github.com/deepfence/SecretScanner` will download and build SecretScanner automatically in `$GOPATH/bin` or `$HOME/go/bin` directory. Or, clone this repository and run `go build -v -i` to build the executable in the current directory.
+7. Edit config.yaml file as needed and run the secret scanner with the appropriate config file directory.
 
 For reference, the [Install file](https://github.com/deepfence/SecretScanner/blob/master/Install.Ubuntu) has commands to build on an ubuntu system.
 
 # Instructions to Run on Local Host
+
+## As a standalone application
 
 ```
 ./SecretScanner --help
@@ -92,6 +116,13 @@ For reference, the [Install file](https://github.com/deepfence/SecretScanner/blo
 
 ./SecretScanner -config-path /path/to/config.yaml/dir -image-name node:8.11
 ```
+
+## As a server application
+```
+./SecretScanner -socket-path /path/to/socket.sock
+```
+
+See "Quickly-Try-Using-Docker" section above to see how to send requests.
 
 # Sample SecretScanner Output
 
