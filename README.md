@@ -1,4 +1,4 @@
-#SecretScanner
+# SecretScanner
 
 [![GitHub license](https://img.shields.io/github/license/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/blob/master/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/stargazers)
