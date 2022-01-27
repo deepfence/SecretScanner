@@ -9,6 +9,7 @@ import (
 	// "strings"
 	"github.com/fatih/color"
 	"github.com/deepfence/SecretScanner/core"
+	pb "github.com/deepfence/agent-plugins-grpc/proto"
 )
 
 const (
@@ -24,7 +25,7 @@ type SecretFound struct {
 	Regex                     string  `json:"Signature to Match,omitempty"`
 	Severity                  string  `json:"Severity,omitempty"`
 	SeverityScore             float64 `json:"Severity Score,omitempty"`
-	PrintBufferStartIndex     int     `json:"Starting Index of Match in Original Content,omitempty"` 
+	PrintBufferStartIndex     int     `json:"Starting Index of Match in Original Content,omitempty"`
 	MatchFromByte             int     `json:"Relative Starting Index of Match in Displayed Substring"`
 	MatchToByte               int     `json:"Relative Ending Index of Match in Displayed Substring"`
 	CompleteFilename          string  `json:"Full File Name,omitempty"`
@@ -186,3 +187,36 @@ func removeFirstLastChar(input string) string {
 	}
 	return input[1:len(input)-1]
 }
+
+func SecretsToSecretInfos(out []SecretFound) []*pb.SecretInfo {
+	res := make([]*pb.SecretInfo, 0)
+	for _, v := range(out) {
+		res = append(res, SecretToSecretInfo(v))
+	}
+	return res
+}
+
+func SecretToSecretInfo(out SecretFound) *pb.SecretInfo {
+	return &pb.SecretInfo{
+		ImageLayerId: out.LayerID,
+		Rule:        &pb.MatchRule {
+			Id:               int32(out.RuleID),
+			Name:             out.RuleName,
+			Part:             out.PartToMatch,
+			StringToMatch:    out.Match,
+			SignatureToMatch: out.Regex,
+		},
+		Match:       &pb.Match     {
+			StartingIndex: int64(out.PrintBufferStartIndex),
+			RelativeStartingIndex: int64(out.MatchFromByte),
+			RelativeEndingIndex:  int64(out.MatchToByte),
+			FullFilename: out.CompleteFilename,
+			MatchedContent: jsonMarshal(out.MatchedContents),
+		},
+		Severity:    &pb.Severity  {
+			Level: out.Severity,
+			Score: float32(out.SeverityScore),
+		},
+	}
+}
+

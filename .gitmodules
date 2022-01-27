@@ -1,0 +1,3 @@
+[submodule "agent-plugins-grpc"]
+	path = agent-plugins-grpc
+	url = http://github.com/deepfence/agent-plugins-grpc
