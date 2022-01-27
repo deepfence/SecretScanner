@@ -63,18 +63,18 @@ Install docker and run SecretScanner on a container image using the following in
   * Scan a container image:
 
     ```
-    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock deepfenceio/secretscanning -image-name node:8.11
+    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock deepfenceio/secretscanning -image-name node:8.11
     ```
 
   * Scan a local directory:
 
     ```
-    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock deepfenceio/secretscanning -local /home/deepfence/src/SecretScanner/test
+    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock deepfenceio/secretscanning -local /home/deepfence/src/SecretScanner/test
     ```
 
 * Or run SecretScanner as a gRPC server:
 	```
-	docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/sock:/tmp/sock deepfenceio -socket-path /tmp/sock/s.sock
+	docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock -v /tmp/sock:/tmp/sock deepfenceio -socket-path /tmp/sock/s.sock
 
 	```
   * Scan a container image:
@@ -92,6 +92,8 @@ Install docker and run SecretScanner on a container image using the following in
     ```
 
 By default, SecretScanner will also create json files with details of all the secrets found in the current working directory. You can explicitly specify the output directory and json filename using the appropriate options.
+
+Please note that you can use `nerdctl` as an alternative to `docker` in the commands above.
 
 # Build Instructions
 

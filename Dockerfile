@@ -11,6 +11,11 @@ ENV GOPATH=/root/.go \
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 
+WORKDIR /home/deepfence/src/
+RUN git clone https://github.com/containerd/nerdctl
+WORKDIR /home/deepfence/src/nerdctl
+RUN make
+
 WORKDIR /home/deepfence/src/SecretScanner
 COPY . .
 RUN make clean
@@ -21,6 +26,7 @@ MAINTAINER DeepFence
 
 RUN apk update && apk add --upgrade libstdc++ libgcc docker hyperscan
 WORKDIR /home/deepfence/usr
+COPY --from=builder /home/deepfence/src/nerdctl/_output/nerdctl /bin
 COPY --from=builder /home/deepfence/src/SecretScanner/SecretScanner .
 COPY --from=builder /home/deepfence/src/SecretScanner/config.yaml .
 WORKDIR /home/deepfence/output
