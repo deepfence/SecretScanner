@@ -5,14 +5,14 @@ import (
 	// "regexp/syntax"
 	// "strings"
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/fatih/color"
 	"github.com/flier/gohs/hyperscan"
-	"regexp"
 	"math"
-	"errors"
+	"regexp"
 )
 
 // Constants representing different parts to be matched
@@ -28,13 +28,13 @@ const (
 
 // Data structure for passing inputs and getting outputs for hyperscan
 type HsInputOutputData struct {
-	inputData           []byte
+	inputData []byte
 	// Avoids extra memory during blacklist comparison, reduces memory pressure
-	inputDataLowerCase  []byte
-	completeFilename    string
-	layerID             string
-	secretsFound        *[]output.SecretFound
-	numSecrets          *uint
+	inputDataLowerCase []byte
+	completeFilename   string
+	layerID            string
+	secretsFound       *[]output.SecretFound
+	numSecrets         *uint
 }
 
 // Different map data structures to map to appropriate signatures, DBs etc.
@@ -100,7 +100,7 @@ func MatchSimpleSignatures(path string, filename string, extension string, layer
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
 func MatchPatternSignatures(contents []byte, path string, filename string, extension string, layerID string,
-								numSecrets *uint) ([]output.SecretFound, error) {
+	numSecrets *uint) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
 	var hsIOData HsInputOutputData
 	var matchingPart string
@@ -122,24 +122,23 @@ func MatchPatternSignatures(contents []byte, path string, filename string, exten
 			matchingStr = contents
 		}
 
-
 		// Ignore if string to match is empty, otherwise hyperscan can return errors
 		if len(matchingStr) == 0 {
 			continue
 		}
-		
-		hsIOData = HsInputOutputData {
-			inputData: matchingStr,
+
+		hsIOData = HsInputOutputData{
+			inputData:          matchingStr,
 			inputDataLowerCase: bytes.ToLower(matchingStr),
-			completeFilename: path,
-			layerID: layerID,
-			secretsFound: &tempSecretsFound,
-			numSecrets: numSecrets,
+			completeFilename:   path,
+			layerID:            layerID,
+			secretsFound:       &tempSecretsFound,
+			numSecrets:         numSecrets,
 		}
 		err := RunHyperscan(hyperscanBlockDbMap[matchingPart], hsIOData)
 		if err != nil {
 			core.GetSession().Log.Info("part: %s, path: %s, filename: %s, extenstion: %s, layerID: %s",
-										part, path, filename, extension, layerID)
+				part, path, filename, extension, layerID)
 			core.GetSession().Log.Warn("MatchPatternSignatures: %s", err)
 			return tempSecretsFound, err
 		}
@@ -173,8 +172,8 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 			}
 
 			core.GetSession().Log.Debug("Simple Signature %s %s %s %s %d", signature.Name,
-							signature.Part, signature.Match, signature.Severity, signature.ID)
-			
+				signature.Part, signature.Match, signature.Severity, signature.ID)
+
 			switch signature.Part {
 			case ContentsPart:
 				addToSignatures(signature, &simpleContentSignatures)
@@ -197,8 +196,8 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 			}
 
 			core.GetSession().Log.Debug("Pattern Signature %s %s %s %s %s %s %d", signature.Name, signature.Part,
-					signature.Match, signature.Regex, signature.RegexType, signature.Severity, signature.ID)
-			
+				signature.Match, signature.Regex, signature.RegexType, signature.Severity, signature.ID)
+
 			signature.CompiledRegex = regexp.MustCompile(signature.Regex)
 
 			switch signature.Part {
@@ -257,7 +256,7 @@ func ClearMatchedRuleSet() {
 // @returns
 // []output.SecretFound - List of all secrets found
 func matchString(part string, input string, completeFilename string, layerID string,
-								numSecrets *uint) []output.SecretFound {
+	numSecrets *uint) []output.SecretFound {
 	var tempSecretsFound []output.SecretFound
 
 	for _, signature := range simpleSignatureMap[part] {
@@ -272,10 +271,10 @@ func matchString(part string, input string, completeFilename string, layerID str
 				core.GetSession().Log.Debug("matchString: Skipping matches containing blacklisted strings")
 				continue
 			}
-			core.GetSession().Log.Info("Simple Signature %s %s %s %s %s %d\n",signature.Name, signature.Part,
-							signature.Match, signature.Regex, signature.Severity, signature.ID)
+			core.GetSession().Log.Info("Simple Signature %s %s %s %s %s %d\n", signature.Name, signature.Part,
+				signature.Match, signature.Regex, signature.Severity, signature.ID)
 			core.GetSession().Log.Info("Sensitive file %s found with matching %s of %s\n",
-							completeFilename, part, color.RedString(input))
+				completeFilename, part, color.RedString(input))
 
 			secret := output.SecretFound{
 				LayerID: layerID,
@@ -283,9 +282,9 @@ func matchString(part string, input string, completeFilename string, layerID str
 				PartToMatch: signature.Part, Match: signature.Match, Regex: signature.Regex,
 				Severity: signature.Severity, SeverityScore: signature.SeverityScore,
 				CompleteFilename: completeFilename,
-				MatchFromByte: 0,
-				MatchToByte: len(input),
-				MatchedContents: input,
+				MatchFromByte:    0,
+				MatchToByte:      len(input),
+				MatchedContents:  input,
 			}
 			tempSecretsFound = append(tempSecretsFound, secret)
 			*numSecrets = *numSecrets + 1
@@ -299,7 +298,7 @@ func matchString(part string, input string, completeFilename string, layerID str
 // For large pattern matches, find the start of the match (SOM) before printing
 // @parameters
 // id - ID of matched rule
-// from - Start index of the match 
+// from - Start index of the match
 // to - End endex of the match
 // flags - This is provided by hyperscan for future use and is unused at present.
 // context - Metadata containing contents being matched, filename, layerID etc.
@@ -344,7 +343,7 @@ func processHsRegexMatch(id uint, from, to uint64, flags uint, context interface
 		}
 	}
 
-	secret,err := printMatchedSignatures(sid, start, int(to), hsIOData)
+	secret, err := printMatchedSignatures(sid, start, int(to), hsIOData)
 	if err != nil {
 		core.GetSession().Log.Error("processHsRegexMatch: %s", err)
 		return nil
@@ -360,11 +359,11 @@ func processHsRegexMatch(id uint, from, to uint64, flags uint, context interface
 // for large patterns.
 // @parameters
 // sid - ID of matched rule
-// from - Start index of the match 
+// from - Start index of the match
 // to - End endex of the match
 // hsIOData - Metadata containing contents being matched, filename, layerID etc.
 // @returns
-// int - Exact start index of the large complex regex matches 
+// int - Exact start index of the large complex regex matches
 func getStartOfLargeRegexMatch(sid int, from, to int, hsIOData HsInputOutputData) int {
 	inputData := hsIOData.inputData
 	// secrets := hsIOData.secretsFound
@@ -381,18 +380,18 @@ func getStartOfLargeRegexMatch(sid int, from, to int, hsIOData HsInputOutputData
 		if i == len(allMatchedIndexes)-1 {
 			// secret := printMatchedSignatures(sid, start+loc[0], start+loc[1], hsIOData)
 			// *secrets = append(*secrets, secret)
-			return start+loc[0]
+			return start + loc[0]
 		}
 	}
-	
-	// It shouldn't reach here. Return "from" as start index, by default 
+
+	// It shouldn't reach here. Return "from" as start index, by default
 	return from
 }
 
 // Print matched secrets on standard output as well as in output files in json format etc.
 // @parameters
 // sid - ID of matched rule
-// from - Start index of the match 
+// from - Start index of the match
 // to - End endex of the match
 // hsIOData - Metadata containing contents being matched, filename, layerID etc.
 // @returns
@@ -406,8 +405,8 @@ func printMatchedSignatures(sid int, from, to int, hsIOData HsInputOutputData) (
 	updatedSeverity, updatedScore := calculateSeverity(inputData[from:to], signatureIDMap[sid].Severity, signatureIDMap[sid].SeverityScore)
 
 	core.GetSession().Log.Info("Pattern Signature %s %s %s %s %s %s %.2f %d", signatureIDMap[sid].Name, signatureIDMap[sid].Part,
-						signatureIDMap[sid].Match, signatureIDMap[sid].Regex, signatureIDMap[sid].RegexType,
-						updatedSeverity, updatedScore, signatureIDMap[sid].ID)
+		signatureIDMap[sid].Match, signatureIDMap[sid].Regex, signatureIDMap[sid].RegexType,
+		updatedSeverity, updatedScore, signatureIDMap[sid].ID)
 	// fmt.Println(signatureIDMap[sid].Name, signatureIDMap[sid].Part, signatureIDMap[sid].Match, signatureIDMap[sid].Regex,
 	//	signatureIDMap[sid].RegexType, updatedSeverity, updatedScore, signatureIDMap[sid].ID)
 	core.GetSession().Log.Info("Secret found in %s of %s within bytes %d and %d", signatureIDMap[sid].Part, completeFilename, from, to)
@@ -420,21 +419,21 @@ func printMatchedSignatures(sid int, from, to int, hsIOData HsInputOutputData) (
 	start = Max(start, from-50)
 	end = Min(end, to+50)
 
-	if !(0 <= start && start <= from && from <= to && to <=end && end <= len(inputData)) {
+	if !(0 <= start && start <= from && from <= to && to <= end && end <= len(inputData)) {
 		return output.SecretFound{}, errors.New("index out of bound while printing matched signatures")
 	}
 
 	coloredMatch := fmt.Sprintf("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
 	//core.GetSession().Log.Info("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
 	core.GetSession().Log.Info(coloredMatch)
-	
+
 	secret := output.SecretFound{
 		LayerID: layerID,
 		RuleID:  sid, RuleName: signatureIDMap[sid].Name,
 		PartToMatch: signatureIDMap[sid].Part, Match: signatureIDMap[sid].Match, Regex: signatureIDMap[sid].Regex,
 		Severity: updatedSeverity, SeverityScore: updatedScore,
-		CompleteFilename: completeFilename,
-		PrintBufferStartIndex: start, MatchFromByte:    from-start, MatchToByte: to-start,
+		CompleteFilename:      completeFilename,
+		PrintBufferStartIndex: start, MatchFromByte: from - start, MatchToByte: to - start,
 		MatchedContents: string(inputData[start:end]),
 	}
 
@@ -464,7 +463,7 @@ func calculateSeverity(inputMatch []byte, severity string, severityScore float64
 
 	scoreRange := 10.0 - severityScore
 
-	increament := (((float64(lenMatch) - float64(MinSecretLength)))*scoreRange)/(float64(MaxSecretLength)-float64(MinSecretLength))
+	increament := ((float64(lenMatch) - float64(MinSecretLength)) * scoreRange) / (float64(MaxSecretLength) - float64(MinSecretLength))
 
 	updatedScore := severityScore + increament
 	if updatedScore > 10.0 {
@@ -477,7 +476,7 @@ func calculateSeverity(inputMatch []byte, severity string, severityScore float64
 		updatedSeverity = "high"
 	}
 
-	return updatedSeverity, math.Round(updatedScore*100)/100
+	return updatedSeverity, math.Round(updatedScore*100) / 100
 }
 
 // Find min of 2 int values

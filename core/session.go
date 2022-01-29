@@ -12,11 +12,11 @@ import (
 
 type Session struct {
 	sync.Mutex
-	Version   string
-	Options   *Options
-	Config    *Config
-	Context   context.Context
-	Log              *Logger
+	Version string
+	Options *Options
+	Config  *Config
+	Context context.Context
+	Log     *Logger
 }
 
 var (
