@@ -51,7 +51,7 @@ func (imageScan *ImageScan) extractImage() error {
 
 	err := imageScan.saveImageData()
 	if err != nil {
-		core.GetSession().Log.Error("scanImage: Could not save container image: %s", err)
+		core.GetSession().Log.Error("scanImage: Could not save container image: %s. Check if the image name is correct.", err)
 		return err
 	}
 
