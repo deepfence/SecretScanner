@@ -77,7 +77,7 @@ Install docker and run SecretScanner on a container image using the following in
   * Scan a local directory:
 
     ```
-    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock deepfenceio/secretscanning -local /home/deepfence/src/SecretScanner/test
+    docker run -it --rm --name=deepfence-secretscanner -v /:/deepfence/mnt -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock deepfenceio/secretscanning -host-mount-path /deepfence/mnt -local /deepfence/mnt
     ```
 
 * Or run SecretScanner as a gRPC server:
