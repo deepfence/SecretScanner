@@ -18,11 +18,11 @@ type Config struct {
 }
 
 type ConfigSignature struct {
-	Name          string  `yaml:"name"`
-	Part          string  `yaml:"part"`
-	Match         string  `yaml:"match,omitempty"`
-	Regex         string  `yaml:"regex,omitempty"`
-	RegexType     string  `yaml:"regextype,omitempty"`
+	Name          string `yaml:"name"`
+	Part          string `yaml:"part"`
+	Match         string `yaml:"match,omitempty"`
+	Regex         string `yaml:"regex,omitempty"`
+	RegexType     string `yaml:"regextype,omitempty"`
 	CompiledRegex *regexp.Regexp
 	Verifier      string  `yaml:"verifier,omitempty"`
 	Severity      string  `yaml:"severity,omitempty"`

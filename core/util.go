@@ -7,11 +7,11 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"regexp"
+	"strings"
 )
 
-// Create directory structure recursively, if they do not exist
+// CreateRecursiveDir Create directory structure recursively, if they do not exist
 // @parameters
 // completePath - Complete path of directory which needs to be created
 // @returns
@@ -47,14 +47,13 @@ func getSanitizedString(imageName string) string {
 	return sanitizedName
 }
 
-
-// Return complete path and filename for json output file
+// GetJsonFilepath Return complete path and filename for json output file
 // @parameters
 // image - Name of the container image or dir, for which json filename and path will be created
 // @returns
 // string - Sanitized string which can used as path and filename of json output file
 // Error - Errors if path can't be created. Otherwise, returns nil
-func GetJsonFilepath(input string) (string,error) {
+func GetJsonFilepath(input string) (string, error) {
 	outputDir := *GetSession().Options.OutputPath
 	JsonFilename := *GetSession().Options.JsonFilename
 	if !PathExists(outputDir) {
@@ -72,8 +71,7 @@ func GetJsonFilepath(input string) (string,error) {
 	return jsonFilePath, nil
 }
 
-
-// Create a temporrary directory to extract the conetents of container image
+// GetTmpDir Create a temporrary directory to extract the conetents of container image
 // @parameters
 // imageName - Name of the container image
 // @returns
@@ -101,7 +99,7 @@ func GetTmpDir(imageName string) (string, error) {
 	return tempPath, err
 }
 
-// Delete the temporary directory
+// DeleteTmpDir Delete the temporary directory
 // @parameters
 // outputDir - Directory which need to be deleted
 // @returns
@@ -120,7 +118,7 @@ func DeleteTmpDir(outputDir string) error {
 	return nil
 }
 
-// Delete all the files and dirs recursively in specified directory
+// DeleteFiles Delete all the files and dirs recursively in specified directory
 // @parameters
 // path - Directory whose contents need to be deleted
 // wildcard - patterns to match the filenames (e.g. '*')
@@ -133,7 +131,7 @@ func DeleteFiles(path string, wildCard string) {
 	}
 }
 
-// Check if input is a symLink, not normal file/dir
+// IsSymLink Check if input is a symLink, not normal file/dir
 // path - Pathname which needs to be checked for symbolic link
 // @returns
 // bool - Return true if input is a symLink

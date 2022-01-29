@@ -1,10 +1,10 @@
 package core
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
-	"bytes"
 )
 
 type MatchFile struct {
@@ -14,7 +14,11 @@ type MatchFile struct {
 	Contents  []byte
 }
 
-// Creates a new Matchfile data structure
+var (
+	pathSeparator = string(os.PathSeparator)
+)
+
+// NewMatchFile Creates a new Matchfile data structure
 func NewMatchFile(path string) MatchFile {
 	path = filepath.ToSlash(path)
 	_, filename := filepath.Split(path)
@@ -29,9 +33,13 @@ func NewMatchFile(path string) MatchFile {
 	}
 }
 
-// Checks if the path is blacklisted
-func IsSkippableFile(path string) bool {
+// IsSkippableFile Checks if the path is blacklisted
+func IsSkippableFile(path string, baseDir string) bool {
 	extension := strings.ToLower(filepath.Ext(path))
+	hostMountPath := *session.Options.HostMountPath
+	if hostMountPath != "" {
+		baseDir = hostMountPath
+	}
 
 	for _, skippableExt := range session.Config.BlacklistedExtensions {
 		if extension == skippableExt {
@@ -40,7 +48,7 @@ func IsSkippableFile(path string) bool {
 	}
 
 	for _, skippablePathIndicator := range session.Config.BlacklistedPaths {
-		skippablePathIndicator = strings.Replace(skippablePathIndicator, "{sep}", string(os.PathSeparator), -1)
+		skippablePathIndicator = baseDir + strings.Replace(skippablePathIndicator, "{sep}", pathSeparator, -1)
 		if strings.Contains(path, skippablePathIndicator) {
 			return true
 		}
@@ -49,7 +57,7 @@ func IsSkippableFile(path string) bool {
 	return false
 }
 
-// Checks if entropy based scanning is appropriate for this file
+// CanCheckEntropy Checks if entropy based scanning is appropriate for this file
 func (match MatchFile) CanCheckEntropy() bool {
 	if match.Filename == "id_rsa" {
 		return false
@@ -64,7 +72,7 @@ func (match MatchFile) CanCheckEntropy() bool {
 	return true
 }
 
-// Checks if the input contains a blacklisted string
+// ContainsBlacklistedString Checks if the input contains a blacklisted string
 func ContainsBlacklistedString(input []byte) bool {
 	for _, blacklistedString := range session.Config.BlacklistedStrings {
 		blacklistedByteStr := []byte(blacklistedString)
@@ -73,17 +81,17 @@ func ContainsBlacklistedString(input []byte) bool {
 			return true
 		}
 	}
-		
+
 	return false
 }
 
-// Return the list of all applicable files inside the given directory for scanning
-func GetMatchingFiles(dir string) []MatchFile {
+// GetMatchingFiles Return the list of all applicable files inside the given directory for scanning
+func GetMatchingFiles(dir string, baseDir string) []MatchFile {
 	fileList := make([]MatchFile, 0)
 	maxFileSize := *session.Options.MaximumFileSize * 1024
 
 	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
-		if err != nil || f.IsDir() || uint(f.Size()) > maxFileSize || IsSkippableFile(path) {
+		if err != nil || f.IsDir() || uint(f.Size()) > maxFileSize || IsSkippableFile(path, baseDir) {
 			return nil
 		}
 		fileList = append(fileList, NewMatchFile(path))
@@ -93,7 +101,7 @@ func GetMatchingFiles(dir string) []MatchFile {
 	return fileList
 }
 
-// Update permissions for dirs in container images, so that they can be properly deleted
+// UpdateDirsPermissionsRW Update permissions for dirs in container images, so that they can be properly deleted
 func UpdateDirsPermissionsRW(dir string) {
 	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
 		if f.IsDir() {

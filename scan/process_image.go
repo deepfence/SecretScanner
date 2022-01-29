@@ -94,7 +94,7 @@ func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
 	return tempSecretsFound, nil
 }
 
-// Scans a given directory recursively to find all secrets inside any file in the dir
+// ScanSecretsInDir Scans a given directory recursively to find all secrets inside any file in the dir
 // @parameters
 // layer - layer ID, if we are scanning directory inside container image
 // baseDir - Parent directory
@@ -111,7 +111,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 		core.UpdateDirsPermissionsRW(fullDir)
 	}
 
-	for _, file := range core.GetMatchingFiles(fullDir) {
+	for _, file := range core.GetMatchingFiles(fullDir, baseDir) {
 		//fmt.Println("filename: ", file.Path)
 
 		relPath, err := filepath.Rel(path.Join(baseDir, layer), file.Path)

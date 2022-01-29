@@ -2,9 +2,9 @@ package signature
 
 import (
 	"fmt"
+	"github.com/deepfence/SecretScanner/core"
 	"github.com/flier/gohs/hyperscan"
 	"os"
-	"github.com/deepfence/SecretScanner/core"	
 )
 
 // Build hyperscan Databases for matching different parts in the beginning
@@ -29,18 +29,18 @@ func BuildHsDb() {
 // error - Errors if any. Otherwise, returns nil
 func CreateHsPatterns(part string) ([]*hyperscan.Pattern, error) {
 	var hsPatterns []*hyperscan.Pattern
-	
+
 	core.GetSession().Log.Debug("Number of Complex Patterns for matching %s: %d", part, len(patternSignatureMap[part]))
 	for _, signature := range patternSignatureMap[part] {
 		core.GetSession().Log.Debug("Pattern Signature %s %s %s %s %s %s %d", signature.Name, signature.Part, signature.Match, signature.Regex, signature.RegexType, signature.Severity, signature.ID)
 
 		// Disable SomLeftMost option for large regex to avoid HS compilation failures.
 		// Postprocess later to find patterns
-		hsPattern := hyperscan.NewPattern(signature.Regex, hyperscan.DotAll | hyperscan.SomLeftMost) // hyperscan.SingleMatch
+		hsPattern := hyperscan.NewPattern(signature.Regex, hyperscan.DotAll|hyperscan.SomLeftMost) // hyperscan.SingleMatch
 		if signature.RegexType == LargeRegexType {
 			hsPattern = hyperscan.NewPattern(signature.Regex, hyperscan.DotAll)
 			if *core.GetSession().Options.MultipleMatch == false {
-				hsPattern = hyperscan.NewPattern(signature.Regex, hyperscan.DotAll | hyperscan.SingleMatch)
+				hsPattern = hyperscan.NewPattern(signature.Regex, hyperscan.DotAll|hyperscan.SingleMatch)
 			} else {
 				hsPattern = hyperscan.NewPattern(signature.Regex, hyperscan.DotAll)
 			}
@@ -80,17 +80,17 @@ func RunHyperscan(hyperscanBlockDb hyperscan.BlockDatabase, hsIOData HsInputOutp
 
 	metadata := hsIOData
 	if err := hyperscanBlockDb.Scan([]byte(metadata.inputData), hyperscanScratch, hyperscanEventHandler, metadata); err != nil {
-		core.GetSession().Log.Info("First 100 bytes of inputData: %s", metadata.inputData[:Min(len(metadata.inputData),100)])
+		core.GetSession().Log.Info("First 100 bytes of inputData: %s", metadata.inputData[:Min(len(metadata.inputData), 100)])
 		core.GetSession().Log.Warn("RunHyperscan: %s", err)
 		return err
 	}
 	return nil
 }
 
-// This is the function that will be called by hyperscan for each match that occurs. 
+// This is the function that will be called by hyperscan for each match that occurs.
 // @parameters
 // id - ID of matched rule
-// from - Start index of the match 
+// from - Start index of the match
 // to - End endex of the match
 // flags - This is provided by hyperscan for future use and is unused at present.
 // context - Metadata containing the contents being matched, filename, layerID etc.
