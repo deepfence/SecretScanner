@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -62,6 +63,13 @@ func GetSession() *Session {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
+		pathSeparator := string(os.PathSeparator)
+		var blacklistedPaths []string
+		for _, blacklistedPath := range session.Config.BlacklistedPaths {
+			blacklistedPaths = append(blacklistedPaths, strings.Replace(blacklistedPath, "{sep}", pathSeparator, -1))
+		}
+		session.Config.BlacklistedPaths = blacklistedPaths
 
 		session.Start()
 	})

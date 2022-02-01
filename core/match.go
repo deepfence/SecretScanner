@@ -14,10 +14,6 @@ type MatchFile struct {
 	Contents  []byte
 }
 
-var (
-	pathSeparator = string(os.PathSeparator)
-)
-
 // NewMatchFile Creates a new Matchfile data structure
 func NewMatchFile(path string) MatchFile {
 	path = filepath.ToSlash(path)
@@ -35,25 +31,28 @@ func NewMatchFile(path string) MatchFile {
 
 // IsSkippableFile Checks if the path is blacklisted
 func IsSkippableFile(path string, baseDir string) bool {
-	extension := strings.ToLower(filepath.Ext(path))
 	hostMountPath := *session.Options.HostMountPath
 	if hostMountPath != "" {
 		baseDir = hostMountPath
 	}
 
+	for _, skippablePathIndicator := range session.Config.BlacklistedPaths {
+		if strings.Contains(path, baseDir+skippablePathIndicator) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsSkippableFileExtension Checks if the file extension is blacklisted
+func IsSkippableFileExtension(path string) bool {
+	extension := strings.ToLower(filepath.Ext(path))
 	for _, skippableExt := range session.Config.BlacklistedExtensions {
 		if extension == skippableExt {
 			return true
 		}
 	}
-
-	for _, skippablePathIndicator := range session.Config.BlacklistedPaths {
-		skippablePathIndicator = baseDir + strings.Replace(skippablePathIndicator, "{sep}", pathSeparator, -1)
-		if strings.Contains(path, skippablePathIndicator) {
-			return true
-		}
-	}
-
 	return false
 }
 
@@ -91,7 +90,7 @@ func GetMatchingFiles(dir string, baseDir string) []MatchFile {
 	maxFileSize := *session.Options.MaximumFileSize * 1024
 
 	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
-		if err != nil || f.IsDir() || uint(f.Size()) > maxFileSize || IsSkippableFile(path, baseDir) {
+		if err != nil || f.IsDir() || uint(f.Size()) > maxFileSize || IsSkippableFile(path, baseDir) || IsSkippableFileExtension(path) {
 			return nil
 		}
 		fileList = append(fileList, NewMatchFile(path))

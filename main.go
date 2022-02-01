@@ -27,7 +27,6 @@ package main
 import (
 	"flag"
 	"fmt"
-
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
@@ -97,7 +96,7 @@ type SecretsWriter interface {
 	WriteSecrets(jsonFilename string) error
 }
 
-func run_once() {
+func runOnce() {
 	var output SecretsWriter
 	var input string
 
@@ -146,6 +145,6 @@ func main() {
 			core.GetSession().Log.Fatal("main: failed to serve: %v", err)
 		}
 	} else {
-		run_once()
+		runOnce()
 	}
 }
