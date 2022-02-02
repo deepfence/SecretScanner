@@ -134,7 +134,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 		}
 		// No need to scan sym links. This avoids hangs when scanning stderr, stdour or special file descriptors
 		// Also, the pointed files will anyway be scanned directly
-		if core.IsSymLink(file.Path) {
+		if core.IsSymLink(path) {
 			return nil
 		}
 
