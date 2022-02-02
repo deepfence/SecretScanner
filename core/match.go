@@ -30,7 +30,7 @@ func NewMatchFile(path string) MatchFile {
 }
 
 // IsSkippableFile Checks if the path is blacklisted
-func IsSkippableFile(path string, baseDir string) bool {
+func IsSkippableDir(path string, baseDir string) bool {
 	hostMountPath := *session.Options.HostMountPath
 	if hostMountPath != "" {
 		baseDir = hostMountPath
@@ -84,21 +84,25 @@ func ContainsBlacklistedString(input []byte) bool {
 	return false
 }
 
-// GetMatchingFiles Return the list of all applicable files inside the given directory for scanning
-func GetMatchingFiles(dir string, baseDir string) []MatchFile {
-	fileList := make([]MatchFile, 0)
-	maxFileSize := *session.Options.MaximumFileSize * 1024
-
-	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
-		if err != nil || f.IsDir() || uint(f.Size()) > maxFileSize || IsSkippableFile(path, baseDir) || IsSkippableFileExtension(path) {
-			return nil
-		}
-		fileList = append(fileList, NewMatchFile(path))
-		return nil
-	})
-
-	return fileList
-}
+//// GetMatchingFiles Return the list of all applicable files inside the given directory for scanning
+//func GetMatchingFiles(dir string, baseDir string) (*bytes.Buffer, *bytes.Buffer, error) {
+//	findCmd := "find " + dir
+//	for _, skippableExt := range session.Config.BlacklistedExtensions {
+//		findCmd += " -not -name \"*" + skippableExt + "\""
+//	}
+//	hostMountPath := *session.Options.HostMountPath
+//	if hostMountPath != "" {
+//		baseDir = hostMountPath
+//	}
+//	for _, skippablePathIndicator := range session.Config.BlacklistedPaths {
+//		findCmd += " -path " + baseDir + skippablePathIndicator + " -prune -o"
+//	}
+//	maxFileSize := strconv.FormatUint(uint64(*session.Options.MaximumFileSize), 10)
+//	findCmd += " -type f -size " + maxFileSize + "M"
+//	GetSession().Log.Info("find command: %s", findCmd)
+//
+//	return ExecuteCommand(findCmd)
+//}
 
 // UpdateDirsPermissionsRW Update permissions for dirs in container images, so that they can be properly deleted
 func UpdateDirsPermissionsRW(dir string) {
