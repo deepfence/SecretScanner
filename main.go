@@ -68,7 +68,7 @@ func findSecretsInImage(image string) (*output.JsonImageSecretsOutput, error) {
 	return &jsonImageSecretsOutput, nil
 }
 
-// Scan a container image for secrets layer by layer
+// Scan a directory
 // @parameters
 // dir - Complete path of the directory to be scanned
 // @returns
@@ -90,6 +90,27 @@ func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
 	jsonDirSecretsOutput.SetSecrets(secrets)
 
 	return &jsonDirSecretsOutput, nil
+}
+
+// Scan a container for secrets
+// @parameters
+// containerId - Id of the container to scan (e.g. "0fdasf989i0")
+// @returns
+// Error, if any. Otherwise, returns nil
+func findSecretsInContainer(containerId string, containerNS string) (*output.JsonImageSecretsOutput, error) {
+
+	res, err := scan.ExtractAndScanContainer(containerId, containerNS)
+	if err != nil {
+		return nil, err
+	}
+	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ContainerId: containerId}
+	jsonImageSecretsOutput.SetTime()
+	jsonImageSecretsOutput.SetImageId(res.ContainerId)
+	jsonImageSecretsOutput.PrintJsonHeader()
+	jsonImageSecretsOutput.PrintJsonFooter()
+	jsonImageSecretsOutput.SetSecrets(res.Secrets)
+
+	return &jsonImageSecretsOutput, nil
 }
 
 type SecretsWriter interface {
@@ -119,6 +140,18 @@ func runOnce() {
 		}
 		output = jsonOutput
 	}
+
+	// Scan existing container for secrets
+	if len(*session.Options.ContainerId) > 0 {
+		fmt.Printf("Scanning container %s for secrets...\n", *session.Options.ContainerId)
+		jsonOutput, err := findSecretsInContainer(*session.Options.ContainerId, *session.Options.ContainerNS)
+		if err != nil {
+			core.GetSession().Log.Fatal("main: error while scanning container: %s", err)
+		}
+		output = jsonOutput
+	}
+
+
 
 	jsonFilename, err := core.GetJsonFilepath(input)
 	if err != nil {

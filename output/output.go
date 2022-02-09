@@ -43,10 +43,11 @@ type JsonDirSecretsOutput struct {
 }
 
 type JsonImageSecretsOutput struct {
-	Timestamp time.Time
-	ImageName string `json:"Image Name"`
-	ImageId   string `json:"Image ID"`
-	Secrets   []SecretFound
+	Timestamp 	time.Time
+	ImageName 	string `json:"Image Name"`
+	ImageId   	string `json:"Image ID"`
+	ContainerId string `json:"Container ID"`
+	Secrets   	[]SecretFound
 }
 
 func (imageOutput *JsonImageSecretsOutput) SetImageName(imageName string) {
