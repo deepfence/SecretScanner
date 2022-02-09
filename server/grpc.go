@@ -63,6 +63,22 @@ func (s *gRPCServer) FindSecretInfo(_ context.Context, r *pb.FindRequest) (*pb.F
 				},
 			},
 		}, nil
+	} else if r.GetContainer().Id != "" {
+		res, err := scan.ExtractAndScanContainer(r.GetContainer().Id, r.GetContainer().Namespace)
+		if err != nil {
+			return nil, err
+		}
+
+		return &pb.FindResult{
+			Timestamp: time.Now().String(),
+			Secrets: output.SecretsToSecretInfos(res.Secrets),
+			Input: &pb.FindResult_Container{
+				Container: &pb.Container{
+					Namespace: r.GetContainer().Namespace,
+					Id: res.ContainerId,
+				},
+			},
+		}, nil
 	}
 	return nil, fmt.Errorf("Invalid request")
 }
