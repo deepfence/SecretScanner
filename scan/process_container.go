@@ -47,10 +47,12 @@ func (containerScan *ContainerScan) extractFileSystem() error {
 		os.Exit(1)
 	}
 	err = containerRuntimeInterface.ExtractFileSystemContainer(containerScan.containerId, containerScan.namespace, containerScan.tempDir + ".tar", endpoint)
+
 	if err != nil {
 		return err
 	}
-	_, stdErr, retVal := runCommand("tar", "-xf", containerScan.tempDir + ".tar", "--warning=none", "-C"+containerScan.tempDir)
+	runCommand("mkdir", containerScan.tempDir)
+	_, stdErr, retVal := runCommand("tar", "-xf", containerScan.tempDir + ".tar", "-C"+containerScan.tempDir)
 	if retVal != 0 {
 		return errors.New(stdErr)
 	}

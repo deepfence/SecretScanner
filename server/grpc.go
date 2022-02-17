@@ -47,7 +47,7 @@ func (s *gRPCServer) FindSecretInfo(_ context.Context, r *pb.FindRequest) (*pb.F
 				Path: r.GetPath(),
 			},
 		}, nil
-	} else if r.GetImage().Name != "" {
+	} else if r.GetImage() != nil && r.GetImage().Name != "" {
 		res, err := scan.ExtractAndScanImage(r.GetImage().Name)
 		if err != nil {
 			return nil, err
@@ -63,7 +63,7 @@ func (s *gRPCServer) FindSecretInfo(_ context.Context, r *pb.FindRequest) (*pb.F
 				},
 			},
 		}, nil
-	} else if r.GetContainer().Id != "" {
+	} else if r.GetContainer() != nil && r.GetContainer().Id != "" {
 		res, err := scan.ExtractAndScanContainer(r.GetContainer().Id, r.GetContainer().Namespace)
 		if err != nil {
 			return nil, err
