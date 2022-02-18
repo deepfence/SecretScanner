@@ -43,6 +43,15 @@ func scanAndPublish(imageName string, postForm url.Values) {
 			secretScanLogDoc[key] = value[0]
 		}
 	}
+	byteJson, err := json.Marshal(secretScanLogDoc)
+	if err != nil {
+		fmt.Println("Error in marshalling secret in_progress log object to json:" + err.Error())
+	} else {
+		err = output.IngestSecretScanResults(string(byteJson), secretScanLogsIndexName)
+		if err != nil {
+			fmt.Println("Error in updating in_progress log" + err.Error())
+		}
+	}
 	res, err := scan.ExtractAndScanImage(imageName)
 	if err != nil {
 		secretScanLogDoc["scan_status"] = "ERROR"
@@ -51,7 +60,7 @@ func scanAndPublish(imageName string, postForm url.Values) {
 			fmt.Println("Error in marshalling secret result object to json:" + err.Error())
 			return
 		}
-		err = output.IngestSecretScanResults(string(byteJson), secretScanIndexName)
+		err = output.IngestSecretScanResults(string(byteJson), secretScanLogsIndexName)
 		if err != nil {
 			fmt.Println("error ingesting data: " + err.Error())
 		}
@@ -94,7 +103,7 @@ func scanAndPublish(imageName string, postForm url.Values) {
 	}
 	secretScanLogDoc["time_stamp"] = timestamp
 	secretScanLogDoc["@timestamp"] = currTime
-	byteJson, err := json.Marshal(secretScanLogDoc)
+	byteJson, err = json.Marshal(secretScanLogDoc)
 	if err != nil {
 		fmt.Println("Error in marshalling secretScanLogDoc to json:" + err.Error())
 		return
