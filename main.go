@@ -40,8 +40,8 @@ const (
 )
 
 var (
-	socket_path = flag.String("socket-path", "", "The gRPC server unix socket path")
-	httpPort = flag.String("http-port", "", "When set the http server will come up at port with df es as output")
+	socketPath = flag.String("socket-path", "", "The gRPC server unix socket path")
+	httpPort   = flag.String("http-port", "", "When set the http server will come up at port with df es as output")
 )
 
 // Read the regex signatures from config file, options etc.
@@ -152,8 +152,6 @@ func runOnce() {
 		output = jsonOutput
 	}
 
-
-
 	jsonFilename, err := core.GetJsonFilepath(input)
 	if err != nil {
 		core.GetSession().Log.Fatal("main: error while retrieving json output: %s", err)
@@ -173,8 +171,8 @@ func main() {
 
 	flag.Parse()
 
-	if *socket_path != "" {
-		err := server.RunServer(*socket_path, PLUGIN_NAME)
+	if *socketPath != "" {
+		err := server.RunServer(*socketPath, PLUGIN_NAME)
 		if err != nil {
 			core.GetSession().Log.Fatal("main: failed to serve: %v", err)
 		}
