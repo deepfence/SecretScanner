@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // CreateRecursiveDir Create directory structure recursively, if they do not exist
@@ -200,4 +201,12 @@ func GetEntropy(data string) (entropy float64) {
 	}
 
 	return entropy
+}
+
+func GetTimestamp() int64 {
+	return time.Now().UTC().UnixNano() / 1000000
+}
+
+func GetCurrentTime() string {
+	return time.Now().UTC().Format("2006-01-02T15:04:05.000") + "Z"
 }

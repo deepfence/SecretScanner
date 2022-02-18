@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
 	"net/http"
@@ -10,14 +11,14 @@ import (
 	"reflect"
 )
 
-var certPath = "/etc/filebeat/filebeat.crt"
-
 const (
-	secretScanIndexName = "secret-scan"
+	secretScanIndexName     = "secret-scan"
 	secretScanLogsIndexName = "secret-scan-logs"
+	scanStatusComplete      = "COMPLETE"
+	scanStatusError         = "ERROR"
 )
 
-func initiateScanImage(writer http.ResponseWriter, request *http.Request) {
+func runSecretScan(writer http.ResponseWriter, request *http.Request) {
 	var imageName = request.URL.Query().Get("image_name")
 	if imageName == "" {
 		http.Error(writer, "{\"error\":\"Image Name is required \"}", http.StatusConflict)
@@ -35,8 +36,8 @@ func initiateScanImage(writer http.ResponseWriter, request *http.Request) {
 func scanAndPublish(imageName string, postForm url.Values) {
 	var secretScanLogDoc = make(map[string]interface{})
 	secretScanLogDoc["scan_status"] = "IN_PROGRESS"
-	secretScanLogDoc["time_stamp"] = getTimestamp()
-	secretScanLogDoc["@timestamp"] = getCurrentTime()
+	secretScanLogDoc["time_stamp"] = core.GetTimestamp()
+	secretScanLogDoc["@timestamp"] = core.GetCurrentTime()
 	for key, value := range postForm {
 		if len(value) > 0 {
 			secretScanLogDoc[key] = value[0]
@@ -50,14 +51,14 @@ func scanAndPublish(imageName string, postForm url.Values) {
 			fmt.Println("Error in marshalling secret result object to json:" + err.Error())
 			return
 		}
-		err = sendSecretScanDataToLogstash(string(byteJson), secretScanIndexName)
+		err = output.IngestSecretScanResults(string(byteJson), secretScanIndexName)
 		if err != nil {
-			fmt.Println("error in sending data to logstash: " + err.Error())
+			fmt.Println("error ingesting data: " + err.Error())
 		}
 		return
 	}
-	timestamp := getTimestamp()
-	currTime := getCurrentTime()
+	timestamp := core.GetTimestamp()
+	currTime := core.GetCurrentTime()
 	secrets := output.SecretsToSecretInfos(res.Secrets)
 	for _, secret := range secrets {
 		var secretScanDoc = make(map[string]interface{})
@@ -68,7 +69,7 @@ func scanAndPublish(imageName string, postForm url.Values) {
 		}
 		secretScanDoc["time_stamp"] = timestamp
 		secretScanDoc["@timestamp"] = currTime
-		values := reflect.ValueOf(*secret)
+		values := reflect.ValueOf(secret)
 		typeOfS := values.Type()
 		for index := 0; index < values.NumField(); index++ {
 			if values.Field(index).CanInterface() {
@@ -80,15 +81,15 @@ func scanAndPublish(imageName string, postForm url.Values) {
 			fmt.Println("Error in marshalling secret result object to json:" + err.Error())
 			return
 		}
-		err = sendSecretScanDataToLogstash(string(byteJson), secretScanIndexName)
+		err = output.IngestSecretScanResults(string(byteJson), secretScanIndexName)
 		if err != nil {
 			fmt.Println("Error in sending data to secretScanIndex:" + err.Error())
 		}
 	}
 	if err == nil {
-		secretScanLogDoc["scan_status"] = "COMPLETE"
+		secretScanLogDoc["scan_status"] = scanStatusComplete
 	} else {
-		secretScanLogDoc["scan_status"] = "ERROR"
+		secretScanLogDoc["scan_status"] = scanStatusError
 		secretScanLogDoc["scan_message"] = err.Error()
 	}
 	secretScanLogDoc["time_stamp"] = timestamp
@@ -98,17 +99,18 @@ func scanAndPublish(imageName string, postForm url.Values) {
 		fmt.Println("Error in marshalling secretScanLogDoc to json:" + err.Error())
 		return
 	}
-	err = sendSecretScanDataToLogstash(string(byteJson) , secretScanLogsIndexName)
+	err = output.IngestSecretScanResults(string(byteJson), secretScanLogsIndexName)
 	if err != nil {
 		fmt.Println("Error in sending data to secretScanLogsIndex:" + err.Error())
 	}
 }
 
 func RunHttpServer(listenPort string) error {
-	http.Handle("/scan-image", http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		initiateScanImage(writer, request)
+	http.Handle("/secret-scan", http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		runSecretScan(writer, request)
 	}))
 
-	http.ListenAndServe(":" + listenPort, nil)
+	http.ListenAndServe(":"+listenPort, nil)
 	fmt.Println("Http Server listening on " + listenPort)
+	return nil
 }

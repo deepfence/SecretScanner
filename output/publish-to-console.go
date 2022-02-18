@@ -1,4 +1,4 @@
-package server
+package output
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -14,9 +13,17 @@ import (
 	"time"
 )
 
-func sendSecretScanDataToLogstash(secretScanMsg string, index string) error {
-	mgmtConsoleUrl := os.Getenv("MGMT_CONSOLE_URL") + ":" + os.Getenv("MGMT_CONSOLE_PORT")
-	deepfenceKey := os.Getenv("DEEPFENCE_KEY")
+var (
+	mgmtConsoleUrl string
+	deepfenceKey   string
+)
+
+func init() {
+	mgmtConsoleUrl = os.Getenv("MGMT_CONSOLE_URL") + ":" + os.Getenv("MGMT_CONSOLE_PORT")
+	deepfenceKey = os.Getenv("DEEPFENCE_KEY")
+}
+
+func IngestSecretScanResults(secretScanMsg string, index string) error {
 	secretScanMsg = strings.Replace(secretScanMsg, "\n", " ", -1)
 	postReader := bytes.NewReader([]byte(secretScanMsg))
 	retryCount := 0
@@ -26,7 +33,7 @@ func sendSecretScanDataToLogstash(secretScanMsg string, index string) error {
 		return err
 	}
 	for {
-		httpReq, err := http.NewRequest("POST", "https://"+mgmtConsoleUrl+"/df-api/add-to-logstash?doc_type=" + index, postReader)
+		httpReq, err := http.NewRequest("POST", "https://"+mgmtConsoleUrl+"/df-api/add-to-logstash?doc_type="+index, postReader)
 		if err != nil {
 			return err
 		}
@@ -70,24 +77,5 @@ func buildClient() (*http.Client, error) {
 		},
 		Timeout: 15 * time.Minute,
 	}
-
-	// Load our trusted certificate path
-	pemData, err := ioutil.ReadFile(certPath)
-	if err != nil {
-		return nil, err
-	}
-	ok := tlsConfig.RootCAs.AppendCertsFromPEM(pemData)
-	if !ok {
-		return nil, errors.New("unable to append certificates to PEM")
-	}
-
 	return client, nil
-}
-
-func getTimestamp() int64 {
-	return time.Now().UTC().UnixNano() / 1000000
-}
-
-func getCurrentTime() string {
-	return time.Now().UTC().Format("2006-01-02T15:04:05.000") + "Z"
 }

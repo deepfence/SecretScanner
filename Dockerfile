@@ -22,6 +22,8 @@ RUN make
 FROM alpine:3.13
 MAINTAINER DeepFence
 
+ENV MGMT_CONSOLE_URL=deepfence-fetcher \
+    MGMT_CONSOLE_PORT=8006
 RUN apk update && apk add --upgrade libstdc++ libgcc docker hyperscan
 WORKDIR /home/deepfence/usr
 COPY --from=builder /home/deepfence/src/nerdctl/_output/nerdctl /bin
