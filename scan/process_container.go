@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
@@ -74,6 +75,10 @@ func (containerScan *ContainerScan) scan() ([]output.SecretFound, error) {
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInContainer: %s", err)
 		return nil, err
+	}
+
+	for _, secret := range secrets {
+		secret.CompleteFilename = strings.Replace(secret.CompleteFilename, containerScan.tempDir, "", 1)
 	}
 
 	return secrets, nil
