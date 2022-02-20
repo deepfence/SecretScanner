@@ -6,7 +6,8 @@ ENV PKG_CONFIG_PATH=/usr/local/include/hs/ \
     CGO_CFLAGS="-I/usr/local/include/hyperscan/src" \
     LD_LIBRARY_PATH=/usr/local/lib:/usr/local/include/hs/lib:$LD_LIBRARY_PATH
 
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26 \
+RUN go install google.golang.org/grpc@v1.41.0 \
+    && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26 \
     && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 
 WORKDIR /home/deepfence/src/

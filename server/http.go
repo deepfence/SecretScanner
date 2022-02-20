@@ -118,6 +118,9 @@ func RunHttpServer(listenPort string) error {
 	http.Handle("/secret-scan", http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		runSecretScan(writer, request)
 	}))
+	http.HandleFunc("/secret-scan/test", func(writer http.ResponseWriter, request *http.Request) {
+		fmt.Fprintf(writer, "Hello World!")
+	})
 
 	http.ListenAndServe(":"+listenPort, nil)
 	fmt.Println("Http Server listening on " + listenPort)
