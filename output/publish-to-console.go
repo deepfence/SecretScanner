@@ -14,13 +14,13 @@ import (
 )
 
 var (
-	mgmtConsoleUrl string
-	deepfenceKey   string
+	MgmtConsoleUrl string
+	DeepfenceKey   string
 )
 
 func init() {
-	mgmtConsoleUrl = os.Getenv("MGMT_CONSOLE_URL") + ":" + os.Getenv("MGMT_CONSOLE_PORT")
-	deepfenceKey = os.Getenv("DEEPFENCE_KEY")
+	MgmtConsoleUrl = os.Getenv("MGMT_CONSOLE_URL") + ":" + os.Getenv("MGMT_CONSOLE_PORT")
+	DeepfenceKey = os.Getenv("DEEPFENCE_KEY")
 }
 
 func IngestSecretScanResults(secretScanMsg string, index string) error {
@@ -33,12 +33,12 @@ func IngestSecretScanResults(secretScanMsg string, index string) error {
 		return err
 	}
 	for {
-		httpReq, err := http.NewRequest("POST", "https://"+mgmtConsoleUrl+"/df-api/add-to-logstash?doc_type="+index, postReader)
+		httpReq, err := http.NewRequest("POST", "https://"+MgmtConsoleUrl+"/df-api/add-to-logstash?doc_type="+index, postReader)
 		if err != nil {
 			return err
 		}
 		httpReq.Close = true
-		httpReq.Header.Add("deepfence-key", deepfenceKey)
+		httpReq.Header.Add("deepfence-key", DeepfenceKey)
 		resp, err := httpClient.Do(httpReq)
 		if err != nil {
 			return err
