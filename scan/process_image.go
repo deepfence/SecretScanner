@@ -45,18 +45,20 @@ type ImageScan struct {
 // imageScan - Structure with details of the container image to scan
 // @returns
 // Error - Errors, if any. Otherwise, returns nil
-func (imageScan *ImageScan) extractImage() error {
+func (imageScan *ImageScan) extractImage(saveImage bool) error {
 	imageName := imageScan.imageName
 	tempDir := imageScan.tempDir
 	imageScan.numSecrets = 0
 
-	err := imageScan.saveImageData()
-	if err != nil {
-		core.GetSession().Log.Error("scanImage: Could not save container image: %s. Check if the image name is correct.", err)
-		return err
+	if saveImage {
+		err := imageScan.saveImageData()
+		if err != nil {
+			core.GetSession().Log.Error("scanImage: Could not save container image: %s. Check if the image name is correct.", err)
+			return err
+		}
 	}
 
-	_, err = extractTarFile(imageName, path.Join(tempDir, imageTarFileName), tempDir)
+	_, err := extractTarFile(imageName, path.Join(tempDir, imageTarFileName), tempDir)
 	if err != nil {
 		core.GetSession().Log.Error("scanImage: Could not extract image tar file: %s", err)
 		return err
@@ -384,7 +386,25 @@ func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
 	defer core.DeleteTmpDir(tempDir)
 
 	imageScan := ImageScan{imageName: image, imageId: "", tempDir: tempDir}
-	err = imageScan.extractImage()
+	err = imageScan.extractImage(true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	secrets, err := imageScan.scan()
+
+	if err != nil {
+		return nil, err
+	}
+	return &ImageExtractionResult{ImageId: imageScan.imageId, Secrets: secrets}, nil
+}
+
+func ExtractAndScanFromTar(tarFolder string, imageName string) (*ImageExtractionResult, error) {
+	defer core.DeleteTmpDir(tarFolder)
+
+	imageScan := ImageScan{imageName: imageName, imageId: "", tempDir: tarFolder}
+	err := imageScan.extractImage(false)
 
 	if err != nil {
 		return nil, err

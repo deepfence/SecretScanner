@@ -1,13 +1,16 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
 	"net/http"
 	"net/url"
+	"os/exec"
 	"reflect"
 )
 
@@ -19,23 +22,47 @@ const (
 )
 
 func runSecretScan(writer http.ResponseWriter, request *http.Request) {
-	var imageName = request.URL.Query().Get("image_name")
-	if imageName == "" {
-		http.Error(writer, "{\"error\":\"Image Name is required \"}", http.StatusConflict)
-	} else if err := request.ParseForm(); err != nil {
+	if err := request.ParseForm(); err != nil {
 		fmt.Fprintf(writer, "ParseForm() err: %v", err)
 		return
+	} else if request.PostForm.Get("image_name_with_tag_list") == "" {
+		http.Error(writer, "{\"error\":\"Image Name with tag list is required \"}", http.StatusConflict)
 	} else {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
 		fmt.Fprintf(writer, "{\"status\": \"Scan Queued\"}")
-		go scanAndPublish(imageName, request.PostForm)
+		go processScans(request.PostForm)
 	}
 }
 
-func scanAndPublish(imageName string, postForm url.Values) {
+func processScans(form url.Values) {
+	imageNameList := form["image_name_with_tag_list"]
+	for _, imageName := range imageNameList {
+		processImage(imageName, form)
+	}
+}
+
+func processImage(imageName string, form url.Values)  {
+	tempFolder, err :=  core.GetTmpDir(imageName)
+	if err != nil {
+		fmt.Println("error creating temp dirs:" + err.Error())
+		return
+	}
+	imageSaveCommand := exec.Command("python3", "registry_image_save.py", "--image_name_with_tag", imageName, "--registry_type", form.Get("registry_type"),
+		"--mgmt_console_url", output.MgmtConsoleUrl, "--deepfence_key", output.DeepfenceKey, "--credential_id", form.Get("credential_id"),
+		"--output_folder", tempFolder)
+	_, err = runCommand(imageSaveCommand, "Image Save:" + imageName)
+	if err != nil {
+		fmt.Println("error saving image:" + err.Error())
+		return
+	}
+	scanAndPublish(imageName, tempFolder, form)
+}
+
+func scanAndPublish(imageName string, tempDir string, postForm url.Values) {
 	var secretScanLogDoc = make(map[string]interface{})
 	secretScanLogDoc["scan_status"] = "IN_PROGRESS"
+	secretScanLogDoc["node_id"] = imageName
 	secretScanLogDoc["time_stamp"] = core.GetTimestamp()
 	secretScanLogDoc["@timestamp"] = core.GetCurrentTime()
 	for key, value := range postForm {
@@ -43,6 +70,7 @@ func scanAndPublish(imageName string, postForm url.Values) {
 			secretScanLogDoc[key] = value[0]
 		}
 	}
+	secretScanLogDoc["image_name_with_tag_list"] = ""
 	byteJson, err := json.Marshal(secretScanLogDoc)
 	if err != nil {
 		fmt.Println("Error in marshalling secret in_progress log object to json:" + err.Error())
@@ -52,7 +80,7 @@ func scanAndPublish(imageName string, postForm url.Values) {
 			fmt.Println("Error in updating in_progress log" + err.Error())
 		}
 	}
-	res, err := scan.ExtractAndScanImage(imageName)
+	res, err := scan.ExtractAndScanFromTar(tempDir, imageName)
 	if err != nil {
 		secretScanLogDoc["scan_status"] = "ERROR"
 		byteJson, err := json.Marshal(secretScanLogDoc)
@@ -76,8 +104,10 @@ func scanAndPublish(imageName string, postForm url.Values) {
 				secretScanLogDoc[key] = value[0]
 			}
 		}
+		secretScanDoc["image_name_with_tag_list"] = ""
 		secretScanDoc["time_stamp"] = timestamp
 		secretScanDoc["@timestamp"] = currTime
+		secretScanLogDoc["node_id"] = imageName
 		values := reflect.ValueOf(secret)
 		typeOfS := values.Type()
 		for index := 0; index < values.NumField(); index++ {
@@ -125,4 +155,17 @@ func RunHttpServer(listenPort string) error {
 	http.ListenAndServe(":"+listenPort, nil)
 	fmt.Println("Http Server listening on " + listenPort)
 	return nil
+}
+
+// operation is prepended to error message in case of error: optional
+func runCommand(cmd *exec.Cmd, operation string) (*bytes.Buffer, error) {
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+	errorOnRun := cmd.Run()
+	if errorOnRun != nil {
+		return nil, errors.New(operation + fmt.Sprint(errorOnRun) + ": " + stderr.String())
+	}
+	return &out, nil
 }
