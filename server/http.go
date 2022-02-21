@@ -37,12 +37,12 @@ func runSecretScan(writer http.ResponseWriter, request *http.Request) {
 
 func processScans(form url.Values) {
 	imageNameList := form["image_name_with_tag_list"]
-	for _, imageName := range imageNameList {
-		processImage(imageName, form)
+	for index, imageName := range imageNameList {
+		processImage(imageName, form["scan_id_list"][index], form)
 	}
 }
 
-func processImage(imageName string, form url.Values)  {
+func processImage(imageName string, scanId string, form url.Values)  {
 	tempFolder, err :=  core.GetTmpDir(imageName)
 	if err != nil {
 		fmt.Println("error creating temp dirs:" + err.Error())
@@ -56,21 +56,24 @@ func processImage(imageName string, form url.Values)  {
 		fmt.Println("error saving image:" + err.Error())
 		return
 	}
-	scanAndPublish(imageName, tempFolder, form)
+	scanAndPublish(imageName, scanId, tempFolder, form)
 }
 
-func scanAndPublish(imageName string, tempDir string, postForm url.Values) {
+func scanAndPublish(imageName string, scanId string, tempDir string, postForm url.Values) {
 	var secretScanLogDoc = make(map[string]interface{})
 	secretScanLogDoc["scan_status"] = "IN_PROGRESS"
 	secretScanLogDoc["node_id"] = imageName
+	secretScanLogDoc["node_name"] = imageName
 	secretScanLogDoc["time_stamp"] = core.GetTimestamp()
 	secretScanLogDoc["@timestamp"] = core.GetCurrentTime()
+	secretScanLogDoc["scan_id"] = scanId
 	for key, value := range postForm {
 		if len(value) > 0 {
 			secretScanLogDoc[key] = value[0]
 		}
 	}
-	secretScanLogDoc["image_name_with_tag_list"] = ""
+	secretScanLogDoc["image_name_with_tag_list"] = nil
+	secretScanLogDoc["scan_id_list"] = nil
 	byteJson, err := json.Marshal(secretScanLogDoc)
 	if err != nil {
 		fmt.Println("Error in marshalling secret in_progress log object to json:" + err.Error())
@@ -104,10 +107,13 @@ func scanAndPublish(imageName string, tempDir string, postForm url.Values) {
 				secretScanLogDoc[key] = value[0]
 			}
 		}
-		secretScanDoc["image_name_with_tag_list"] = ""
+		secretScanDoc["image_name_with_tag_list"] = nil
+		secretScanDoc["scan_id_list"] = nil
 		secretScanDoc["time_stamp"] = timestamp
 		secretScanDoc["@timestamp"] = currTime
-		secretScanLogDoc["node_id"] = imageName
+		secretScanDoc["node_id"] = imageName
+		secretScanDoc["node_name"] = imageName
+		secretScanDoc["scan_id"] = scanId
 		values := reflect.ValueOf(secret)
 		typeOfS := values.Type()
 		for index := 0; index < values.NumField(); index++ {
