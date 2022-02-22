@@ -29,6 +29,7 @@ WORKDIR /home/deepfence/usr
 COPY --from=builder /home/deepfence/src/nerdctl/_output/nerdctl /bin
 COPY --from=builder /home/deepfence/src/SecretScanner/SecretScanner .
 COPY --from=builder /home/deepfence/src/SecretScanner/config.yaml .
+COPY registry_image_save/* .
 WORKDIR /home/deepfence/output
 
 ENTRYPOINT ["/home/deepfence/usr/SecretScanner", "-config-path", "/home/deepfence/usr"]
