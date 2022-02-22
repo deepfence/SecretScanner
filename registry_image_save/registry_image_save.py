@@ -1,6 +1,9 @@
 import logging
 import argparse
 import sys
+
+sys.path.insert(1, 'scan_registry')
+
 from scan_registry.secret_scan_registry import max_days, SecretScanECRImages, SecretScanDockerPrivateRegistryImages, \
     SecretScanHarborRegistryImages, SecretScanAzureRegistryImages, REGISTRY_TYPE_DOCKER_PVT, REGISTRY_TYPE_HARBOR, \
     REGISTRY_TYPE_ECR, REGISTRY_TYPE_AZURE, REGISTRY_TYPE_DOCKER_HUB, SecretScanDockerHubImages, REGISTRY_TYPE_QUAY, \
