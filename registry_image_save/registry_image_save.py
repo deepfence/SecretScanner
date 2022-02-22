@@ -2,14 +2,12 @@ import logging
 import argparse
 import sys
 
-sys.path.insert(1, 'scan_registry')
-
-from scan_registry.secret_scan_registry import max_days, SecretScanECRImages, SecretScanDockerPrivateRegistryImages, \
+from secret_scan_registry import max_days, SecretScanECRImages, SecretScanDockerPrivateRegistryImages, \
     SecretScanHarborRegistryImages, SecretScanAzureRegistryImages, REGISTRY_TYPE_DOCKER_PVT, REGISTRY_TYPE_HARBOR, \
     REGISTRY_TYPE_ECR, REGISTRY_TYPE_AZURE, REGISTRY_TYPE_DOCKER_HUB, SecretScanDockerHubImages, REGISTRY_TYPE_QUAY, \
     SecretScanQuayRegistryImages, REGISTRY_TYPE_GITLAB, SecretScanGitlabRegistryImages, REGISTRY_TYPE_GCLOUD, \
     SecretScanGoogleRegistryImages, REGISTRY_TYPE_JFROG, SecretScanJfrogRegistryImages
-from utils.credentials import get_registry_credential
+from credentials import get_registry_credential
 
 logging.basicConfig(level=logging.ERROR)
 
