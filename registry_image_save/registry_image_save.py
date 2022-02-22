@@ -47,7 +47,7 @@ arg_parser.add_argument("--image_tag", metavar="image_tag", type=str, required=F
                         help="Filter images by tag name. Eg: only scan 'latest' tag")
 arg_parser.add_argument("--is_image_local", metavar="is_image_local", type=str, required=False,
                         default="false", help="Set to true if ci/cd scan or command line scan")
-arg_parser.add_argument('--output_folder', action="output_folder", type=str, required=False,
+arg_parser.add_argument('--output_folder', metavar="output_folder", type=str, required=False, default="",
                         help="Output Tar of image")
 arg_parser.add_argument("--credential_id", metavar="credential_id", type=str, required=False, default="",
                         help="Credential id (optional)")
