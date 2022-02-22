@@ -114,7 +114,7 @@ func scanAndPublish(imageName string, scanId string, tempDir string, postForm ur
 		secretScanDoc["node_id"] = imageName
 		secretScanDoc["node_name"] = imageName
 		secretScanDoc["scan_id"] = scanId
-		values := reflect.ValueOf(secret)
+		values := reflect.ValueOf(*secret)
 		typeOfS := values.Type()
 		for index := 0; index < values.NumField(); index++ {
 			if values.Field(index).CanInterface() {
