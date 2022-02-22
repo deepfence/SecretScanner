@@ -24,7 +24,7 @@ MAINTAINER DeepFence
 
 ENV MGMT_CONSOLE_URL=deepfence-fetcher \
     MGMT_CONSOLE_PORT=8006
-RUN apk update && apk add --upgrade libstdc++ libgcc docker hyperscan skopeo python3 python3-pip bash
+RUN apk update && apk add --upgrade libstdc++ libgcc docker hyperscan skopeo python3 py3-pip bash
 WORKDIR /home/deepfence/usr
 COPY --from=builder /home/deepfence/src/nerdctl/_output/nerdctl /bin
 COPY --from=builder /home/deepfence/src/SecretScanner/SecretScanner .
