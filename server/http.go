@@ -104,7 +104,7 @@ func scanAndPublish(imageName string, scanId string, tempDir string, postForm ur
 		var secretScanDoc = make(map[string]interface{})
 		for key, value := range postForm {
 			if len(value) > 0 {
-				secretScanLogDoc[key] = value[0]
+				secretScanDoc[key] = value[0]
 			}
 		}
 		secretScanDoc["image_name_with_tag_list"] = nil
