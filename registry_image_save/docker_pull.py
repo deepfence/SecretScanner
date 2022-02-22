@@ -91,7 +91,7 @@ def get_image_layers(full_registry_name):
     layers = resp.json()['layers']
 
     # Create tmp folder that will hold the image
-    imgdir = 'tmp_{}_{}'.format(img, tag.replace(':', '@'))
+    imgdir = '/tmp/tmp_{}_{}'.format(img, tag.replace(':', '@'))
     os.mkdir(imgdir)
     print(('Creating image structure in: ' + imgdir))
 
