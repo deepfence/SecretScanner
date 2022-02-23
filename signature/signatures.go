@@ -167,7 +167,7 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 
 		if signature.Match != "" {
 			if signature.Severity == "" {
-				signature.Severity = "Low"
+				signature.Severity = "low"
 				signature.SeverityScore = 2.5
 			}
 
@@ -187,10 +187,10 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 		} else {
 			if signature.Severity == "" {
 				if signature.RegexType == LargeRegexType {
-					signature.Severity = "High"
+					signature.Severity = "high"
 					signature.SeverityScore = 7.5
 				} else {
-					signature.Severity = "Medium"
+					signature.Severity = "medium"
 					signature.SeverityScore = 5.0
 				}
 			}
@@ -471,7 +471,7 @@ func calculateSeverity(inputMatch []byte, severity string, severityScore float64
 	}
 
 	if 2.5 < updatedScore && updatedScore <= 7.5 {
-		updatedSeverity = "Medium"
+		updatedSeverity = "medium"
 	} else if 7.5 < updatedScore {
 		updatedSeverity = "high"
 	}
