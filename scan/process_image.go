@@ -1,9 +1,12 @@
 package scan
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,6 +15,8 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"fmt"
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
@@ -266,11 +271,12 @@ func (imageScan *ImageScan) saveImageData() error {
 	if err != nil {
 		return err
 	}
+	fmt.Printf("Scanning image %s for secrets...\n", outputParam)
 	_, err = drun.Save(imageName, outputParam)
+
 	if err != nil {
 		return err
 	}
-
 	core.GetSession().Log.Info("Image %s saved in %s", imageName, imageScan.tempDir)
 	return nil
 }
@@ -289,14 +295,92 @@ func extractTarFile(imageName, imageTarPath string, extractPath string) (string,
 	path := extractPath
 
 	// Extract the contents of image from tar file
-	_, stdErr, retVal := runCommand("tar", "-xf", imageTarPath, "-C"+path)
-	if retVal != 0 {
-		// fmt.Println(stdErr)
-		return "", errors.New(stdErr)
+	if err := untar(imageTarPath, path); err != nil {
+		fmt.Println(err)
+		return "", err
 	}
 
 	core.GetSession().Log.Debug("Finished extracting tar file %s", imageTarPath)
 	return path, nil
+}
+
+// Extract all the details from image manifest
+// @parameters
+// path - Complete path where image contents are extracted
+// @returns
+// manifestItem - The manifestItem containing details about image layers
+// Error - Errors, if any. Otherwise, returns nil
+func untar(tarName string, xpath string) (err error) {
+	tarFile, err := os.Open(tarName)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = tarFile.Close()
+	}()
+
+	absPath, err := filepath.Abs(xpath)
+	if err != nil {
+		return err
+	}
+
+	tr := tar.NewReader(tarFile)
+	if strings.HasSuffix(tarName, ".gz") || strings.HasSuffix(tarName, ".gzip") {
+		gz, err := gzip.NewReader(tarFile)
+		if err != nil {
+			return err
+		}
+		defer gz.Close()
+		tr = tar.NewReader(gz)
+	}
+
+	// untar each segment
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		// determine proper file path info
+		finfo := hdr.FileInfo()
+		fileName := hdr.Name
+		if filepath.IsAbs(fileName) {
+			fmt.Printf("removing / prefix from %s\n", fileName)
+			fileName, err = filepath.Rel("/", fileName)
+			if err != nil {
+				return err
+			}
+		}
+		absFileName := filepath.Join(absPath, fileName)
+
+		if finfo.Mode().IsDir() {
+			if err := os.MkdirAll(absFileName, 0755); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// create new file with original file mode
+		file, err := os.OpenFile(absFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, finfo.Mode().Perm())
+		if err != nil {
+			return err
+		}
+		// fmt.Printf("x %s\n", absFileName)
+		n, cpErr := io.Copy(file, tr)
+		if closeErr := file.Close(); closeErr != nil { // close file immediately
+			return err
+		}
+		if cpErr != nil {
+			return cpErr
+		}
+		if n != finfo.Size() {
+			return fmt.Errorf("unexpected bytes written: wrote %d, want %d", n, finfo.Size())
+		}
+	}
+	return nil
 }
 
 // Extract all the details from image manifest
