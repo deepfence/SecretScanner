@@ -33,7 +33,7 @@ func IngestSecretScanResults(secretScanMsg string, index string) error {
 		return err
 	}
 	for {
-		httpReq, err := http.NewRequest("POST", "https://"+MgmtConsoleUrl+"/df-api/add-to-logstash?doc_type="+index, postReader)
+		httpReq, err := http.NewRequest("POST", "https://"+MgmtConsoleUrl+"/df-api/ingest?doc_type="+index, postReader)
 		if err != nil {
 			return err
 		}
