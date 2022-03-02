@@ -5,13 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Jeffail/tunny"
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"reflect"
+	"strconv"
 )
 
 const (
@@ -19,7 +22,28 @@ const (
 	secretScanLogsIndexName = "secret-scan-logs"
 	scanStatusComplete      = "COMPLETE"
 	scanStatusError         = "ERROR"
+	defaultScanConcurrency  = 5
 )
+
+var (
+	scanConcurrency    int
+	httpScanWorkerPool *tunny.Pool
+)
+
+type imageParameters struct {
+	imageName string
+	scanId    string
+	form      url.Values
+}
+
+func init() {
+	var err error
+	scanConcurrency, err = strconv.Atoi(os.Getenv("SECRET_SCAN_CONCURRENCY"))
+	if err != nil {
+		scanConcurrency = defaultScanConcurrency
+	}
+	httpScanWorkerPool = tunny.NewFunc(scanConcurrency, processImageWrapper)
+}
 
 func runSecretScan(writer http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
@@ -38,8 +62,18 @@ func runSecretScan(writer http.ResponseWriter, request *http.Request) {
 func processScans(form url.Values) {
 	imageNameList := form["image_name_with_tag_list"]
 	for index, imageName := range imageNameList {
-		processImage(imageName, form["scan_id_list"][index], form)
+		go httpScanWorkerPool.Process(imageParameters{imageName: imageName, scanId: form["scan_id_list"][index], form: form})
 	}
+}
+
+func processImageWrapper(imageParamsInterface interface{}) interface {} {
+	imageParams, ok := imageParamsInterface.(imageParameters)
+	if !ok {
+		fmt.Println("Error reading input from API")
+		return nil
+	}
+	processImage(imageParams.imageName, imageParams.scanId, imageParams.form)
+	return nil
 }
 
 func processImage(imageName string, scanId string, form url.Values)  {
