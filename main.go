@@ -152,6 +152,11 @@ func runOnce() {
 		output = jsonOutput
 	}
 
+	if output == nil {
+		core.GetSession().Log.Error("set either -local or -image-name flag")
+		return
+	}
+
 	jsonFilename, err := core.GetJsonFilepath(input)
 	if err != nil {
 		core.GetSession().Log.Fatal("main: error while retrieving json output: %s", err)

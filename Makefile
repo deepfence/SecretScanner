@@ -11,7 +11,6 @@ clean:
 	-rm ./SecretScanner
 
 SecretScanner: $(PWD)/**/*.go $(PWD)/agent-plugins-grpc/proto/*.go
-	go mod vendor
 	go build -v
 
 .PHONY: clean
