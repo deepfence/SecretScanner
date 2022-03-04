@@ -9,11 +9,6 @@ ENV PKG_CONFIG_PATH=/usr/local/include/hs/ \
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26 \
     && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 
-WORKDIR /home/deepfence/src/
-RUN git clone https://github.com/containerd/nerdctl
-WORKDIR /home/deepfence/src/nerdctl
-RUN make
-
 WORKDIR /home/deepfence/src/SecretScanner
 COPY . .
 RUN make clean
@@ -24,9 +19,12 @@ MAINTAINER DeepFence
 
 ENV MGMT_CONSOLE_URL=deepfence-fetcher \
     MGMT_CONSOLE_PORT=8006
-RUN apk update && apk add --upgrade libstdc++ libgcc docker hyperscan skopeo python3 py3-pip bash
+RUN apk update && apk add --no-cache --upgrade curl tar libstdc++ libgcc docker hyperscan skopeo python3 py3-pip bash \
+    && curl -fsSLOk https://github.com/containerd/nerdctl/releases/download/v0.17.1/nerdctl-0.17.1-linux-amd64.tar.gz \
+    && tar Cxzvvf /usr/local/bin nerdctl-0.17.1-linux-amd64.tar.gz \
+    && rm nerdctl-0.17.1-linux-amd64.tar.gz \
+    && apk del curl
 WORKDIR /home/deepfence/usr
-COPY --from=builder /home/deepfence/src/nerdctl/_output/nerdctl /bin
 COPY --from=builder /home/deepfence/src/SecretScanner/SecretScanner .
 COPY --from=builder /home/deepfence/src/SecretScanner/config.yaml .
 COPY registry_image_save/* ./

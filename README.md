@@ -56,47 +56,44 @@ Usage of ./SecretScanner:
 Install docker and run SecretScanner on a container image using the following instructions:
 
 * Build SecretScanner:
-
-`docker build --rm=true --tag=deepfenceio/secretscanning:latest -f Dockerfile .`
+```shell
+./bootstrap.sh
+docker build --rm=true --tag=deepfenceio/deepfence_secret_scanner:latest -f Dockerfile .
+```
 
 * Or, pull the latest build from docker hub by doing:
-
-`docker pull deepfenceio/secretscanning`
+```shell
+docker pull deepfenceio/deepfence_secret_scanner:latest
+```
 
 * Pull a container image for scanning:
-
-`docker pull node:8.11`
+```shell
+docker pull node:8.11
+```
 
 * Run SecretScanner as a standalone:
   * Scan a container image:
-
-    ```
-    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock deepfenceio/secretscanning -image-name node:8.11
+    ```shell
+    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock deepfenceio/deepfence_secret_scanner:latest -image-name node:8.11
     ```
 
   * Scan a local directory:
-
-    ```
-    docker run -it --rm --name=deepfence-secretscanner -v /:/deepfence/mnt -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock deepfenceio/secretscanning -host-mount-path /deepfence/mnt -local /deepfence/mnt
+    ```shell
+    docker run -it --rm --name=deepfence-secretscanner -v /:/deepfence/mnt -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock deepfenceio/deepfence_secret_scanner:latest -host-mount-path /deepfence/mnt -local /deepfence/mnt
     ```
 
 * Or run SecretScanner as a gRPC server:
-	```
-	docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock -v /tmp/sock:/tmp/sock deepfenceio -socket-path /tmp/sock/s.sock
-
-	```
-  * Scan a container image:
-
+    ```shell
+    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock -v /tmp/sock:/tmp/sock deepfenceio -socket-path /tmp/sock/s.sock
     ```
-	grpcurl -plaintext -import-path ./agent-plugins-grpc/proto -proto secret_scanner.proto -d '{"image": {"name": "node:8.11"}}' -unix '/tmp/sock.sock' secret_scanner.SecretScanner/FindSecretInfo
-
+  * Scan a container image:
+    ```shell
+    grpcurl -plaintext -import-path ./agent-plugins-grpc/proto -proto secret_scanner.proto -d '{"image": {"name": "node:8.11"}}' -unix '/tmp/sock.sock' secret_scanner.SecretScanner/FindSecretInfo
     ```
 
   * Scan a local directory:
-
-    ```
-	grpcurl -plaintext -import-path ./agent-plugins-grpc/proto -proto secret_scanner.proto -d '{"path": "/tmp"}' -unix '/tmp/sock.sock' secret_scanner.SecretScanner/FindSecretInfo
-
+    ```shell
+    grpcurl -plaintext -import-path ./agent-plugins-grpc/proto -proto secret_scanner.proto -d '{"path": "/tmp"}' -unix '/tmp/sock.sock' secret_scanner.SecretScanner/FindSecretInfo
     ```
 
 By default, SecretScanner will also create json files with details of all the secrets found in the current working directory. You can explicitly specify the output directory and json filename using the appropriate options.
@@ -119,7 +116,7 @@ For reference, the [Install file](https://github.com/deepfence/SecretScanner/blo
 
 ## As a standalone application
 
-```
+```shell
 ./SecretScanner --help
 
 ./SecretScanner -config-path /path/to/config.yaml/dir -local test
@@ -128,7 +125,7 @@ For reference, the [Install file](https://github.com/deepfence/SecretScanner/blo
 ```
 
 ## As a server application
-```
+```shell
 ./SecretScanner -socket-path /path/to/socket.sock
 ```
 
