@@ -16,6 +16,7 @@ RUN make
 
 FROM alpine:3.13
 MAINTAINER DeepFence
+LABEL deepfence.role=system
 
 ENV MGMT_CONSOLE_URL=deepfence-fetcher \
     MGMT_CONSOLE_PORT=8006
