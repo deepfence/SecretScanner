@@ -288,6 +288,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deepfence/vessel v0.5.9 h1:O0UykeLGiV4mICSUSu0LW+GupjekSQB9+qK9UAN/pyQ=
 github.com/deepfence/vessel v0.5.9/go.mod h1:Unls3LOzXwj3UEy/pGRgePI5SaKjzTuONu1dNOTrNUw=
+github.com/deepfence/vessel v0.5.10-0.20220311114815-5131df73f13f h1:2QlJYauO77wMA9GDef1i/aL1IaWxTsXJ3tSBplQEztk=
+github.com/deepfence/vessel v0.5.10-0.20220311114815-5131df73f13f/go.mod h1:Unls3LOzXwj3UEy/pGRgePI5SaKjzTuONu1dNOTrNUw=
 github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8lFg6daOBZbT6/BDGIz6Y3WFGn8juu6G+CQ6LHtl0=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
