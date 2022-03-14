@@ -195,8 +195,10 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 	if walkErr != nil {
 		if walkErr == maxSecretsExceeded {
 			session.Log.Warn("filepath.Walk: %s", walkErr)
+			fmt.Printf("filepath.Walk: %s\n", walkErr)
 		} else {
 			session.Log.Error("Error in filepath.Walk: %s", walkErr)
+			fmt.Printf("Error in filepath.Walk: %s\n", walkErr)
 		}
 	}
 	return tempSecretsFound, nil
