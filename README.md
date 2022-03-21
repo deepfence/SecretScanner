@@ -6,12 +6,18 @@
 [![Slack](https://img.shields.io/badge/slack-@deepfence-blue.svg?logo=slack)](https://join.slack.com/t/deepfence-community/shared_invite/zt-podmzle9-5X~qYx8wMaLt9bGWwkSdgQ)
 [![Twitter](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Fgithub.com%2Fdeepfence%2FSecretScanner)](https://twitter.com/intent/tweet?text=Check%20this%20out%3A&url=https%3A%2F%2Fgithub.com%2Fdeepfence%2FSecretScanner)
 
+## Announcing ThreatMapper 1.3.0
+
+SecretScanner has been integrated into [ThreatMapper 1.3.0](https://github.com/deepfence/ThreatMapper), and also remains as this standalone project.
+
+# SecretScanner
+
 Deepfence SecretScanner can find unprotected secrets in container images or file systems.
 
 * SecretScanner is a standalone tool that retrieves and searches container and host filesystems, matching the contents against a database of approximately 140 secret types.
 * SecretScanner is also included in [ThreatMapper](https://github.com/deepfence/ThreatMapper), an open source scanner that identifies vulnerable dependencies and unprotected secrets in cloud native applications, and ranks these vulnerabilities based on their risk-of-exploit ([example](https://github.com/deepfence/ThreatMapper/wiki/Scanning-Production-Deployments))
 
-# What are Secrets?
+## What are Secrets?
 
 Secrets are any kind of sensitive or private data which gives authorized users permission to access critical IT infrastructure (such as accounts, devices, network, cloud based services), applications, storage, databases and other kinds of critical data for an organization. For example, passwords, AWS access IDs, AWS secret access keys, Google OAuth Key etc. are secrets. Secrets should be strictly kept private. However, sometimes attackers can easily access secrets due to flawed security policies or inadvertent mistakes by developers. Sometimes developers use default secrets or leave hard-coded secrets such as passwords, API keys, encryption keys, SSH keys, tokens etc. in container images, especially during rapid development and deployment cycles in CI/CD pipeline. Also, sometimes users store passwords in plain text. Leakage of secrets to unauthorized entities can put your organization and infrastructure at serious security risk.
 
@@ -19,7 +25,7 @@ Deepfence SecretScanner helps users scan their container images or local directo
 
 Check out our [blog](https://medium.com/deepfence-cloud-native-security/detecting-secrets-to-reduce-attack-surface-3405ee6329b5) for more details.
 
-# Command line options
+## Command line options
 
 ```
 $ ./SecretScanner --help
@@ -54,7 +60,7 @@ Usage of ./SecretScanner:
 
 ```
 
-# Quickly Try Using Docker
+## Quickly Try Using Docker
 
 Install docker and run SecretScanner on a container image using the following instructions:
 
@@ -103,7 +109,7 @@ By default, SecretScanner will also create json files with details of all the se
 
 Please note that you can use `nerdctl` as an alternative to `docker` in the commands above.
 
-# Build Instructions
+## Build Instructions
 
 1. Run boostrap.sh
 2. Install Docker
@@ -115,9 +121,9 @@ Please note that you can use `nerdctl` as an alternative to `docker` in the comm
 
 For reference, the [Install file](https://github.com/deepfence/SecretScanner/blob/master/Install.Ubuntu) has commands to build on an ubuntu system.
 
-# Instructions to Run on Local Host
+## Instructions to Run on Local Host
 
-## As a standalone application
+### As a standalone application
 
 ```shell
 ./SecretScanner --help
@@ -127,14 +133,14 @@ For reference, the [Install file](https://github.com/deepfence/SecretScanner/blo
 ./SecretScanner -config-path /path/to/config.yaml/dir -image-name node:8.11
 ```
 
-## As a server application
+### As a server application
 ```shell
 ./SecretScanner -socket-path /path/to/socket.sock
 ```
 
 See "Quickly-Try-Using-Docker" section above to see how to send requests.
 
-# Sample SecretScanner Output
+## Sample SecretScanner Output
 
 ![SampleJsonOutput](images/SampleSecretsOutput.png)
 
