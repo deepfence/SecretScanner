@@ -359,6 +359,7 @@ func untar(tarName string, xpath string) (err error) {
 		absFileName := filepath.Join(absPath, fileName)
 
 		if finfo.Mode().IsDir() || strings.Contains(fileName, "/") {
+
 			if err := os.MkdirAll(absFileName, 0755); err != nil {
 				return err
 			}
@@ -469,7 +470,7 @@ func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer core.DeleteTmpDir(tempDir)
+	// defer core.DeleteTmpDir(tempDir)
 
 	imageScan := ImageScan{imageName: image, imageId: "", tempDir: tempDir}
 	err = imageScan.extractImage(true)
@@ -487,7 +488,7 @@ func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
 }
 
 func ExtractAndScanFromTar(tarFolder string, imageName string) (*ImageExtractionResult, error) {
-	defer core.DeleteTmpDir(tarFolder)
+	// defer core.DeleteTmpDir(tarFolder)
 
 	imageScan := ImageScan{imageName: imageName, imageId: "", tempDir: tarFolder}
 	err := imageScan.extractImage(false)
