@@ -384,8 +384,6 @@ func untar(tarName string, xpath string) (err error) {
 		}
 		// fmt.Printf("x %s\n", absFileName)
 		n, cpErr := io.Copy(file, tr)
-		fmt.Println("n:")
-		fmt.Println(n)
 		if closeErr := file.Close(); closeErr != nil { // close file immediately
 			fmt.Println("clserr:"+closeErr.Error())
 			return err
