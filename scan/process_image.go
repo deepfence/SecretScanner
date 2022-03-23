@@ -362,8 +362,10 @@ func untar(tarName string, xpath string) (err error) {
 		if strings.Contains(fileName, "/") {
 			relPath := strings.Split(fileName, "/")
 			if len(relPath) > 1 {
-				dirs := relPath[0 : len(relPath)-1]
-				absPath = filepath.Join(absPath, strings.Join(dirs, "/"))
+				dirs := relPath[0]
+				//absPath = filepath.Join(absPath, strings.Join(dirs, "/"))
+				fmt.Println("dirs: " + dirs)
+				absPath = filepath.Join(absPath, dirs)
 			}
 			fmt.Println("absPath: " + absPath)
 			fmt.Println("fileName: " + fileName)
@@ -373,23 +375,30 @@ func untar(tarName string, xpath string) (err error) {
 		}
 
 		if finfo.Mode().IsDir() {
-			fmt.Println("absPath: " + absPath)
+			fmt.Println("isDir absPath: " + absPath)
 			if err := os.MkdirAll(absFileName, 0755); err != nil {
 				return err
 			}
+			continue
 		}
 
 		// create new file with original file mode
+		fmt.Println("opening file: " + absFileName)
 		file, err := os.OpenFile(absFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, finfo.Mode().Perm())
 		if err != nil {
+			fmt.Println(err.Error())
 			return err
 		}
 		// fmt.Printf("x %s\n", absFileName)
 		n, cpErr := io.Copy(file, tr)
+		fmt.Println("n:")
+		fmt.Println(n)
 		if closeErr := file.Close(); closeErr != nil { // close file immediately
+			fmt.Println("clserr:"+closeErr.Error())
 			return err
 		}
 		if cpErr != nil {
+			fmt.Println("copyErr:" + cpErr.Error())
 			return cpErr
 		}
 		if n != finfo.Size() {
