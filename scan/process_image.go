@@ -361,15 +361,16 @@ func untar(tarName string, xpath string) (err error) {
 		absFileName := filepath.Join(absPath, fileName)
 		if strings.Contains(fileName, "/") {
 			relPath := strings.Split(fileName, "/")
+			var absDirPath string
 			if len(relPath) > 1 {
 				dirs := relPath[0]
 				//absPath = filepath.Join(absPath, strings.Join(dirs, "/"))
 				fmt.Println("dirs: " + dirs)
-				absPath = filepath.Join(absPath, dirs)
+				absDirPath = filepath.Join(absPath, dirs)
 			}
-			fmt.Println("absPath: " + absPath)
+			fmt.Println("absDirPath: " + absDirPath)
 			fmt.Println("fileName: " + fileName)
-			if err := os.MkdirAll(absPath, 0755); err != nil {
+			if err := os.MkdirAll(absDirPath, 0755); err != nil {
 				fmt.Println(err.Error())
 			}
 		}
