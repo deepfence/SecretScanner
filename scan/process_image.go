@@ -349,9 +349,7 @@ func untar(tarName string, xpath string) (err error) {
 		// determine proper file path info
 		finfo := hdr.FileInfo()
 		fileName := hdr.Name
-		fmt.Println("Pre Process fileName:" + fileName)
 		if filepath.IsAbs(fileName) {
-			fmt.Printf("removing / prefix from %s\n", fileName)
 			fileName, err = filepath.Rel("/", fileName)
 			if err != nil {
 				return err
@@ -363,20 +361,15 @@ func untar(tarName string, xpath string) (err error) {
 			relPath := strings.Split(fileName, "/")
 			var absDirPath string
 			if len(relPath) > 1 {
-				dirs := relPath[0]
-				//absPath = filepath.Join(absPath, strings.Join(dirs, "/"))
-				fmt.Println("dirs: " + dirs)
-				absDirPath = filepath.Join(absPath, dirs)
+				dirs := relPath[0: len(relPath) - 1]
+				absDirPath = filepath.Join(absPath, strings.Join(dirs, "/"))
 			}
-			fmt.Println("absDirPath: " + absDirPath)
-			fmt.Println("fileName: " + fileName)
 			if err := os.MkdirAll(absDirPath, 0755); err != nil {
 				fmt.Println(err.Error())
 			}
 		}
 
 		if finfo.Mode().IsDir() {
-			fmt.Println("isDir absPath: " + absPath)
 			if err := os.MkdirAll(absFileName, 0755); err != nil {
 				return err
 			}
@@ -384,7 +377,6 @@ func untar(tarName string, xpath string) (err error) {
 		}
 
 		// create new file with original file mode
-		fmt.Println("opening file: " + absFileName)
 		file, err := os.OpenFile(absFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, finfo.Mode().Perm())
 		if err != nil {
 			fmt.Println(err.Error())
