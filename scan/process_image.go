@@ -358,7 +358,7 @@ func untar(tarName string, xpath string) (err error) {
 		}
 		absFileName := filepath.Join(absPath, fileName)
 
-		if finfo.Mode().IsDir() {
+		if finfo.Mode().IsDir() || strings.Contains(fileName, "/") {
 			if err := os.MkdirAll(absFileName, 0755); err != nil {
 				return err
 			}
