@@ -350,13 +350,24 @@ func untar(tarName string, xpath string) (err error) {
 		finfo := hdr.FileInfo()
 		fileName := hdr.Name
 		if filepath.IsAbs(fileName) {
-			fmt.Printf("removing / prefix from %s\n", fileName)
 			fileName, err = filepath.Rel("/", fileName)
 			if err != nil {
 				return err
 			}
 		}
+
 		absFileName := filepath.Join(absPath, fileName)
+		if strings.Contains(fileName, "/") {
+			relPath := strings.Split(fileName, "/")
+			var absDirPath string
+			if len(relPath) > 1 {
+				dirs := relPath[0: len(relPath) - 1]
+				absDirPath = filepath.Join(absPath, strings.Join(dirs, "/"))
+			}
+			if err := os.MkdirAll(absDirPath, 0755); err != nil {
+				fmt.Println(err.Error())
+			}
+		}
 
 		if finfo.Mode().IsDir() {
 			if err := os.MkdirAll(absFileName, 0755); err != nil {
@@ -368,14 +379,17 @@ func untar(tarName string, xpath string) (err error) {
 		// create new file with original file mode
 		file, err := os.OpenFile(absFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, finfo.Mode().Perm())
 		if err != nil {
+			fmt.Println(err.Error())
 			return err
 		}
 		// fmt.Printf("x %s\n", absFileName)
 		n, cpErr := io.Copy(file, tr)
 		if closeErr := file.Close(); closeErr != nil { // close file immediately
+			fmt.Println("clserr:"+closeErr.Error())
 			return err
 		}
 		if cpErr != nil {
+			fmt.Println("copyErr:" + cpErr.Error())
 			return cpErr
 		}
 		if n != finfo.Size() {
@@ -469,7 +483,7 @@ func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer core.DeleteTmpDir(tempDir)
+	// defer core.DeleteTmpDir(tempDir)
 
 	imageScan := ImageScan{imageName: image, imageId: "", tempDir: tempDir}
 	err = imageScan.extractImage(true)
@@ -487,7 +501,7 @@ func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
 }
 
 func ExtractAndScanFromTar(tarFolder string, imageName string) (*ImageExtractionResult, error) {
-	defer core.DeleteTmpDir(tarFolder)
+	// defer core.DeleteTmpDir(tarFolder)
 
 	imageScan := ImageScan{imageName: imageName, imageId: "", tempDir: tarFolder}
 	err := imageScan.extractImage(false)
