@@ -368,7 +368,9 @@ func untar(tarName string, xpath string) (err error) {
 			if err := os.MkdirAll(absPath, 0755); err != nil {
 				return err
 			}
-			continue
+			if finfo.Mode().IsDir() {
+				continue
+			}
 		}
 
 		// create new file with original file mode
