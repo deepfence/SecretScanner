@@ -318,6 +318,8 @@ github.com/deepfence/vessel v0.5.10-0.20220311134709-e1346719156e h1:qopkfNVF0Z8
 github.com/deepfence/vessel v0.5.10-0.20220311134709-e1346719156e/go.mod h1:Unls3LOzXwj3UEy/pGRgePI5SaKjzTuONu1dNOTrNUw=
 github.com/deepfence/vessel v0.5.10-0.20220321031531-3f676eb8cca4 h1:t1pWNvx7N04RCMYJilltRXiXClq0zB34QuYwv0zXgHc=
 github.com/deepfence/vessel v0.5.10-0.20220321031531-3f676eb8cca4/go.mod h1:uZmgejPKRV5R5dC13Ptt+ueHEFkkU6wJO816H5kU03g=
+github.com/deepfence/vessel v0.5.10-0.20220328031044-7a80d1631ce1 h1:oCsZxWt75DqVDygj7yMq750hJ86I8i0ZFxQslys6kyM=
+github.com/deepfence/vessel v0.5.10-0.20220328031044-7a80d1631ce1/go.mod h1:uZmgejPKRV5R5dC13Ptt+ueHEFkkU6wJO816H5kU03g=
 github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8lFg6daOBZbT6/BDGIz6Y3WFGn8juu6G+CQ6LHtl0=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
