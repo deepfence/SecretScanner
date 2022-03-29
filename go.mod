@@ -7,17 +7,16 @@ replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 require (
 	github.com/Jeffail/tunny v0.1.4
 	github.com/deepfence/agent-plugins-grpc v0.0.0-00010101000000-000000000000
-	github.com/deepfence/vessel v0.5.10-0.20220328113409-48372aee1ba7
+	github.com/deepfence/vessel v0.5.10
 	github.com/fatih/color v1.13.0
 	github.com/flier/gohs v1.1.1
-	google.golang.org/grpc v1.44.0
+	google.golang.org/grpc v1.45.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
 require (
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/Microsoft/hcsshim v0.9.2 // indirect
-	github.com/bits-and-blooms/bitset v1.2.0 // indirect
 	github.com/containerd/cgroups v1.0.3 // indirect
 	github.com/containerd/containerd v1.6.1 // indirect
 	github.com/containerd/continuity v0.2.2 // indirect
@@ -48,9 +47,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.28.0 // indirect
-	go.opentelemetry.io/otel v1.3.0 // indirect
-	go.opentelemetry.io/otel/trace v1.3.0 // indirect
 	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
