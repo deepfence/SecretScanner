@@ -130,8 +130,19 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 		if err != nil {
 			return err
 		}
+
+		var scanDirPath string
+		if layer != "" {
+			scanDirPath = strings.TrimPrefix(path, baseDir +  "/" + layer)
+			if scanDirPath == "" {
+				scanDirPath = "/"
+			}
+		} else {
+			scanDirPath = path
+		}
+
 		if f.IsDir() {
-			if core.IsSkippableDir(path, baseDir) {
+			if core.IsSkippableDir(scanDirPath, baseDir) {
 				return filepath.SkipDir
 			}
 			return nil
