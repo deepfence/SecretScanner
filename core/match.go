@@ -37,7 +37,7 @@ func IsSkippableDir(path string, baseDir string) bool {
 	}
 
 	for _, skippablePathIndicator := range session.Config.BlacklistedPaths {
-		if strings.HasPrefix(path, skippablePathIndicator) {
+		if strings.HasPrefix(path, skippablePathIndicator) ||  strings.HasPrefix(path, filepath.Join(baseDir, skippablePathIndicator)) {
 			return true
 		}
 	}
