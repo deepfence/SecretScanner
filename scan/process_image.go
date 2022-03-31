@@ -91,7 +91,7 @@ func (imageScan *ImageScan) extractImage(saveImage bool) error {
 // Error - Errors, if any. Otherwise, returns nil
 func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
 	tempDir := imageScan.tempDir
-	// defer deleteTmpDir(tempDir)
+	defer core.DeleteTmpDir(tempDir)
 
 	tempSecretsFound, err := imageScan.processImageLayers(tempDir)
 	if err != nil {
