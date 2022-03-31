@@ -187,12 +187,16 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 				session.Log.Error("scanSecretsInDir: %s", err)
 				// return tempSecretsFound, err
 			}
-			output.PrintColoredSecrets(secrets, isFirstSecret)
+			if *session.Options.Quiet {
+				output.PrintColoredSecrets(secrets, isFirstSecret)
+			}
 			tempSecretsFound = append(tempSecretsFound, secrets...)
 		}
 
 		secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, numSecrets)
-		output.PrintColoredSecrets(secrets, isFirstSecret)
+		if *session.Options.Quiet {
+			output.PrintColoredSecrets(secrets, isFirstSecret)
+		}
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 		// Reset the matched Rule IDs to enable matched signatures for next file
 		signature.ClearMatchedRuleSet()

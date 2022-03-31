@@ -32,5 +32,5 @@ COPY registry_image_save/* ./
 RUN pip3 install -r requirements.txt
 WORKDIR /home/deepfence/output
 
-ENTRYPOINT ["/home/deepfence/usr/SecretScanner", "-config-path", "/home/deepfence/usr"]
+ENTRYPOINT ["/home/deepfence/usr/SecretScanner", "-config-path", "/home/deepfence/usr", "-quiet", "true"]
 CMD ["-h"]

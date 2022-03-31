@@ -26,6 +26,7 @@ type Options struct {
 	MaxSecrets      *uint
 	ContainerId     *string
 	ContainerNS     *string
+	Quiet			*bool
 }
 
 func ParseOptions() (*Options, error) {
@@ -45,6 +46,7 @@ func ParseOptions() (*Options, error) {
 		MaxSecrets:      flag.Uint("max-secrets", 1000, "Maximum number of secrets to find in one container image or file system."),
 		ContainerId:     flag.String("container-id", "", "Id of existing container ID"),
 		ContainerNS:     flag.String("container-ns", "", "Namespace of existing container to scan, empty for docker runtime"),
+		Quiet: 			 flag.Bool("quiet", false, "Don't display any output in stdout"),
 	}
 	flag.Parse()
 	return options, nil
