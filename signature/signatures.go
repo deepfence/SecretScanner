@@ -35,6 +35,7 @@ type HsInputOutputData struct {
 	layerID            string
 	secretsFound       *[]output.SecretFound
 	numSecrets         *uint
+	matchedRuleSet     map[uint]uint // Indicates if any rules macthed in the last iteration
 }
 
 // Different map data structures to map to appropriate signatures, DBs etc.
@@ -43,7 +44,6 @@ var (
 	patternSignatureMap map[string][]core.ConfigSignature
 	hyperscanBlockDbMap map[string]hyperscan.BlockDatabase
 	signatureIDMap      map[int]core.ConfigSignature
-	matchedRuleSet      map[uint]uint // Indicates if any rules macthed in the last iteration
 )
 
 // Initialize all the data structures
@@ -53,7 +53,6 @@ func init() {
 	patternSignatureMap = make(map[string][]core.ConfigSignature)
 	hyperscanBlockDbMap = make(map[string]hyperscan.BlockDatabase)
 	signatureIDMap = make(map[int]core.ConfigSignature)
-	matchedRuleSet = make(map[uint]uint) // New empty set
 }
 
 // Scan to find simple pattern matches for the path, filename and extension of this file
@@ -100,7 +99,7 @@ func MatchSimpleSignatures(path string, filename string, extension string, layer
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
 func MatchPatternSignatures(contents []byte, path string, filename string, extension string, layerID string,
-	numSecrets *uint) ([]output.SecretFound, error) {
+	numSecrets *uint, matchedRuleSet map[uint]uint) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
 	var hsIOData HsInputOutputData
 	var matchingPart string
@@ -134,6 +133,7 @@ func MatchPatternSignatures(contents []byte, path string, filename string, exten
 			layerID:            layerID,
 			secretsFound:       &tempSecretsFound,
 			numSecrets:         numSecrets,
+			matchedRuleSet:     matchedRuleSet,
 		}
 		err := RunHyperscan(hyperscanBlockDbMap[matchingPart], hsIOData)
 		if err != nil {
@@ -240,13 +240,6 @@ func addToSignatures(signature core.ConfigSignature, Signatures *[]core.ConfigSi
 	*Signatures = append(*Signatures, signature)
 }
 
-// Clear the map of matched ruleset before starting next iteration
-func ClearMatchedRuleSet() {
-	for k := range matchedRuleSet { // Loop
-		delete(matchedRuleSet, k)
-	}
-}
-
 // Match simple pattern signatures with path, filename or extension
 // @parameters
 // part - which part to be matched: path, filename or extension
@@ -331,14 +324,14 @@ func processHsRegexMatch(id uint, from, to uint64, flags uint, context interface
 
 	// Match only once for now, later report only supersets
 	// Report multiple matches, only if MultipleMatch is set to true
-	_, exists := matchedRuleSet[id] // Check, if this pattern matched for this file earlier
+	_, exists := hsIOData.matchedRuleSet[id] // Check, if this pattern matched for this file earlier
 	if !exists {
-		matchedRuleSet[id] = 1 // Add to matched rules for first match
+		hsIOData.matchedRuleSet[id] = 1 // Add to matched rules for first match
 	} else if *core.GetSession().Options.MultipleMatch == false {
 		return nil // Don't output later matches of this pattern, if multi-match is false
 	} else if *core.GetSession().Options.MultipleMatch == true {
-		matchedRuleSet[id] = matchedRuleSet[id] + 1
-		if matchedRuleSet[id] > *core.GetSession().Options.MaxMultiMatch {
+		hsIOData.matchedRuleSet[id] = hsIOData.matchedRuleSet[id] + 1
+		if hsIOData.matchedRuleSet[id] > *core.GetSession().Options.MaxMultiMatch {
 			return nil // Don't output later matches of this pattern, if #Mateches > MaxThreshold
 		}
 	}
