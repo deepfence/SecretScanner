@@ -240,13 +240,6 @@ func addToSignatures(signature core.ConfigSignature, Signatures *[]core.ConfigSi
 	*Signatures = append(*Signatures, signature)
 }
 
-// Clear the map of matched ruleset before starting next iteration
-/*func ClearMatchedRuleSet() {
-	for k := range matchedRuleSet { // Loop
-		delete(matchedRuleSet, k)
-	}
-}
-*/
 // Match simple pattern signatures with path, filename or extension
 // @parameters
 // part - which part to be matched: path, filename or extension

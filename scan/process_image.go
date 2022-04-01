@@ -201,8 +201,6 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			output.PrintColoredSecrets(secrets, isFirstSecret)
 		}
 		tempSecretsFound = append(tempSecretsFound, secrets...)
-		// Reset the matched Rule IDs to enable matched signatures for next file
-		// signature.ClearMatchedRuleSet()
 
 		// Don't report secrets if number of secrets exceeds MAX value
 		if *numSecrets >= *session.Options.MaxSecrets {
