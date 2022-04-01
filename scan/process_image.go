@@ -112,8 +112,11 @@ func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
 func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecret *bool,
-	numSecrets *uint) ([]output.SecretFound, error) {
+	numSecrets *uint, matchedRuleSet map[uint]uint) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
+	if matchedRuleSet == nil {
+		matchedRuleSet = make(map[uint]uint)
+	}
 
 	if layer != "" {
 		core.UpdateDirsPermissionsRW(fullDir)
@@ -180,7 +183,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 		} else {
 			// fmt.Println(relPath, file.Filename, file.Extension, layer)
 			secrets, err = signature.MatchPatternSignatures(contents, relPath, file.Filename, file.Extension,
-				layer, numSecrets)
+				layer, numSecrets, matchedRuleSet)
 			if err != nil {
 				session.Log.Info("relPath: %s, Filename: %s, Extension: %s, layer: %s",
 					relPath, file.Filename, file.Extension, layer)
@@ -199,7 +202,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 		}
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 		// Reset the matched Rule IDs to enable matched signatures for next file
-		signature.ClearMatchedRuleSet()
+		// signature.ClearMatchedRuleSet()
 
 		// Don't report secrets if number of secrets exceeds MAX value
 		if *numSecrets >= *session.Options.MaxSecrets {
@@ -235,6 +238,7 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string) ([]outp
 	extractPath := path.Join(imageManifestPath, core.ExtractedImageFilesDir)
 	layerIDs := imageScan.imageManifest.LayerIds
 	layerPaths := imageScan.imageManifest.Layers
+	matchedRuleSet := make(map[uint]uint)
 
 	loopCntr := len(layerPaths)
 	var secrets []output.SecretFound
@@ -260,7 +264,7 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string) ([]outp
 			// return tempSecretsFound, error
 		}
 		core.GetSession().Log.Debug("Analyzing dir: %s", targetDir)
-		secrets, err = ScanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret, &imageScan.numSecrets)
+		secrets, err = ScanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret, &imageScan.numSecrets, matchedRuleSet)
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 		if err != nil {
 			core.GetSession().Log.Error("ProcessImageLayers: %s", err)

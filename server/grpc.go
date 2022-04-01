@@ -36,7 +36,7 @@ func (s *gRPCServer) FindSecretInfo(_ context.Context, r *pb.FindRequest) (*pb.F
 		var isFirstSecret bool = true
 		var numSecrets uint = 0
 
-		secrets, err := scan.ScanSecretsInDir("", r.GetPath(), r.GetPath(), &isFirstSecret, &numSecrets)
+		secrets, err := scan.ScanSecretsInDir("", r.GetPath(), r.GetPath(), &isFirstSecret, &numSecrets, nil)
 		if err != nil {
 			return nil, err
 		}
