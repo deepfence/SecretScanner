@@ -366,6 +366,7 @@ func untar(tarName string, xpath string) (err error) {
 		// determine proper file path info
 		finfo := hdr.FileInfo()
 		fileName := hdr.Name
+		fmt.Println("fileName:" + fileName)
 		if filepath.IsAbs(fileName) {
 			fileName, err = filepath.Rel("/", fileName)
 			if err != nil {
@@ -374,6 +375,7 @@ func untar(tarName string, xpath string) (err error) {
 		}
 
 		absFileName := filepath.Join(absPath, fileName)
+		fmt.Println("absFileName:" + absFileName)
 		if strings.Contains(fileName, "/") {
 			relPath := strings.Split(fileName, "/")
 			var absDirPath string
@@ -381,6 +383,7 @@ func untar(tarName string, xpath string) (err error) {
 				dirs := relPath[0: len(relPath) - 1]
 				absDirPath = filepath.Join(absPath, strings.Join(dirs, "/"))
 			}
+			fmt.Println("absDirPath:" + absDirPath)
 			if err := os.MkdirAll(absDirPath, 0755); err != nil {
 				fmt.Println(err.Error())
 			}
