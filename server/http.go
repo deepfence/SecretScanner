@@ -5,29 +5,30 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Jeffail/tunny"
-	"github.com/deepfence/SecretScanner/core"
-	"github.com/deepfence/SecretScanner/output"
-	"github.com/deepfence/SecretScanner/scan"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"reflect"
 	"strconv"
+
+	"github.com/Jeffail/tunny"
+	"github.com/deepfence/SecretScanner/core"
+	"github.com/deepfence/SecretScanner/output"
+	"github.com/deepfence/SecretScanner/scan"
 )
 
 const (
-	secretScanIndexName     = "secret-scan"
-	secretScanLogsIndexName = "secret-scan-logs"
-	scanStatusComplete      = "COMPLETE"
-	scanStatusError         = "ERROR"
-	defaultScanConcurrency  = 5
+	scanStatusComplete     = "COMPLETE"
+	scanStatusError        = "ERROR"
+	defaultScanConcurrency = 5
 )
 
 var (
-	scanConcurrency    int
-	httpScanWorkerPool *tunny.Pool
+	scanConcurrency         int
+	httpScanWorkerPool      *tunny.Pool
+	secretScanIndexName     = "secret-scan"
+	secretScanLogsIndexName = "secret-scan-logs"
 )
 
 type imageParameters struct {
@@ -43,6 +44,12 @@ func init() {
 		scanConcurrency = defaultScanConcurrency
 	}
 	httpScanWorkerPool = tunny.NewFunc(scanConcurrency, processImageWrapper)
+
+	customerUniqueId := os.Getenv("CUSTOMER_UNIQUE_ID")
+	if customerUniqueId != "" {
+		secretScanIndexName += fmt.Sprintf("-%s", customerUniqueId)
+		secretScanLogsIndexName += fmt.Sprintf("-%s", customerUniqueId)
+	}
 }
 
 func runSecretScan(writer http.ResponseWriter, request *http.Request) {
@@ -66,7 +73,7 @@ func processScans(form url.Values) {
 	}
 }
 
-func processImageWrapper(imageParamsInterface interface{}) interface {} {
+func processImageWrapper(imageParamsInterface interface{}) interface{} {
 	imageParams, ok := imageParamsInterface.(imageParameters)
 	if !ok {
 		fmt.Println("Error reading input from API")
@@ -76,8 +83,8 @@ func processImageWrapper(imageParamsInterface interface{}) interface {} {
 	return nil
 }
 
-func processImage(imageName string, scanId string, form url.Values)  {
-	tempFolder, err :=  core.GetTmpDir(imageName)
+func processImage(imageName string, scanId string, form url.Values) {
+	tempFolder, err := core.GetTmpDir(imageName)
 	if err != nil {
 		fmt.Println("error creating temp dirs:" + err.Error())
 		return
@@ -85,7 +92,7 @@ func processImage(imageName string, scanId string, form url.Values)  {
 	imageSaveCommand := exec.Command("python3", "/home/deepfence/usr/registry_image_save.py", "--image_name_with_tag", imageName, "--registry_type", form.Get("registry_type"),
 		"--mgmt_console_url", output.MgmtConsoleUrl, "--deepfence_key", output.DeepfenceKey, "--credential_id", form.Get("credential_id"),
 		"--output_folder", tempFolder)
-	_, err = runCommand(imageSaveCommand, "Image Save:" + imageName)
+	_, err = runCommand(imageSaveCommand, "Image Save:"+imageName)
 	if err != nil {
 		fmt.Println("error saving image:" + err.Error())
 		return
