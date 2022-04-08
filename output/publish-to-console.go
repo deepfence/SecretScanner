@@ -19,7 +19,11 @@ var (
 )
 
 func init() {
-	MgmtConsoleUrl = os.Getenv("MGMT_CONSOLE_URL") + ":" + os.Getenv("MGMT_CONSOLE_PORT")
+	MgmtConsoleUrl = os.Getenv("MGMT_CONSOLE_URL")
+	mgmtConsolePort := os.Getenv("MGMT_CONSOLE_PORT")
+	if mgmtConsolePort != "" && mgmtConsolePort != "443" {
+		MgmtConsoleUrl += ":" + mgmtConsolePort
+	}
 	DeepfenceKey = os.Getenv("DEEPFENCE_KEY")
 }
 
