@@ -1,7 +1,9 @@
-FROM golang:1.17-alpine3.13 AS builder
+FROM golang:1.18-alpine3.15 AS builder
 MAINTAINER DeepFence
 
-RUN apk update && apk add --upgrade hyperscan-dev gcc musl-dev pkgconfig g++ make git protoc
+RUN apk update  \
+    && apk add --upgrade gcc musl-dev pkgconfig g++ make git protoc \
+    && apk add hyperscan-dev --repository=http://dl-cdn.alpinelinux.org/alpine/v3.13/community
 ENV PKG_CONFIG_PATH=/usr/local/include/hs/ \
     CGO_CFLAGS="-I/usr/local/include/hyperscan/src" \
     LD_LIBRARY_PATH=/usr/local/lib:/usr/local/include/hs/lib:$LD_LIBRARY_PATH
@@ -14,16 +16,17 @@ COPY . .
 RUN make clean
 RUN make
 
-FROM alpine:3.13
+FROM alpine:3.15
 MAINTAINER DeepFence
 LABEL deepfence.role=system
 
 ENV MGMT_CONSOLE_URL=deepfence-fetcher \
     MGMT_CONSOLE_PORT=8006
-RUN apk update && apk add --no-cache --upgrade curl tar libstdc++ libgcc docker hyperscan skopeo python3 py3-pip bash \
-    && curl -fsSLOk https://github.com/containerd/nerdctl/releases/download/v0.17.1/nerdctl-0.17.1-linux-amd64.tar.gz \
-    && tar Cxzvvf /usr/local/bin nerdctl-0.17.1-linux-amd64.tar.gz \
-    && rm nerdctl-0.17.1-linux-amd64.tar.gz \
+RUN apk update && apk add --no-cache --upgrade curl tar libstdc++ libgcc docker skopeo python3 py3-pip bash \
+    && apk add hyperscan --repository=http://dl-cdn.alpinelinux.org/alpine/v3.13/community \
+    && curl -fsSLOk https://github.com/containerd/nerdctl/releases/download/v0.18.0/nerdctl-0.18.0-linux-amd64.tar.gz \
+    && tar Cxzvvf /usr/local/bin nerdctl-0.18.0-linux-amd64.tar.gz \
+    && rm nerdctl-0.18.0-linux-amd64.tar.gz \
     && apk del curl
 WORKDIR /home/deepfence/usr
 COPY --from=builder /home/deepfence/src/SecretScanner/SecretScanner .
