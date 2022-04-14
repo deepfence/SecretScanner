@@ -19,16 +19,16 @@ import (
 )
 
 const (
-	scanStatusComplete     = "COMPLETE"
-	scanStatusError        = "ERROR"
-	defaultScanConcurrency = 5
+	scanStatusComplete      = "COMPLETE"
+	scanStatusError         = "ERROR"
+	defaultScanConcurrency  = 5
+	secretScanIndexName     = "secret-scan"
+	secretScanLogsIndexName = "secret-scan-logs"
 )
 
 var (
-	scanConcurrency         int
-	httpScanWorkerPool      *tunny.Pool
-	secretScanIndexName     = "secret-scan"
-	secretScanLogsIndexName = "secret-scan-logs"
+	scanConcurrency    int
+	httpScanWorkerPool *tunny.Pool
 )
 
 type imageParameters struct {
@@ -44,12 +44,6 @@ func init() {
 		scanConcurrency = defaultScanConcurrency
 	}
 	httpScanWorkerPool = tunny.NewFunc(scanConcurrency, processImageWrapper)
-
-	customerUniqueId := os.Getenv("CUSTOMER_UNIQUE_ID")
-	if customerUniqueId != "" {
-		secretScanIndexName += fmt.Sprintf("-%s", customerUniqueId)
-		secretScanLogsIndexName += fmt.Sprintf("-%s", customerUniqueId)
-	}
 }
 
 func runSecretScan(writer http.ResponseWriter, request *http.Request) {
