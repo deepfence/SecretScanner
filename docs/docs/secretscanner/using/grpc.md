@@ -6,6 +6,13 @@ title: Using over GRPC
 
 You can run a persistent SecretScanner service and issue requests for scans using GRPC.  You first need to build SecretScanner from source, to generate the necessary proto files.
 
+:::info
+
+### Help needed!
+
+These instructions are out-of-date and need refreshed
+:::
+
 ## Prerequisites
 
 You will need the [grcpurl](https://github.com/fullstorydev/grpcurl) tool.
@@ -23,12 +30,6 @@ docker run -it --rm --name=deepfence-secretscanner \
 	deepfenceio/deepfence_secret_scanner:latest \
 	-socket-path /tmp/sock/s.sock
 ```
-
-:::info
-
-Currently testing this, determining how the secret_scanner.proto files are generated
-
-:::
 
 
 ## Scan a Container Image

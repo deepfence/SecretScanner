@@ -7,6 +7,12 @@ title: Standalone Build
 
 As an alternative to running SecretScanner as a docker container, you can build it as a Standalone application.
 
+:::info
+
+### Help needed!
+
+These instructions are out-of-date and need refreshed
+:::
 
 ## Build Instructions
 

@@ -4,7 +4,7 @@ title: Introduction to SecretScanner
 
 # SecretScanner
 
-Deepfence can find unprotected secrets in container images or file systems.
+Deepfence SecretScanner can find unprotected secrets in container images or file systems.
 
 * SecretScanner is a standalone tool that retrieves and searches container and host filesystems, matching the contents against a database of approximately 140 secret types.
 * SecretScanner is also included in [ThreatMapper](https://github.com/deepfence/ThreatMapper), an open source scanner that identifies vulnerable dependencies and unprotected secrets in cloud native applications, and ranks these vulnerabilities based on their risk-of-exploit.
