@@ -38,7 +38,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/ogarrett/SecretScanner/docs/',
+            'https://github.com/deepfence/SecretScanner/docs/',
           breadcrumbs: true,
           routeBasePath: '/',
           // options for remark-admonitions
