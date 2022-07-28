@@ -32,10 +32,10 @@ docker rmi node:latest
 You can summarise the results by processing the JSON output, e.g. using `jq`:
 
 ```bash
-docker run -it --rm --name=deepfence-yaradare \
+docker run -it --rm --name=deepfence-secretscanner \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /tmp:/home/deepfence/output \
-    deepfenceio/deepfence-yaradare:latest \
+    deepfenceio/deepfence_secret_scanner:latest \
     --image-name node:latest --json-filename=node-secret-scan.json
 
 cat /tmp/node-secret-scan.json | jq '.Secrets[] | { rule: ."Matched Rule Name", file: ."Full File Name" }'
