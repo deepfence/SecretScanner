@@ -83,17 +83,17 @@ docker pull node:8.11
 * Run SecretScanner as a standalone:
   * Scan a container image:
     ```shell
-    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock deepfenceio/deepfence_secret_scanner:latest -image-name node:8.11
+    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock deepfenceio/deepfence_secret_scanner:latest -image-name node:8.11
     ```
 
   * Scan a local directory:
     ```shell
-    docker run -it --rm --name=deepfence-secretscanner -v /:/deepfence/mnt -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock deepfenceio/deepfence_secret_scanner:latest -host-mount-path /deepfence/mnt -local /deepfence/mnt
+    docker run -it --rm --name=deepfence-secretscanner -v /:/deepfence/mnt -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock deepfenceio/deepfence_secret_scanner:latest -host-mount-path /deepfence/mnt -local /deepfence/mnt
     ```
 
 * Or run SecretScanner as a gRPC server:
     ```shell
-    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /run/containerd/containerd.sock:/run/containerd/containerd.sock -v /tmp/sock:/tmp/sock deepfenceio -socket-path /tmp/sock/s.sock
+    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/sock:/tmp/sock deepfenceio -socket-path /tmp/sock/s.sock
     ```
   * Scan a container image:
     ```shell
