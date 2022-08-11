@@ -1,5 +1,6 @@
 # SecretScanner
 
+[![Documentation](https://img.shields.io/badge/documentation-read-green)](https://docs.deepfence.io/secretscanner)
 [![GitHub license](https://img.shields.io/github/license/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/blob/master/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/issues)
@@ -8,7 +9,7 @@
 
 ## Announcing ThreatMapper 1.3.0
 
-SecretScanner has been integrated into [ThreatMapper 1.3.0](https://github.com/deepfence/ThreatMapper), and also remains as this standalone project.
+> SecretScanner has been integrated into [ThreatMapper 1.3.0](https://github.com/deepfence/ThreatMapper), and also remains as this standalone project.
 
 # SecretScanner
 
@@ -25,42 +26,15 @@ Deepfence SecretScanner helps users scan their container images or local directo
 
 Check out our [blog](https://medium.com/deepfence-cloud-native-security/detecting-secrets-to-reduce-attack-surface-3405ee6329b5) for more details.
 
-## Command line options
+## When to use SecretScanner
 
-```
-$ ./SecretScanner --help
+Use SecretScanner if you need a lightweight, efficient method to scan container images and filesystems for possible secrets (keys, tokens, passwords). You can then review these possible 'secrets' to determine if any of them should be removed from production deployments.
 
-Usage of ./SecretScanner:
-  -config-path string
-    	Searches for config.yaml from given directory. If not set, tries to find it from SecretScanner binary's and current directory
-  -debug-level string
-    	Debug levels are one of FATAL, ERROR, IMPORTANT, WARN, INFO, DEBUG. Only levels higher than the debug-level are displayed (default "ERROR")
-  -image-name string
-    	Name of the image along with tag to scan for secrets
-  -json-filename string
-    	Output json file name. If not set, it will automatically create a filename based on image or dir name
-  -local string
-    	Specify local directory (absolute path) which to scan. Scans only given directory recursively.
-  -max-multi-match uint
-    	Maximum number of matches of same pattern in one file. This is used only when multi-match option is enabled. (default 3)
-  -max-secrets uint
-    	Maximum number of secrets to find in one container image or file system. (default 1000)
-  -maximum-file-size uint
-    	Maximum file size to process in KB (default 256)
-  -multi-match
-    	Output multiple matches of same pattern in one file. By default, only one match of a pattern is output for a file for better performance
-  -output-path string
-    	Output directory where json file will be stored. If not set, it will output to current directory
-  -temp-directory string
-    	Directory to process and store repositories/matches (default "/tmp")
-  -threads int
-    	Number of concurrent threads (default number of logical CPUs)
-  -socket-path string
-  		The gRPC server socket path
+## Quick Start
 
-```
+For full instructions, refer to the [SecretScanner Documentation](https://docs.deepfence.io/secretscanner/).
 
-## Quickly Try Using Docker
+![SampleJsonOutput](images/SampleSecretsOutput.png)
 
 Install docker and run SecretScanner on a container image using the following instructions:
 
@@ -80,73 +54,31 @@ docker pull deepfenceio/deepfence_secret_scanner:latest
 docker pull node:8.11
 ```
 
-* Run SecretScanner as a standalone:
-  * Scan a container image:
+* Scan the container image:
     ```shell
     docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock deepfenceio/deepfence_secret_scanner:latest -image-name node:8.11
     ```
 
-  * Scan a local directory:
-    ```shell
-    docker run -it --rm --name=deepfence-secretscanner -v /:/deepfence/mnt -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock deepfenceio/deepfence_secret_scanner:latest -host-mount-path /deepfence/mnt -local /deepfence/mnt
-    ```
-
-* Or run SecretScanner as a gRPC server:
-    ```shell
-    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/sock:/tmp/sock deepfenceio -socket-path /tmp/sock/s.sock
-    ```
-  * Scan a container image:
-    ```shell
-    grpcurl -plaintext -import-path ./agent-plugins-grpc/proto -proto secret_scanner.proto -d '{"image": {"name": "node:8.11"}}' -unix '/tmp/sock.sock' secret_scanner.SecretScanner/FindSecretInfo
-    ```
-
-  * Scan a local directory:
-    ```shell
-    grpcurl -plaintext -import-path ./agent-plugins-grpc/proto -proto secret_scanner.proto -d '{"path": "/tmp"}' -unix '/tmp/sock.sock' secret_scanner.SecretScanner/FindSecretInfo
-    ```
-
-By default, SecretScanner will also create json files with details of all the secrets found in the current working directory. You can explicitly specify the output directory and json filename using the appropriate options.
-
-Please note that you can use `nerdctl` as an alternative to `docker` in the commands above.
-
-## Build Instructions
-
-1. Run boostrap.sh
-2. Install Docker
-3. Install Hyperscan
-4. Install go for your platform (version 1.14)
-5. Install go modules, if needed: `gohs`, `yaml.v3` and `color`
-6. `go get github.com/deepfence/SecretScanner` will download and build SecretScanner automatically in `$GOPATH/bin` or `$HOME/go/bin` directory. Or, clone this repository and run `go build -v -i` to build the executable in the current directory.
-7. Edit config.yaml file as needed and run the secret scanner with the appropriate config file directory.
-
-For reference, the [Install file](https://github.com/deepfence/SecretScanner/blob/master/Install.Ubuntu) has commands to build on an ubuntu system.
-
-## Instructions to Run on Local Host
-
-### As a standalone application
-
-```shell
-./SecretScanner --help
-
-./SecretScanner -config-path /path/to/config.yaml/dir -local test
-
-./SecretScanner -config-path /path/to/config.yaml/dir -image-name node:8.11
-```
-
-### As a server application
-```shell
-./SecretScanner -socket-path /path/to/socket.sock
-```
-
-See "Quickly-Try-Using-Docker" section above to see how to send requests.
-
-## Sample SecretScanner Output
-
-![SampleJsonOutput](images/SampleSecretsOutput.png)
-
 # Credits
 
 We have built upon the configuration file from [shhgit](https://github.com/eth0izzle/shhgit) project.
+
+## Get in touch
+
+Thank you for using SecretScanner.
+
+ * [<img src="https://img.shields.io/badge/documentation-read-green">](https://docs.deepfence.io/secretscanner/) Start with the documentation
+ * [<img src="https://img.shields.io/badge/slack-@deepfence-blue.svg?logo=slack">](https://join.slack.com/t/deepfence-community/shared_invite/zt-podmzle9-5X~qYx8wMaLt9bGWwkSdgQ) Got a question, need some help?  Find the Deepfence team on Slack
+ * [![GitHub issues](https://img.shields.io/github/issues/deepfence/PacketStreamer)](https://github.com/deepfence/SecretScaanner/issues) Got a feature request or found a bug? Raise an issue
+ * [productsecurity *at* deepfence *dot* io](SECURITY.md): Found a security issue? Share it in confidence
+ * Find out more at [deepfence.io](https://deepfence.io/)
+
+## Security and Support
+
+For any security-related issues in the SecretScanner project, contact [productsecurity *at* deepfence *dot* io](SECURITY.md).
+
+Please file GitHub issues as needed, and join the Deepfence Community [Slack channel](https://join.slack.com/t/deepfence-community/shared_invite/zt-podmzle9-5X~qYx8wMaLt9bGWwkSdgQ).
+
 
 # Disclaimer
 
