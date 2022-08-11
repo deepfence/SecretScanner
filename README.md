@@ -69,7 +69,7 @@ Thank you for using SecretScanner.
 
  * [<img src="https://img.shields.io/badge/documentation-read-green">](https://docs.deepfence.io/secretscanner/) Start with the documentation
  * [<img src="https://img.shields.io/badge/slack-@deepfence-blue.svg?logo=slack">](https://join.slack.com/t/deepfence-community/shared_invite/zt-podmzle9-5X~qYx8wMaLt9bGWwkSdgQ) Got a question, need some help?  Find the Deepfence team on Slack
- * [![GitHub issues](https://img.shields.io/github/issues/deepfence/PacketStreamer)](https://github.com/deepfence/SecretScaanner/issues) Got a feature request or found a bug? Raise an issue
+ * [![GitHub issues](https://img.shields.io/github/issues/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/issues) Got a feature request or found a bug? Raise an issue
  * [productsecurity *at* deepfence *dot* io](SECURITY.md): Found a security issue? Share it in confidence
  * Find out more at [deepfence.io](https://deepfence.io/)
 
