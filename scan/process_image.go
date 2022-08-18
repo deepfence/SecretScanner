@@ -502,6 +502,8 @@ type ImageExtractionResult struct {
 
 func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
 	tempDir, err := core.GetTmpDir(image)
+	fmt.Println("tempDir")
+	fmt.Println(tempDir)
 	if err != nil {
 		return nil, err
 	}
