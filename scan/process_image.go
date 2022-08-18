@@ -136,7 +136,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 
 		var scanDirPath string
 		if layer != "" {
-			scanDirPath = strings.TrimPrefix(path, baseDir +  "/" + layer)
+			scanDirPath = strings.TrimPrefix(path, baseDir+"/"+layer)
 			if scanDirPath == "" {
 				scanDirPath = "/"
 			}
@@ -287,6 +287,8 @@ func (imageScan *ImageScan) saveImageData() error {
 	imageName := imageScan.imageName
 	outputParam := path.Join(imageScan.tempDir, imageTarFileName)
 	drun, err := vessel.NewRuntime()
+	fmt.Println("Received vessel runtime:")
+	fmt.Println(drun)
 	if err != nil {
 		return err
 	}
@@ -366,6 +368,7 @@ func untar(tarName string, xpath string) (err error) {
 		// determine proper file path info
 		finfo := hdr.FileInfo()
 		fileName := hdr.Name
+		fmt.Println("fileName:" + fileName)
 		if filepath.IsAbs(fileName) {
 			fileName, err = filepath.Rel("/", fileName)
 			if err != nil {
@@ -374,13 +377,15 @@ func untar(tarName string, xpath string) (err error) {
 		}
 
 		absFileName := filepath.Join(absPath, fileName)
+		fmt.Println("absFileName:" + absFileName)
 		if strings.Contains(fileName, "/") {
 			relPath := strings.Split(fileName, "/")
 			var absDirPath string
 			if len(relPath) > 1 {
-				dirs := relPath[0: len(relPath) - 1]
+				dirs := relPath[0 : len(relPath)-1]
 				absDirPath = filepath.Join(absPath, strings.Join(dirs, "/"))
 			}
+			fmt.Println("absDirPath:" + absDirPath)
 			if err := os.MkdirAll(absDirPath, 0755); err != nil {
 				fmt.Println(err.Error())
 			}
@@ -402,7 +407,7 @@ func untar(tarName string, xpath string) (err error) {
 		// fmt.Printf("x %s\n", absFileName)
 		n, cpErr := io.Copy(file, tr)
 		if closeErr := file.Close(); closeErr != nil { // close file immediately
-			fmt.Println("clserr:"+closeErr.Error())
+			fmt.Println("clserr:" + closeErr.Error())
 			return err
 		}
 		if cpErr != nil {
