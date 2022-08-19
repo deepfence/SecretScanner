@@ -34,7 +34,7 @@ Use SecretScanner if you need a lightweight, efficient method to scan container 
 
 For full instructions, refer to the [SecretScanner Documentation](https://community.deepfence.io/docs/secretscanner/).
 
-![SampleJsonOutput](images/SampleSecretsOutput.png)
+![SecretScanner QuickStart](docs/docs/secretscanner/img/secretscanner.svg)
 
 Install docker and run SecretScanner on a container image using the following instructions:
 
