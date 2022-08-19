@@ -13,12 +13,9 @@ Deepfence SecretScanner can find unprotected secrets in container images or file
 
 Secrets are any kind of sensitive or private data which gives authorized users permission to access critical IT infrastructure (such as accounts, devices, network, cloud based services), applications, storage, databases and other kinds of critical data for an organization. For example, passwords, AWS access IDs, AWS secret access keys, Google OAuth Key etc. are secrets. 
 
-## Sample SecretScanner Output
+## SecretScanner in Action
 
-| ![SecretScanner JSON Output](img/secretscanner-output.png) |
-| :--: |
-| *Sample SecretScanner JSON output* |
-
+![SecretScanner in Action](img/secretscanner.svg)
 
 ## When to use SecretScanner
 
