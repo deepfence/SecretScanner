@@ -7,7 +7,7 @@ replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 require (
 	github.com/Jeffail/tunny v0.1.4
 	github.com/deepfence/agent-plugins-grpc v0.0.0-00010101000000-000000000000
-	github.com/deepfence/vessel v0.5.10
+	github.com/deepfence/vessel v0.6.1-0.20220821102815-c3a0de8bd9e0
 	github.com/fatih/color v1.13.0
 	github.com/flier/gohs v1.2.0
 	google.golang.org/grpc v1.46.0
