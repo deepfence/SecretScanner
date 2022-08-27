@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"github.com/gabriel-vasile/mimetype"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,7 +48,17 @@ func IsSkippableDir(path string, baseDir string) bool {
 
 // IsSkippableFileExtension Checks if the file extension is blacklisted
 func IsSkippableFileExtension(path string) bool {
-	extension := strings.ToLower(filepath.Ext(path))
+	extension := ""
+	fileType, err := mimetype.DetectFile(path)
+	if err == nil {
+		extension = fileType.Extension()
+		GetSession().Log.Debug("File ext info %s, file path %s", extension, path)
+
+	} else {
+		GetSession().Log.Error("detect file content type error %s", err)
+		GetSession().Log.Error("error file path %s", path)
+	}
+
 	for _, skippableExt := range session.Config.BlacklistedExtensions {
 		if extension == skippableExt {
 			return true

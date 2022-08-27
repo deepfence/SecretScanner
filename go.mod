@@ -15,6 +15,7 @@ require (
 )
 
 require (
+	github.com/gabriel-vasile/mimetype v1.4.0 // indirect
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/Microsoft/hcsshim v0.9.2 // indirect
 	github.com/containerd/cgroups v1.0.3 // indirect
