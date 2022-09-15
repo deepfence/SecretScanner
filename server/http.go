@@ -21,7 +21,7 @@ import (
 const (
 	scanStatusComplete      = "COMPLETE"
 	scanStatusError         = "ERROR"
-	defaultScanConcurrency  = 5
+	defaultScanConcurrency  = 2
 	secretScanIndexName     = "secret-scan"
 	secretScanLogsIndexName = "secret-scan-logs"
 )
