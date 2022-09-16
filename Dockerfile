@@ -24,9 +24,9 @@ ENV MGMT_CONSOLE_URL=deepfence-internal-router \
     MGMT_CONSOLE_PORT=443
 RUN apk update && apk add --no-cache --upgrade curl tar libstdc++ libgcc docker skopeo python3 py3-pip bash \
     && apk add hyperscan --repository=https://dl-cdn.alpinelinux.org/alpine/v3.13/community \
-    && curl -fsSLOk https://github.com/containerd/nerdctl/releases/download/v0.18.0/nerdctl-0.18.0-linux-amd64.tar.gz \
-    && tar Cxzvvf /usr/local/bin nerdctl-0.18.0-linux-amd64.tar.gz \
-    && rm nerdctl-0.18.0-linux-amd64.tar.gz \
+    && curl -fsSLOk https://github.com/containerd/nerdctl/releases/download/v0.23.0/nerdctl-0.23.0-linux-amd64.tar.gz \
+    && tar Cxzvvf /usr/local/bin nerdctl-0.23.0-linux-amd64.tar.gz \
+    && rm nerdctl-0.23.0-linux-amd64.tar.gz \
     && apk del curl
 WORKDIR /home/deepfence/usr
 COPY --from=builder /home/deepfence/src/SecretScanner/SecretScanner .
