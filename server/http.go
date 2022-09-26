@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -37,6 +39,10 @@ type imageParameters struct {
 	form      url.Values
 }
 
+type standaloneRequest struct {
+	ImageNameWithTag string `json:"image_name_with_tag"`
+}
+
 func init() {
 	var err error
 	scanConcurrency, err = strconv.Atoi(os.Getenv("SECRET_SCAN_CONCURRENCY"))
@@ -58,6 +64,52 @@ func runSecretScan(writer http.ResponseWriter, request *http.Request) {
 		fmt.Fprintf(writer, "{\"status\": \"Scan Queued\"}")
 		go processScans(request.PostForm)
 	}
+}
+
+func runSecretScanStandalone(writer http.ResponseWriter, request *http.Request) {
+	// fmt.Printf("rbody: %s\n", request.Body.)
+	requestDump, err := httputil.DumpRequest(request, true)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(string(requestDump))
+
+	b, err := ioutil.ReadAll(request.Body)
+	defer request.Body.Close()
+	if err != nil {
+		http.Error(writer, err.Error(), 500)
+		return
+	}
+	// decoder := json.NewDecoder(request.Body)
+	var req standaloneRequest
+	// err = decoder.Decode(&req)
+	err = json.Unmarshal(b, &req)
+	if err != nil {
+		fmt.Fprintf(writer, "Parse err: %v", err)
+		return
+	}
+	fmt.Printf("Secret Scan triggered for %s: ", req.ImageNameWithTag)
+	res, err := scan.ExtractAndScanImage(req.ImageNameWithTag)
+	if err != nil {
+		fmt.Fprintf(writer, "Image scan err: %v", err)
+		return
+	}
+
+	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ImageName: req.ImageNameWithTag}
+	jsonImageSecretsOutput.SetTime()
+	jsonImageSecretsOutput.SetImageId(res.ImageId)
+	jsonImageSecretsOutput.PrintJsonHeader()
+	jsonImageSecretsOutput.PrintJsonFooter()
+	jsonImageSecretsOutput.SetSecrets(res.Secrets)
+
+	outByte, err := json.Marshal(jsonImageSecretsOutput)
+	if err != nil {
+		fmt.Fprintf(writer, "report marshaling error: %v", err)
+		return
+	}
+
+	fmt.Fprintf(writer, string(outByte))
+	return
 }
 
 func processScans(form url.Values) {
@@ -196,6 +248,20 @@ func RunHttpServer(listenPort string) error {
 
 	http.ListenAndServe(":"+listenPort, nil)
 	fmt.Println("Http Server listening on " + listenPort)
+	return nil
+}
+
+func RunStandaloneHttpServer(listenPort string) error {
+	fmt.Println("Trying to start Http Server on " + listenPort)
+	http.Handle("/secret-scan", http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		runSecretScanStandalone(writer, request)
+	}))
+	http.HandleFunc("/secret-scan/ping", func(writer http.ResponseWriter, request *http.Request) {
+		fmt.Fprintf(writer, "pong")
+	})
+
+	fmt.Println("Http Server listening on " + listenPort)
+	http.ListenAndServe(":"+listenPort, nil)
 	return nil
 }
 

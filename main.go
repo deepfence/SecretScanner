@@ -27,6 +27,7 @@ package main
 import (
 	"flag"
 	"fmt"
+
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
@@ -40,8 +41,9 @@ const (
 )
 
 var (
-	socketPath = flag.String("socket-path", "", "The gRPC server unix socket path")
-	httpPort   = flag.String("http-port", "", "When set the http server will come up at port with df es as output")
+	socketPath         = flag.String("socket-path", "", "The gRPC server unix socket path")
+	httpPort           = flag.String("http-port", "", "When set the http server will come up at port with df es as output")
+	standAloneHTTPPort = flag.String("standalone-http-port", "", "use to run secret scanner as a standalone service")
 )
 
 // Read the regex signatures from config file, options etc.
@@ -183,6 +185,11 @@ func main() {
 		}
 	} else if *httpPort != "" {
 		err := server.RunHttpServer(*httpPort)
+		if err != nil {
+			core.GetSession().Log.Fatal("main: failed to serve through http: %v", err)
+		}
+	} else if *standAloneHTTPPort != "" {
+		err := server.RunStandaloneHttpServer(*standAloneHTTPPort)
 		if err != nil {
 			core.GetSession().Log.Fatal("main: failed to serve through http: %v", err)
 		}
