@@ -3,11 +3,11 @@
 [![Documentation](https://img.shields.io/badge/documentation-read-green)](https://community.deepfence.io/docs/secretscanner/)
 [![GitHub license](https://img.shields.io/github/license/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/blob/master/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/stargazers)
+[![Hacktoberfest](https://img.shields.io/github/hacktoberfest/2022/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/issues)
 [![GitHub issues](https://img.shields.io/github/issues/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/issues)
 [![Slack](https://img.shields.io/badge/slack-@deepfence-blue.svg?logo=slack)](https://join.slack.com/t/deepfence-community/shared_invite/zt-podmzle9-5X~qYx8wMaLt9bGWwkSdgQ)
 [![Twitter](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Fgithub.com%2Fdeepfence%2FSecretScanner)](https://twitter.com/intent/tweet?text=Check%20this%20out%3A&url=https%3A%2F%2Fgithub.com%2Fdeepfence%2FSecretScanner)
 
-## Announcing ThreatMapper 1.3.0
 
 > SecretScanner has been integrated into [ThreatMapper 1.3.0](https://github.com/deepfence/ThreatMapper), and also remains as this standalone project.
 
