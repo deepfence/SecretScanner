@@ -65,11 +65,19 @@ func GetSession() *Session {
 		}
 
 		pathSeparator := string(os.PathSeparator)
+		nameSeperator := "-"
 		var blacklistedPaths []string
 		for _, blacklistedPath := range session.Config.BlacklistedPaths {
 			blacklistedPaths = append(blacklistedPaths, strings.Replace(blacklistedPath, "{sep}", pathSeparator, -1))
 		}
 		session.Config.BlacklistedPaths = blacklistedPaths
+		var excludePaths []string
+		for _, excludePath := range session.Config.ExcludePaths {
+			excludePaths = append(excludePaths, strings.Replace(excludePath, "{sep}", pathSeparator, -1))
+			excludePaths = append(excludePaths, strings.Replace(excludePath, "{name_sep}", nameSeperator, -1))
+
+		}
+		session.Config.ExcludePaths = excludePaths
 
 		session.Start()
 	})

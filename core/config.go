@@ -13,6 +13,7 @@ type Config struct {
 	BlacklistedStrings           []string          `yaml:"blacklisted_strings"`
 	BlacklistedExtensions        []string          `yaml:"blacklisted_extensions"`
 	BlacklistedPaths             []string          `yaml:"blacklisted_paths"`
+	ExcludePaths                 []string          `yaml:"exclude_paths"`
 	BlacklistedEntropyExtensions []string          `yaml:"blacklisted_entropy_extensions"`
 	Signatures                   []ConfigSignature `yaml:"signatures"`
 }

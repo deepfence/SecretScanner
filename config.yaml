@@ -2,7 +2,9 @@
 
 blacklisted_strings: [] # skip matches containing any of these strings (case sensitive)
 blacklisted_extensions: [".exe", ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".psd", ".xcf", ".zip", ".tar.gz", ".ttf", ".lock", ".pem"]
-blacklisted_paths: ["{sep}var{sep}lib{sep}docker", "{sep}var{sep}lib{sep}containerd", "{sep}bin", "{sep}boot", "{sep}dev", "{sep}lib", "{sep}lib64", "{sep}media", "{sep}proc", "{sep}run", "{sep}sbin", "{sep}usr{sep}lib", "{sep}sys", "{sep}home{sep}kubernetes"] # use {sep} for the OS' path seperator (i.e. / or \)
+blacklisted_paths: ["{sep}var{sep}lib{sep}docker", "{sep}var-lib-docker","{sep}var{sep}lib{sep}containerd", "{sep}var-lib-containerd","{sep}bin", "{sep}boot", "{sep}dev", "{sep}lib", "{sep}lib64", "{sep}media", "{sep}proc", "{sep}run", "{sep}sbin", "{sep}usr{sep}lib", "{sep}sys", "{sep}home{sep}kubernetes"] # use {sep} for the OS' path seperator (i.e. / or \)
+exclude_paths: ["{sep}var{sep}lib{sep}docker", "{sep}var{name_sep}lib{name_sep}docker","{sep}var{sep}lib{sep}containerd", "{sep}var{name_sep}lib{name_sep}containerd"] # use {sep} for the OS' path seperator and {name_sep} for -  (i.e. / or \)
+
 
 signatures:
   - part:  'extension'
