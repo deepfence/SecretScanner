@@ -118,10 +118,23 @@ func getDefaultConfig() (*Config, error) {
 	return config, nil
 }
 
-func loadConfigFile(dir string) (*Config, error) {
-	config := &Config{}
+func loadConfigFile(configPath string) (*Config, error) {
+	var (
+		config *Config = &Config{}
+		data   []byte
+		err    error
+	)
 
-	data, err := ioutil.ReadFile(path.Join(dir, "config.yaml"))
+	fstat, err := os.Stat(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if fstat.IsDir() {
+		data, err = ioutil.ReadFile(path.Join(configPath, "config.yaml"))
+	} else {
+		data, err = ioutil.ReadFile(configPath)
+	}
 	if err != nil {
 		return nil, err
 	}
