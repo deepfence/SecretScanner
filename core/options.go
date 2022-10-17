@@ -3,6 +3,7 @@ package core
 import (
 	"flag"
 	"os"
+	"strings"
 )
 
 const (
@@ -17,7 +18,8 @@ type Options struct {
 	TempDirectory   *string
 	Local           *string
 	HostMountPath   *string
-	ConfigPath      *string
+	ConfigPath      *repeatableStringValue
+	MergeConfigs    *bool
 	OutputPath      *string
 	JsonFilename    *string
 	ImageName       *string
@@ -26,7 +28,24 @@ type Options struct {
 	MaxSecrets      *uint
 	ContainerId     *string
 	ContainerNS     *string
-	Quiet			*bool
+	Quiet           *bool
+}
+
+type repeatableStringValue struct {
+	values []string
+}
+
+func (v *repeatableStringValue) String() string {
+	return strings.Join(v.values, ", ")
+}
+
+func (v *repeatableStringValue) Set(s string) error {
+	v.values = append(v.values, s)
+	return nil
+}
+
+func (v *repeatableStringValue) Values() []string {
+	return v.values
 }
 
 func ParseOptions() (*Options, error) {
@@ -37,7 +56,8 @@ func ParseOptions() (*Options, error) {
 		TempDirectory:   flag.String("temp-directory", os.TempDir(), "Directory to process and store repositories/matches"),
 		Local:           flag.String("local", "", "Specify local directory (absolute path) which to scan. Scans only given directory recursively."),
 		HostMountPath:   flag.String("host-mount-path", "", "If scanning the host, specify the host mount path for path exclusions to work correctly."),
-		ConfigPath:      flag.String("config-path", "", "Searches for config.yaml from given directory. If not set, tries to find it from SecretScanner binary's and current directory"),
+		ConfigPath:      &repeatableStringValue{},
+		MergeConfigs:    flag.Bool("merge-configs", false, "Merge config files specified by --config-path into the default config"),
 		OutputPath:      flag.String("output-path", ".", "Output directory where json file will be stored. If not set, it will output to current directory"),
 		JsonFilename:    flag.String("json-filename", "", "Output json file name. If not set, it will automatically create a filename based on image or dir name"),
 		ImageName:       flag.String("image-name", "", "Name of the image along with tag to scan for secrets"),
@@ -46,8 +66,9 @@ func ParseOptions() (*Options, error) {
 		MaxSecrets:      flag.Uint("max-secrets", 1000, "Maximum number of secrets to find in one container image or file system."),
 		ContainerId:     flag.String("container-id", "", "Id of existing container ID"),
 		ContainerNS:     flag.String("container-ns", "", "Namespace of existing container to scan, empty for docker runtime"),
-		Quiet: 			 flag.Bool("quiet", false, "Don't display any output in stdout"),
+		Quiet:           flag.Bool("quiet", false, "Don't display any output in stdout"),
 	}
+	flag.Var(options.ConfigPath, "config-path", "Searches for config.yaml from given directory. If not set, tries to find it from SecretScanner binary's and current directory.  Can be specified multiple times.")
 	flag.Parse()
 	return options, nil
 }
