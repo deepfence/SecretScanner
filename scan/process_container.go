@@ -11,18 +11,19 @@ import (
 	"github.com/deepfence/vessel"
 	vesselConstants "github.com/deepfence/vessel/constants"
 	containerdRuntime "github.com/deepfence/vessel/containerd"
+	crioRuntime "github.com/deepfence/vessel/crio"
 	dockerRuntime "github.com/deepfence/vessel/docker"
 )
 
 var (
-	containerTarFileName   = "save-output.tar"
+	containerTarFileName = "save-output.tar"
 )
 
 type ContainerScan struct {
-	containerId     string
-	tempDir         string
-	namespace       string
-	numSecrets      uint
+	containerId string
+	tempDir     string
+	namespace   string
+	numSecrets  uint
 }
 
 // Function to retrieve contents of container
@@ -42,22 +43,27 @@ func (containerScan *ContainerScan) extractFileSystem() error {
 		containerRuntimeInterface = dockerRuntime.New()
 	case vesselConstants.CONTAINERD:
 		containerRuntimeInterface = containerdRuntime.New(endpoint)
+	case vesselConstants.CRIO:
+		containerRuntimeInterface = crioRuntime.New(endpoint)
 	}
 	if containerRuntimeInterface == nil {
 		fmt.Println("Error: Could not detect container runtime")
 		os.Exit(1)
 	}
-	err = containerRuntimeInterface.ExtractFileSystemContainer(containerScan.containerId, containerScan.namespace, containerScan.tempDir + ".tar", endpoint)
+	err = containerRuntimeInterface.ExtractFileSystemContainer(
+		containerScan.containerId, containerScan.namespace,
+		containerScan.tempDir+".tar", endpoint,
+	)
 
 	if err != nil {
 		return err
 	}
 	runCommand("mkdir", containerScan.tempDir)
-	_, stdErr, retVal := runCommand("tar", "-xf", containerScan.tempDir + ".tar", "-C"+containerScan.tempDir)
+	_, stdErr, retVal := runCommand("tar", "-xf", containerScan.tempDir+".tar", "-C"+containerScan.tempDir)
 	if retVal != 0 {
 		return errors.New(stdErr)
 	}
-	runCommand("rm", containerScan.tempDir + ".tar")
+	runCommand("rm", containerScan.tempDir+".tar")
 	return nil
 }
 
@@ -85,7 +91,7 @@ func (containerScan *ContainerScan) scan() ([]output.SecretFound, error) {
 }
 
 type ContainerExtractionResult struct {
-	Secrets []output.SecretFound
+	Secrets     []output.SecretFound
 	ContainerId string
 }
 
