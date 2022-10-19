@@ -7,14 +7,14 @@ replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 require (
 	github.com/Jeffail/tunny v0.1.4
 	github.com/deepfence/agent-plugins-grpc v0.0.0-00010101000000-000000000000
-	 github.com/deepfence/vessel v0.7.0
+	github.com/deepfence/vessel v0.7.0
 	github.com/fatih/color v1.13.0
 	github.com/flier/gohs v1.2.0
 	google.golang.org/grpc v1.49.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace github.com/deepfence/vessel v0.7.0 => github.com/deepfence/vessel cri-o
+replace github.com/deepfence/vessel v0.7.0 => github.com/deepfence/vessel v0.7.1-0.20221019033652-a6bc0c128ca6
 
 require (
 	github.com/Microsoft/go-winio v0.5.1 // indirect
