@@ -259,6 +259,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deepfence/vessel v0.8.1-0.20221027103030-e1f142487be4 h1:yAw6LtWhDEktXKfgCTFbVWsF1Goup0qeYj3lAcXPPFw=
 github.com/deepfence/vessel v0.8.1-0.20221027103030-e1f142487be4/go.mod h1:Xi7FQo3uGb5AvzjDNm1GpmzMbB1lnsi8sHG85pZgHco=
+github.com/deepfence/vessel v0.8.1-0.20221027105303-0d5234873fcf h1:sy+EiL2TvV9CIhmCcpJayjAy7xtuXmQm4672Am/pqls=
+github.com/deepfence/vessel v0.8.1-0.20221027105303-0d5234873fcf/go.mod h1:Xi7FQo3uGb5AvzjDNm1GpmzMbB1lnsi8sHG85pZgHco=
 github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8lFg6daOBZbT6/BDGIz6Y3WFGn8juu6G+CQ6LHtl0=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
