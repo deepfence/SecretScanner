@@ -257,8 +257,8 @@ github.com/d2g/hardwareaddr v0.0.0-20190221164911-e7d9fbe030e4/go.mod h1:bMl4RjI
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/deepfence/vessel v0.8.1-0.20221026143352-1357c6069832 h1:h5mxXA8GK/Yp7yeHTmX/M8AxTmBMQgwFu306M9FZoTk=
-github.com/deepfence/vessel v0.8.1-0.20221026143352-1357c6069832/go.mod h1:Xi7FQo3uGb5AvzjDNm1GpmzMbB1lnsi8sHG85pZgHco=
+github.com/deepfence/vessel v0.8.1-0.20221027094915-fc1a8be80529 h1:8BsxexrGOZMoKD1dCtJa0bk7Z7fd90ddEyVA89jvwKs=
+github.com/deepfence/vessel v0.8.1-0.20221027094915-fc1a8be80529/go.mod h1:Xi7FQo3uGb5AvzjDNm1GpmzMbB1lnsi8sHG85pZgHco=
 github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8lFg6daOBZbT6/BDGIz6Y3WFGn8juu6G+CQ6LHtl0=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
