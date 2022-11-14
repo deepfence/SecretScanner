@@ -93,8 +93,8 @@ def main():
             try:
                 registry_scanner = SecretScanDockerHubImages(
                     scan_details["docker_hub_namespace"],
-                    scan_details["docker_hub_username"],
-                    scan_details["docker_hub_password"])
+                    scan_details.get("docker_hub_username", ""),
+                    scan_details.get("docker_hub_password", ""))
             except Exception as ex:
                 print("Error: {}\n".format(ex))
                 arg_parser.print_help()
