@@ -138,7 +138,8 @@ func processImage(imageName string, scanId string, form url.Values) {
 	imageSaveCommand := exec.Command("python3", "/home/deepfence/usr/registry_image_save.py", "--image_name_with_tag", imageName, "--registry_type", form.Get("registry_type"),
 		"--mgmt_console_url", output.MgmtConsoleUrl, "--deepfence_key", output.DeepfenceKey, "--credential_id", form.Get("credential_id"),
 		"--output_folder", tempFolder)
-	_, err = runCommand(imageSaveCommand, "Image Save:"+imageName)
+	out, err := runCommand(imageSaveCommand, "Image Save:"+imageName)
+	fmt.Println("Output from python save:" + out.String())
 	if err != nil {
 		fmt.Println("error saving image:" + err.Error())
 		return

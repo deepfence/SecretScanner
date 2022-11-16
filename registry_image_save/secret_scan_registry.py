@@ -166,7 +166,11 @@ class SecretScanRegistryImages:
         img_name = image_name_with_tag
         save_path = output_folder
         mkdir_recursive(save_path)
-        cmd_line = ["skopeo", "--insecure-policy", "copy", "--authfile", self.docker_config_file,
+        if self.docker_config_file == "" or self.docker_config_file is None:
+            cmd_line = ["skopeo", "--insecure-policy", "copy",
+                        "docker://{}".format(img_name), "docker-archive://{}/save-output.tar".format(save_path)]
+        else:
+            cmd_line = ["skopeo", "--insecure-policy", "copy", "--authfile", self.docker_config_file,
                     "docker://{}".format(img_name), "docker-archive://{}/save-output.tar".format(save_path)]
         pid_val = Popen(cmd_line, stdin=PIPE, stdout=PIPE, shell=False)
         pid_list.append(pid_val)
@@ -350,7 +354,10 @@ class SecretScanDockerHubImages(SecretScanRegistryImages):
         super().__init__()
         self.docker_config_path = docker_config_path_prefix + REGISTRY_TYPE_DOCKER_HUB
         self.registry_type = REGISTRY_TYPE_DOCKER_HUB
-        self.docker_config_file = "{0}/{1}".format(self.docker_config_path, config_json)
+        if docker_hub_username:
+            self.docker_config_file = "{0}/{1}".format(self.docker_config_path, config_json)
+        else:
+            self.docker_config_file = ""
         mkdir_recursive(self.docker_config_path)
         self.docker_hub_namespace = docker_hub_namespace
         self.docker_hub_username = docker_hub_username
@@ -358,6 +365,8 @@ class SecretScanDockerHubImages(SecretScanRegistryImages):
         self.docker_hub_url = "https://hub.docker.com/v2"
 
     def validate(self):
+        if self.docker_hub_username == "" or self.docker_hub_username is None:
+            return True
         try:
             resp = requests.post(self.docker_hub_url + "/users/login/",
                                  json={"username": self.docker_hub_username, "password": self.docker_hub_password})
@@ -372,14 +381,18 @@ class SecretScanDockerHubImages(SecretScanRegistryImages):
                         filter_past_days=max_days):
         images_list = []
         try:
-            resp = requests.post(self.docker_hub_url + "/users/login/",
-                                 json={"username": self.docker_hub_username, "password": self.docker_hub_password})
-            auth_token = resp.json().get("token", "")
-            if not auth_token:
-                return images_list
+            auth_token = None
+            if self.docker_hub_username:
+                resp = requests.post(self.docker_hub_url + "/users/login/",
+                                     json={"username": self.docker_hub_username, "password": self.docker_hub_password})
+                auth_token = resp.json().get("token", "")
+                if not auth_token:
+                    return images_list
             image_from_date = datetime.now() - timedelta(days=filter_past_days)
             image_from_date = image_from_date.replace(hour=0, minute=0, second=0, microsecond=0)
-            req_header = {"Authorization": "JWT " + auth_token}
+            req_header = {}
+            if auth_token is not None:
+                req_header = {"Authorization": "JWT " + auth_token}
             resp = requests.get(
                 self.docker_hub_url + "/repositories/" + self.docker_hub_namespace + "/?page_size=100",
                 headers=req_header)
@@ -446,10 +459,11 @@ class SecretScanDockerHubImages(SecretScanRegistryImages):
         return images_list
 
     def docker_login(self):
-        with open(self.docker_config_file, "w") as f:
-            auth_enc = base64.b64encode(
-                "{0}:{1}".format(self.docker_hub_username, self.docker_hub_password).encode('ascii')).decode("utf-8")
-            json.dump({"auths": {"https://index.docker.io/v1/": {"auth": auth_enc}}}, f)
+        if self.docker_hub_username:
+            with open(self.docker_config_file, "w") as f:
+                auth_enc = base64.b64encode(
+                    "{0}:{1}".format(self.docker_hub_username, self.docker_hub_password).encode('ascii')).decode("utf-8")
+                json.dump({"auths": {"https://index.docker.io/v1/": {"auth": auth_enc}}}, f)
 
 
 class SecretScanDockerPrivateRegistryImages(SecretScanRegistryImages):
@@ -458,7 +472,8 @@ class SecretScanDockerPrivateRegistryImages(SecretScanRegistryImages):
         super().__init__()
         self.docker_config_path = docker_config_path_prefix + REGISTRY_TYPE_DOCKER_PVT
         self.registry_type = REGISTRY_TYPE_DOCKER_PVT
-        self.docker_config_file = "{0}/{1}".format(self.docker_config_path, config_json)
+        if docker_pvt_registry_username:
+            self.docker_config_file = "{0}/{1}".format(self.docker_config_path, config_json)
         mkdir_recursive(self.docker_config_path)
         if not docker_pvt_registry_url:
             logging.error('SecretScanDockerPrivateRegistryImages: empty registry_url')
@@ -496,7 +511,9 @@ class SecretScanDockerPrivateRegistryImages(SecretScanRegistryImages):
                         filter_past_days=max_days):
         images_list = []
         verify, cert = self.get_self_signed_certs()
-        auth = (self.docker_pvt_registry_username, self.docker_pvt_registry_password)
+        auth = None
+        if self.docker_pvt_registry_username:
+            auth = (self.docker_pvt_registry_username, self.docker_pvt_registry_password)
         catalog_resp = requests.get("{0}/v2/_catalog".format(self.docker_pvt_registry_url),
                                     verify=verify, cert=cert, auth=auth)
         if catalog_resp.status_code != 200:
@@ -586,11 +603,12 @@ class SecretScanDockerPrivateRegistryImages(SecretScanRegistryImages):
         return images_list
 
     def docker_login(self):
-        with open(self.docker_config_file, "w") as f:
-            auth_enc = base64.b64encode(
-                "{0}:{1}".format(self.docker_pvt_registry_username, self.docker_pvt_registry_password).encode(
-                    'ascii')).decode("utf-8")
-            json.dump({"auths": {self.docker_registry_name: {"auth": auth_enc}}}, f)
+        if self.docker_pvt_registry_username:
+            with open(self.docker_config_file, "w") as f:
+                auth_enc = base64.b64encode(
+                    "{0}:{1}".format(self.docker_pvt_registry_username, self.docker_pvt_registry_password).encode(
+                        'ascii')).decode("utf-8")
+                json.dump({"auths": {self.docker_registry_name: {"auth": auth_enc}}}, f)
 
 
 class SecretScanAzureRegistryImages(SecretScanDockerPrivateRegistryImages):

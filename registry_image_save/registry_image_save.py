@@ -93,8 +93,8 @@ def main():
             try:
                 registry_scanner = SecretScanDockerHubImages(
                     scan_details["docker_hub_namespace"],
-                    scan_details["docker_hub_username"],
-                    scan_details["docker_hub_password"])
+                    scan_details.get("docker_hub_username", ""),
+                    scan_details.get("docker_hub_password", ""))
             except Exception as ex:
                 print("Error: {}\n".format(ex))
                 arg_parser.print_help()
@@ -232,9 +232,9 @@ def main():
             docker_hub_args.add_argument("--docker_hub_namespace", metavar="docker_hub_namespace", required=True,
                                          type=str, help="Organization namespace. Eg: deepfenceio")
             docker_hub_args.add_argument("--docker_hub_username", metavar="docker_hub_username",
-                                         type=str, required=True, help="Docker hub username")
+                                         type=str, required=False, help="Docker hub username")
             docker_hub_args.add_argument("--docker_hub_password", metavar="docker_hub_password",
-                                         type=str, required=True, help="Docker hub password")
+                                         type=str, required=False, help="Docker hub password")
             cmd_args = arg_parser.parse_args()
             try:
                 registry_scanner = SecretScanDockerHubImages(
