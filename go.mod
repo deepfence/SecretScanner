@@ -1,6 +1,6 @@
 module github.com/deepfence/SecretScanner
 
-go 1.18
+go 1.19
 
 replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 
@@ -10,7 +10,7 @@ require (
 	github.com/deepfence/vessel v0.8.1
 	github.com/fatih/color v1.13.0
 	github.com/flier/gohs v1.2.0
-	google.golang.org/grpc v1.49.0
+	google.golang.org/grpc v1.50.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
