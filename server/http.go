@@ -279,7 +279,7 @@ func runCommand(cmd *exec.Cmd, operation string) (*bytes.Buffer, error) {
 }
 
 func format(data map[string]interface{}) ([]byte, error) {
-	encoded, err := json.Marshal(&data)
+	encoded, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
