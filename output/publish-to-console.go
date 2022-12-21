@@ -43,6 +43,7 @@ func IngestSecretScanResults(secretScanMsg string, index string) error {
 		}
 		httpReq.Close = true
 		httpReq.Header.Add("deepfence-key", DeepfenceKey)
+		httpReq.Header.Add("Content-Type", "application/vnd.kafka.json.v2+json")
 		resp, err := httpClient.Do(httpReq)
 		if err != nil {
 			return err
