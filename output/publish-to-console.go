@@ -37,7 +37,7 @@ func IngestSecretScanResults(secretScanMsg string, index string) error {
 		return err
 	}
 	for {
-		httpReq, err := http.NewRequest("POST", "https://"+MgmtConsoleUrl+"/df-api/ingest?doc_type="+index, postReader)
+		httpReq, err := http.NewRequest("POST", "https://"+MgmtConsoleUrl+"/ingest/topics/"+index, postReader)
 		if err != nil {
 			return err
 		}

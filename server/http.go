@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Jeffail/tunny"
+	"github.com/deepfence/SecretScanner/core"
+	"github.com/deepfence/SecretScanner/output"
+	"github.com/deepfence/SecretScanner/scan"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -13,11 +17,6 @@ import (
 	"os/exec"
 	"reflect"
 	"strconv"
-
-	"github.com/Jeffail/tunny"
-	"github.com/deepfence/SecretScanner/core"
-	"github.com/deepfence/SecretScanner/output"
-	"github.com/deepfence/SecretScanner/scan"
 )
 
 const (
@@ -162,7 +161,7 @@ func scanAndPublish(imageName string, scanId string, tempDir string, postForm ur
 	}
 	secretScanLogDoc["image_name_with_tag_list"] = nil
 	secretScanLogDoc["scan_id_list"] = nil
-	byteJson, err := json.Marshal(secretScanLogDoc)
+	byteJson, err := format(secretScanLogDoc)
 	if err != nil {
 		fmt.Println("Error in marshalling secret in_progress log object to json:" + err.Error())
 	} else {
@@ -175,7 +174,7 @@ func scanAndPublish(imageName string, scanId string, tempDir string, postForm ur
 	if err != nil {
 		secretScanLogDoc["scan_status"] = "ERROR"
 		secretScanLogDoc["scan_message"] = err.Error()
-		byteJson, err := json.Marshal(secretScanLogDoc)
+		byteJson, err := format(secretScanLogDoc)
 		if err != nil {
 			fmt.Println("Error in marshalling secret result object to json:" + err.Error())
 			return
@@ -210,7 +209,7 @@ func scanAndPublish(imageName string, scanId string, tempDir string, postForm ur
 				secretScanDoc[typeOfS.Field(index).Name] = values.Field(index).Interface()
 			}
 		}
-		byteJson, err := json.Marshal(secretScanDoc)
+		byteJson, err := format(secretScanDoc)
 		if err != nil {
 			fmt.Println("Error in marshalling secret result object to json:" + err.Error())
 			return
@@ -228,7 +227,7 @@ func scanAndPublish(imageName string, scanId string, tempDir string, postForm ur
 	}
 	secretScanLogDoc["time_stamp"] = timestamp
 	secretScanLogDoc["@timestamp"] = currTime
-	byteJson, err = json.Marshal(secretScanLogDoc)
+	byteJson, err = format(secretScanLogDoc)
 	if err != nil {
 		fmt.Println("Error in marshalling secretScanLogDoc to json:" + err.Error())
 		return
@@ -277,4 +276,13 @@ func runCommand(cmd *exec.Cmd, operation string) (*bytes.Buffer, error) {
 		return nil, errors.New(operation + fmt.Sprint(errorOnRun) + ": " + stderr.String())
 	}
 	return &out, nil
+}
+
+func format(data map[string]interface{}) ([]byte, error) {
+	encoded, err := json.Marshal(&data)
+	if err != nil {
+		return nil, err
+	}
+	value := "{\"value\":" + string(encoded) + "}"
+	return []byte("{\"records\":[" + value + "]}"), nil
 }
