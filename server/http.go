@@ -284,5 +284,7 @@ func format(data map[string]interface{}) ([]byte, error) {
 		return nil, err
 	}
 	value := "{\"value\":" + string(encoded) + "}"
+	fmt.Println("value:")
+	fmt.Println(value)
 	return []byte("{\"records\":[" + value + "]}"), nil
 }
