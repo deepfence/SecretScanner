@@ -1,0 +1,12 @@
+FROM golang:1.19.4-bullseye
+RUN apt update
+RUN apt install -y libboost-dev cmake git ragel protoc-gen-go
+WORKDIR /tmp/src
+RUN git clone https://github.com/deepfence/SecretScanner.git
+RUN git clone https://github.com/intel/hyperscan.git
+RUN cd hyperscan && mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=MinSizeRel
+WORKDIR /tmp/src/SecretScanner
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1 \
+    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+RUN make clean
+RUN make

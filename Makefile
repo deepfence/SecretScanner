@@ -11,6 +11,6 @@ clean:
 	-rm ./SecretScanner
 
 SecretScanner: $(PWD)/**/*.go $(PWD)/agent-plugins-grpc/proto/*.go
-	go build -buildvcs=false -v .
+	PKG_CONFIG_PATH=/tmp/src/hyperscan/build CGO_LDFLAGS="-L /tmp/src/hyperscan/build/lib -static" CGO_CFLAGS="-I/tmp/src/hyperscan/src" go build ./main.go
 
 .PHONY: clean
