@@ -2,7 +2,7 @@ FROM golang:1.19.4-bullseye
 RUN apt update
 RUN apt install -y libboost-dev cmake git ragel protoc-gen-go
 WORKDIR /tmp/src
-RUN git clone https://github.com/deepfence/SecretScanner.git
+RUN git clone --branch cli https://github.com/deepfence/SecretScanner.git
 RUN git clone https://github.com/intel/hyperscan.git
 RUN cd hyperscan && mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=MinSizeRel
 WORKDIR /tmp/src/SecretScanner
