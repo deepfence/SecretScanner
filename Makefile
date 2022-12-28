@@ -11,6 +11,10 @@ clean:
 	-rm ./SecretScanner
 
 SecretScanner: $(PWD)/**/*.go $(PWD)/agent-plugins-grpc/proto/*.go
-	go build
+	go build $(GO_BUILD_EXTRA)
 
-.PHONY: clean
+static:
+	docker build -t static-secret-scanner -f Dockerfile-static .
+	docker run -v $(PWD):/go/src/SecretScanner static-secret-scanner
+
+.PHONY: clean static

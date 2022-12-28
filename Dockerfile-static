@@ -1,0 +1,24 @@
+FROM golang:1.19.4-alpine
+
+RUN apk add --upgrade gcc musl-dev pkgconfig g++ make git protoc cmake boost-dev
+RUN apk add hyperscan-dev --repository=https://dl-cdn.alpinelinux.org/alpine/v3.13/community
+RUN apk add ragel
+
+ENV PKG_CONFIG_PATH=/usr/local/include/hs/ \
+    CGO_CFLAGS="-I/usr/local/include/hyperscan/src" \
+    LD_LIBRARY_PATH=/usr/local/lib:/usr/local/include/hs/lib:$LD_LIBRARY_PATH
+
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1 \
+    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+
+WORKDIR /go/src
+RUN git clone https://github.com/intel/hyperscan.git
+RUN cd hyperscan && mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=MinSizeRel
+
+WORKDIR /go/src/SecretScanner
+ENV PKG_CONFIG_PATH=/go/src/hyperscan/build
+ENV CGO_LDFLAGS="-L /go/src/hyperscan/build/lib -static"
+ENV CGO_CFLAGS="-I/go/src/hyperscan/src"
+ENV GO_BUILD_EXTRA="-buildvcs=false"
+
+ENTRYPOINT ["/bin/sh", "-c", "make clean && make"]
