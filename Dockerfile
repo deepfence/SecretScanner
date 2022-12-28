@@ -14,7 +14,7 @@ RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1 \
 WORKDIR /home/deepfence/src/SecretScanner
 COPY . .
 RUN make clean
-RUN make
+RUN PKG_CONFIG_PATH=/tmp/src/hyperscan/build CGO_LDFLAGS="-L /tmp/src/hyperscan/build/lib -static" CGO_CFLAGS="-I/tmp/src/hyperscan/src" make
 
 FROM alpine:3.15
 MAINTAINER DeepFence
