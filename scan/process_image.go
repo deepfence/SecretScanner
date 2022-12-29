@@ -136,7 +136,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 
 		var scanDirPath string
 		if layer != "" {
-			scanDirPath = strings.TrimPrefix(path, baseDir +  "/" + layer)
+			scanDirPath = strings.TrimPrefix(path, baseDir+"/"+layer)
 			if scanDirPath == "" {
 				scanDirPath = "/"
 			}
@@ -190,14 +190,14 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 				session.Log.Error("scanSecretsInDir: %s", err)
 				// return tempSecretsFound, err
 			}
-			if *session.Options.Quiet {
+			if !*session.Options.Quiet {
 				output.PrintColoredSecrets(secrets, isFirstSecret)
 			}
 			tempSecretsFound = append(tempSecretsFound, secrets...)
 		}
 
 		secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, numSecrets)
-		if *session.Options.Quiet {
+		if !*session.Options.Quiet {
 			output.PrintColoredSecrets(secrets, isFirstSecret)
 		}
 		tempSecretsFound = append(tempSecretsFound, secrets...)
@@ -378,7 +378,7 @@ func untar(tarName string, xpath string) (err error) {
 			relPath := strings.Split(fileName, "/")
 			var absDirPath string
 			if len(relPath) > 1 {
-				dirs := relPath[0: len(relPath) - 1]
+				dirs := relPath[0 : len(relPath)-1]
 				absDirPath = filepath.Join(absPath, strings.Join(dirs, "/"))
 			}
 			if err := os.MkdirAll(absDirPath, 0755); err != nil {
@@ -402,7 +402,7 @@ func untar(tarName string, xpath string) (err error) {
 		// fmt.Printf("x %s\n", absFileName)
 		n, cpErr := io.Copy(file, tr)
 		if closeErr := file.Close(); closeErr != nil { // close file immediately
-			fmt.Println("clserr:"+closeErr.Error())
+			fmt.Println("clserr:" + closeErr.Error())
 			return err
 		}
 		if cpErr != nil {
