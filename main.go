@@ -59,14 +59,14 @@ func findSecretsInImage(image string) (*output.JsonImageSecretsOutput, error) {
 
 	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ImageName: image}
 	jsonImageSecretsOutput.SetTime()
-	if !*session.Options.Quiet {
+	if !(*session.Options.Quiet) {
 		jsonImageSecretsOutput.PrintJsonHeader()
 	}
 	res, err := scan.ExtractAndScanImage(image)
 	if err != nil {
 		return nil, err
 	}
-	if !*session.Options.Quiet {
+	if !(*session.Options.Quiet) {
 		jsonImageSecretsOutput.PrintJsonFooter()
 	}
 	jsonImageSecretsOutput.SetSecrets(res.Secrets)
@@ -84,7 +84,7 @@ func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
 	var numSecrets uint = 0
 	jsonDirSecretsOutput := output.JsonDirSecretsOutput{DirName: *session.Options.Local}
 	jsonDirSecretsOutput.SetTime()
-	if !*session.Options.Quiet {
+	if !(*session.Options.Quiet) {
 		jsonDirSecretsOutput.PrintJsonHeader()
 	}
 
@@ -93,7 +93,7 @@ func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
 		core.GetSession().Log.Error("findSecretsInDir: %s", err)
 		return nil, err
 	}
-	if !*session.Options.Quiet {
+	if !(*session.Options.Quiet) {
 		jsonDirSecretsOutput.PrintJsonFooter()
 	}
 	jsonDirSecretsOutput.SetSecrets(secrets)
@@ -110,14 +110,14 @@ func findSecretsInContainer(containerId string, containerNS string) (*output.Jso
 
 	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ContainerId: containerId}
 	jsonImageSecretsOutput.SetTime()
-	if !*session.Options.Quiet {
+	if !(*session.Options.Quiet) {
 		jsonImageSecretsOutput.PrintJsonHeader()
 	}
 	res, err := scan.ExtractAndScanContainer(containerId, containerNS)
 	if err != nil {
 		return nil, err
 	}
-	if !*session.Options.Quiet {
+	if !(*session.Options.Quiet) {
 		jsonImageSecretsOutput.PrintJsonFooter()
 	}
 	jsonImageSecretsOutput.SetSecrets(res.Secrets)
