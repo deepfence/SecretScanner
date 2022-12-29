@@ -94,7 +94,6 @@ func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
 	defer core.DeleteTmpDir(tempDir)
 
 	tempSecretsFound, err := imageScan.processImageLayers(tempDir)
-	fmt.Printf("length of tempSecretsFound at 97 processImage: %d \n", len(tempSecretsFound))
 	if err != nil {
 		core.GetSession().Log.Error("scanImage: %s", err)
 		return tempSecretsFound, err
@@ -137,7 +136,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 
 		var scanDirPath string
 		if layer != "" {
-			scanDirPath = strings.TrimPrefix(path, baseDir+"/"+layer)
+			scanDirPath = strings.TrimPrefix(path, baseDir +  "/" + layer)
 			if scanDirPath == "" {
 				scanDirPath = "/"
 			}
@@ -185,7 +184,6 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			// fmt.Println(relPath, file.Filename, file.Extension, layer)
 			secrets, err = signature.MatchPatternSignatures(contents, relPath, file.Filename, file.Extension,
 				layer, numSecrets, matchedRuleSet)
-			fmt.Printf("length of secrets at 188 processImage: %d \n", len(secrets))
 			if err != nil {
 				session.Log.Info("relPath: %s, Filename: %s, Extension: %s, layer: %s",
 					relPath, file.Filename, file.Extension, layer)
@@ -196,16 +194,14 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 				output.PrintColoredSecrets(secrets, isFirstSecret)
 			}
 			tempSecretsFound = append(tempSecretsFound, secrets...)
-			fmt.Printf("length of tempSecretsFound at 199 processImage: %d \n", len(tempSecretsFound))
 		}
 
 		secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, numSecrets)
-		fmt.Printf("length of secrets at 203 processImage: %d \n", len(secrets))
 		if *session.Options.Quiet {
 			output.PrintColoredSecrets(secrets, isFirstSecret)
 		}
 		tempSecretsFound = append(tempSecretsFound, secrets...)
-		fmt.Printf("length of tempSecretsFound at 208 processImage: %d \n", len(tempSecretsFound))
+
 		// Don't report secrets if number of secrets exceeds MAX value
 		if *numSecrets >= *session.Options.MaxSecrets {
 			return maxSecretsExceeded
@@ -221,7 +217,6 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			fmt.Printf("Error in filepath.Walk: %s\n", walkErr)
 		}
 	}
-	fmt.Printf("length of tempSecretsFound at 224 processImage: %d \n", len(tempSecretsFound))
 	return tempSecretsFound, nil
 }
 
@@ -268,9 +263,7 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string) ([]outp
 		}
 		core.GetSession().Log.Debug("Analyzing dir: %s", targetDir)
 		secrets, err = ScanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret, &imageScan.numSecrets, matchedRuleSet)
-		fmt.Printf("length of secrets at 267 processImage: %d \n", len(secrets))
 		tempSecretsFound = append(tempSecretsFound, secrets...)
-		fmt.Printf("length of tempSecretsFound at 269 processImage: %d \n", len(tempSecretsFound))
 		if err != nil {
 			core.GetSession().Log.Error("ProcessImageLayers: %s", err)
 			// return tempSecretsFound, err
@@ -385,7 +378,7 @@ func untar(tarName string, xpath string) (err error) {
 			relPath := strings.Split(fileName, "/")
 			var absDirPath string
 			if len(relPath) > 1 {
-				dirs := relPath[0 : len(relPath)-1]
+				dirs := relPath[0: len(relPath) - 1]
 				absDirPath = filepath.Join(absPath, strings.Join(dirs, "/"))
 			}
 			if err := os.MkdirAll(absDirPath, 0755); err != nil {
@@ -409,7 +402,7 @@ func untar(tarName string, xpath string) (err error) {
 		// fmt.Printf("x %s\n", absFileName)
 		n, cpErr := io.Copy(file, tr)
 		if closeErr := file.Close(); closeErr != nil { // close file immediately
-			fmt.Println("clserr:" + closeErr.Error())
+			fmt.Println("clserr:"+closeErr.Error())
 			return err
 		}
 		if cpErr != nil {
