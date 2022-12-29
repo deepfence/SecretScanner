@@ -81,6 +81,7 @@ func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
 	var numSecrets uint = 0
 
 	secrets, err := scan.ScanSecretsInDir("", "", dir, &isFirstSecret, &numSecrets, nil)
+	fmt.Printf("length of secrets at 84 main: %d \n", len(secrets))
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInDir: %s", err)
 		return nil, err
