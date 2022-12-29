@@ -65,7 +65,7 @@ func GetJsonFilepath(input string) (string, error) {
 		}
 	}
 	if JsonFilename == "" {
-		JsonFilename = getSanitizedString(input) + "-secrets.json"
+		JsonFilename = getSanitizedString(input) + "secrets.json"
 	}
 	jsonFilePath := filepath.Join(outputDir, JsonFilename)
 	GetSession().Log.Info("Complete json file path and name: %s", jsonFilePath)

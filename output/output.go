@@ -43,11 +43,11 @@ type JsonDirSecretsOutput struct {
 }
 
 type JsonImageSecretsOutput struct {
-	Timestamp 	time.Time
-	ImageName 	string `json:"Image Name"`
-	ImageId   	string `json:"Image ID"`
+	Timestamp   time.Time
+	ImageName   string `json:"Image Name"`
+	ImageId     string `json:"Image ID"`
 	ContainerId string `json:"Container ID"`
-	Secrets   	[]SecretFound
+	Secrets     []SecretFound
 }
 
 func (imageOutput *JsonImageSecretsOutput) SetImageName(imageName string) {
@@ -111,6 +111,7 @@ func (imageOutput JsonImageSecretsOutput) PrintJsonHeader() {
 	fmt.Printf(Indent+"\"Timestamp\": \"%s\",\n", time.Now().Format("2006-01-02 15:04:05.000000000 -07:00"))
 	fmt.Printf(Indent+"\"Image Name\": \"%s\",\n", imageOutput.ImageName)
 	fmt.Printf(Indent+"\"Image ID\": \"%s\",\n", imageOutput.ImageId)
+	fmt.Printf(Indent+"\"Container ID\": \"%s\",\n", imageOutput.ContainerId)
 	fmt.Printf(Indent + "\"Secrets\": [\n")
 }
 
