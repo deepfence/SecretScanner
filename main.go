@@ -57,15 +57,18 @@ var session = core.GetSession()
 // Error, if any. Otherwise, returns nil
 func findSecretsInImage(image string) (*output.JsonImageSecretsOutput, error) {
 
+	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ImageName: image}
+	jsonImageSecretsOutput.SetTime()
+	if !(*session.Options.Quiet) {
+		jsonImageSecretsOutput.PrintJsonHeader()
+	}
 	res, err := scan.ExtractAndScanImage(image)
 	if err != nil {
 		return nil, err
 	}
-	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ImageName: image}
-	jsonImageSecretsOutput.SetTime()
-	jsonImageSecretsOutput.SetImageId(res.ImageId)
-	jsonImageSecretsOutput.PrintJsonHeader()
-	jsonImageSecretsOutput.PrintJsonFooter()
+	if !(*session.Options.Quiet) {
+		jsonImageSecretsOutput.PrintJsonFooter()
+	}
 	jsonImageSecretsOutput.SetSecrets(res.Secrets)
 
 	return &jsonImageSecretsOutput, nil
@@ -79,17 +82,20 @@ func findSecretsInImage(image string) (*output.JsonImageSecretsOutput, error) {
 func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
 	var isFirstSecret bool = true
 	var numSecrets uint = 0
+	jsonDirSecretsOutput := output.JsonDirSecretsOutput{DirName: *session.Options.Local}
+	jsonDirSecretsOutput.SetTime()
+	if !(*session.Options.Quiet) {
+		jsonDirSecretsOutput.PrintJsonHeader()
+	}
 
 	secrets, err := scan.ScanSecretsInDir("", "", dir, &isFirstSecret, &numSecrets, nil)
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInDir: %s", err)
 		return nil, err
 	}
-
-	jsonDirSecretsOutput := output.JsonDirSecretsOutput{DirName: *session.Options.Local}
-	jsonDirSecretsOutput.SetTime()
-	jsonDirSecretsOutput.PrintJsonHeader()
-	jsonDirSecretsOutput.PrintJsonFooter()
+	if !(*session.Options.Quiet) {
+		jsonDirSecretsOutput.PrintJsonFooter()
+	}
 	jsonDirSecretsOutput.SetSecrets(secrets)
 
 	return &jsonDirSecretsOutput, nil
@@ -102,15 +108,18 @@ func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
 // Error, if any. Otherwise, returns nil
 func findSecretsInContainer(containerId string, containerNS string) (*output.JsonImageSecretsOutput, error) {
 
+	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ContainerId: containerId}
+	jsonImageSecretsOutput.SetTime()
+	if !(*session.Options.Quiet) {
+		jsonImageSecretsOutput.PrintJsonHeader()
+	}
 	res, err := scan.ExtractAndScanContainer(containerId, containerNS)
 	if err != nil {
 		return nil, err
 	}
-	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ContainerId: containerId}
-	jsonImageSecretsOutput.SetTime()
-	jsonImageSecretsOutput.SetImageId(res.ContainerId)
-	jsonImageSecretsOutput.PrintJsonHeader()
-	jsonImageSecretsOutput.PrintJsonFooter()
+	if !(*session.Options.Quiet) {
+		jsonImageSecretsOutput.PrintJsonFooter()
+	}
 	jsonImageSecretsOutput.SetSecrets(res.Secrets)
 
 	return &jsonImageSecretsOutput, nil

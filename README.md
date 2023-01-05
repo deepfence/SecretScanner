@@ -59,6 +59,21 @@ docker pull node:8.11
     docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock deepfenceio/deepfence_secret_scanner:latest -image-name node:8.11
     ```
 
+# CLI
+
+Download the binary and yaml file. The binary can run to perform secret scans:
+Scan a local directory
+```shell
+./SecretScanner -local <dir_to_scan> -quiet=false -config-path <dir_path_containing_yaml>
+```
+Scan a local docker image
+```shell
+./SecretScanner -quiet=false -image-name <image_name:tag> -config-path <dir_path_containing_yaml>
+```
+Scan the filesystem of a running container using id or name
+```shell
+./SecretScanner -quiet=false -config-path <dir_path_containing_yaml> -container-id <container-id-or-name>
+```
 # Credits
 
 We have built upon the configuration file from [shhgit](https://github.com/eth0izzle/shhgit) project.
