@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -74,7 +74,7 @@ func runSecretScanStandalone(writer http.ResponseWriter, request *http.Request) 
 	}
 	fmt.Println(string(requestDump))
 
-	b, err := ioutil.ReadAll(request.Body)
+	b, err := io.ReadAll(request.Body)
 	defer request.Body.Close()
 	if err != nil {
 		http.Error(writer, err.Error(), 500)

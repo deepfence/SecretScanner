@@ -3,7 +3,6 @@ package output
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 	// "strings"
@@ -43,11 +42,11 @@ type JsonDirSecretsOutput struct {
 }
 
 type JsonImageSecretsOutput struct {
-	Timestamp 	time.Time
-	ImageName 	string `json:"Image Name"`
-	ImageId   	string `json:"Image ID"`
+	Timestamp   time.Time
+	ImageName   string `json:"Image Name"`
+	ImageId     string `json:"Image ID"`
 	ContainerId string `json:"Container ID"`
-	Secrets   	[]SecretFound
+	Secrets     []SecretFound
 }
 
 func (imageOutput *JsonImageSecretsOutput) SetImageName(imageName string) {
@@ -95,7 +94,7 @@ func printSecretsToJsonFile(secretsJson interface{}, outputFilename string) erro
 		return err
 	}
 
-	err = ioutil.WriteFile(outputFilename, file, os.ModePerm)
+	err = os.WriteFile(outputFilename, file, os.ModePerm)
 	if err != nil {
 		core.GetSession().Log.Error("printSecretsToJsonFile: Couldn't write json output to file: %s", err)
 		return err
