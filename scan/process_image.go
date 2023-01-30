@@ -2,12 +2,13 @@ package scan
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -15,8 +16,6 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
-
-	"fmt"
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
@@ -102,6 +101,38 @@ func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
 	return tempSecretsFound, nil
 }
 
+func readFile(path string) ([]byte, error) {
+	var content string
+	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if len(line) == 0 {
+			continue
+		}
+		content += scanner.Text() + "\n"
+	}
+	return []byte(content), nil
+}
+
+func scanFile(filePath, relPath, fileName, fileExtension, layer string, numSecrets *uint, matchedRuleSet map[uint]uint) ([]output.SecretFound, error) {
+	contents, err := readFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+	// fmt.Println(relPath, file.Filename, file.Extension, layer)
+	secrets, err := signature.MatchPatternSignatures(contents, relPath, fileName, fileExtension, layer, numSecrets, matchedRuleSet)
+	if err != nil {
+		return nil, err
+	}
+	return secrets, nil
+}
+
 // ScanSecretsInDir Scans a given directory recursively to find all secrets inside any file in the dir
 // @parameters
 // layer - layer ID, if we are scanning directory inside container image
@@ -126,8 +157,6 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 	maxFileSize := *session.Options.MaximumFileSize * 1024
 	var file core.MatchFile
 	var relPath string
-	var contents []byte
-	var secrets []output.SecretFound
 
 	walkErr := filepath.Walk(fullDir, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
@@ -136,7 +165,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 
 		var scanDirPath string
 		if layer != "" {
-			scanDirPath = strings.TrimPrefix(path, baseDir +  "/" + layer)
+			scanDirPath = strings.TrimPrefix(path, baseDir+"/"+layer)
 			if scanDirPath == "" {
 				scanDirPath = "/"
 			}
@@ -176,24 +205,17 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			}
 		}
 
-		contents, err = ioutil.ReadFile(file.Path)
+		secrets, err := scanFile(file.Path, relPath, file.Filename, file.Extension, layer, numSecrets, matchedRuleSet)
 		if err != nil {
-			session.Log.Error("scanSecretsInDir reading file: %s", err)
-			// return tempSecretsFound, err
+			session.Log.Info("relPath: %s, Filename: %s, Extension: %s, layer: %s", relPath, file.Filename, file.Extension, layer)
+			session.Log.Error("scanSecretsInDir: %s", err)
 		} else {
-			// fmt.Println(relPath, file.Filename, file.Extension, layer)
-			secrets, err = signature.MatchPatternSignatures(contents, relPath, file.Filename, file.Extension,
-				layer, numSecrets, matchedRuleSet)
-			if err != nil {
-				session.Log.Info("relPath: %s, Filename: %s, Extension: %s, layer: %s",
-					relPath, file.Filename, file.Extension, layer)
-				session.Log.Error("scanSecretsInDir: %s", err)
-				// return tempSecretsFound, err
+			if len(secrets) > 0 {
+				if *session.Options.Quiet {
+					output.PrintColoredSecrets(secrets, isFirstSecret)
+				}
+				tempSecretsFound = append(tempSecretsFound, secrets...)
 			}
-			if *session.Options.Quiet {
-				output.PrintColoredSecrets(secrets, isFirstSecret)
-			}
-			tempSecretsFound = append(tempSecretsFound, secrets...)
 		}
 
 		secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, numSecrets)
@@ -378,7 +400,7 @@ func untar(tarName string, xpath string) (err error) {
 			relPath := strings.Split(fileName, "/")
 			var absDirPath string
 			if len(relPath) > 1 {
-				dirs := relPath[0: len(relPath) - 1]
+				dirs := relPath[0 : len(relPath)-1]
 				absDirPath = filepath.Join(absPath, strings.Join(dirs, "/"))
 			}
 			if err := os.MkdirAll(absDirPath, 0755); err != nil {
@@ -402,7 +424,7 @@ func untar(tarName string, xpath string) (err error) {
 		// fmt.Printf("x %s\n", absFileName)
 		n, cpErr := io.Copy(file, tr)
 		if closeErr := file.Close(); closeErr != nil { // close file immediately
-			fmt.Println("clserr:"+closeErr.Error())
+			fmt.Println("closeErr:" + closeErr.Error())
 			return err
 		}
 		if cpErr != nil {

@@ -7,12 +7,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math"
+	"regexp"
+
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/fatih/color"
 	"github.com/flier/gohs/hyperscan"
-	"math"
-	"regexp"
 )
 
 // Constants representing different parts to be matched
