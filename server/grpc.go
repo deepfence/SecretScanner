@@ -24,15 +24,15 @@ type gRPCServer struct {
 }
 
 func (s *gRPCServer) GetName(context.Context, *pb.Empty) (*pb.Name, error) {
-	return &pb.Name { Str: s.plugin_name }, nil
+	return &pb.Name{Str: s.plugin_name}, nil
 }
 
 func (s *gRPCServer) GetUID(context.Context, *pb.Empty) (*pb.Uid, error) {
-	return &pb.Uid { Str: fmt.Sprintf("%s-%s", s.plugin_name, s.socket_path) }, nil
+	return &pb.Uid{Str: fmt.Sprintf("%s-%s", s.plugin_name, s.socket_path)}, nil
 }
 
 func (s *gRPCServer) FindSecretInfo(_ context.Context, r *pb.FindRequest) (*pb.FindResult, error) {
-	if r.GetPath()  != "" {
+	if r.GetPath() != "" {
 		var isFirstSecret bool = true
 		var numSecrets uint = 0
 
@@ -42,7 +42,7 @@ func (s *gRPCServer) FindSecretInfo(_ context.Context, r *pb.FindRequest) (*pb.F
 		}
 		return &pb.FindResult{
 			Timestamp: time.Now().String(),
-			Secrets: output.SecretsToSecretInfos(secrets),
+			Secrets:   output.SecretsToSecretInfos(secrets),
 			Input: &pb.FindResult_Path{
 				Path: r.GetPath(),
 			},
@@ -55,11 +55,11 @@ func (s *gRPCServer) FindSecretInfo(_ context.Context, r *pb.FindRequest) (*pb.F
 
 		return &pb.FindResult{
 			Timestamp: time.Now().String(),
-			Secrets: output.SecretsToSecretInfos(res.Secrets),
+			Secrets:   output.SecretsToSecretInfos(res.Secrets),
 			Input: &pb.FindResult_Image{
 				Image: &pb.DockerImage{
 					Name: r.GetImage().Name,
-					Id: res.ImageId,
+					Id:   res.ImageId,
 				},
 			},
 		}, nil
@@ -71,11 +71,11 @@ func (s *gRPCServer) FindSecretInfo(_ context.Context, r *pb.FindRequest) (*pb.F
 
 		return &pb.FindResult{
 			Timestamp: time.Now().String(),
-			Secrets: output.SecretsToSecretInfos(res.Secrets),
+			Secrets:   output.SecretsToSecretInfos(res.Secrets),
 			Input: &pb.FindResult_Container{
 				Container: &pb.Container{
 					Namespace: r.GetContainer().Namespace,
-					Id: res.ContainerId,
+					Id:        res.ContainerId,
 				},
 			},
 		}, nil

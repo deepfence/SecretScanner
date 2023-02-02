@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -132,9 +131,9 @@ func loadConfigFile(configPath string) (*Config, error) {
 	}
 
 	if fstat.IsDir() {
-		data, err = ioutil.ReadFile(path.Join(configPath, "config.yaml"))
+		data, err = os.ReadFile(path.Join(configPath, "config.yaml"))
 	} else {
-		data, err = ioutil.ReadFile(configPath)
+		data, err = os.ReadFile(configPath)
 	}
 	if err != nil {
 		return nil, err
