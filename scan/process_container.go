@@ -77,7 +77,7 @@ func (containerScan *ContainerScan) scan() ([]output.SecretFound, error) {
 	var isFirstSecret bool = true
 	var numSecrets uint = 0
 
-	secrets, err := ScanSecretsInDir("", "", containerScan.tempDir, &isFirstSecret, &numSecrets, nil)
+	secrets, err := ScanSecretsInDir("", containerScan.tempDir, containerScan.tempDir, &isFirstSecret, &numSecrets, nil)
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInContainer: %s", err)
 		return nil, err
