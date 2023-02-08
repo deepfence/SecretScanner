@@ -11,6 +11,6 @@ clean:
 	-rm ./SecretScanner
 
 SecretScanner: $(PWD)/**/*.go $(PWD)/agent-plugins-grpc/proto/*.go
-	go build -buildvcs=false -v .
+	go build -ldflags="-extldflags=-static" -buildvcs=false -v .
 
 .PHONY: clean
