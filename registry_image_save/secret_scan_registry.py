@@ -167,7 +167,7 @@ class SecretScanRegistryImages:
         save_path = output_folder
         mkdir_recursive(save_path)
         if self.docker_config_file == "" or self.docker_config_file is None:
-            cmd_line = ["skopeo", "--insecure-policy", "copy", "--tls-verify=false"
+            cmd_line = ["skopeo", "--insecure-policy", "copy", "--tls-verify=false",
                         "docker://{}".format(img_name), "docker-archive://{}/save-output.tar".format(save_path)]
         else:
             cmd_line = ["skopeo", "--insecure-policy", "copy", "--tls-verify=false", "--authfile", self.docker_config_file,
