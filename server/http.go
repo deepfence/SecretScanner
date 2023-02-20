@@ -88,12 +88,21 @@ func runSecretScanStandalone(writer http.ResponseWriter, request *http.Request) 
 		fmt.Fprintf(writer, "Parse err: %v", err)
 		return
 	}
+
+	flock := core.NewFlock()
+	if err := flock.LockFile(); err != nil {
+		fmt.Fprintf(writer, err.Error())
+		return
+	}
+
 	fmt.Printf("Secret Scan triggered for %s: ", req.ImageNameWithTag)
 	res, err := scan.ExtractAndScanImage(req.ImageNameWithTag)
 	if err != nil {
 		fmt.Fprintf(writer, "Image scan err: %v", err)
 		return
 	}
+
+	flock.UnlockFile()
 
 	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ImageName: req.ImageNameWithTag}
 	jsonImageSecretsOutput.SetTime()
@@ -113,6 +122,13 @@ func runSecretScanStandalone(writer http.ResponseWriter, request *http.Request) 
 }
 
 func processScans(form url.Values) {
+	flock := core.NewFlock()
+	if err := flock.LockFile(); err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	defer flock.UnlockFile()
+
 	imageNameList := form["image_name_with_tag_list"]
 	for index, imageName := range imageNameList {
 		go httpScanWorkerPool.Process(imageParameters{imageName: imageName, scanId: form["scan_id_list"][index], form: form})
