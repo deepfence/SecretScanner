@@ -19,7 +19,6 @@ func NewMatchFile(path string) MatchFile {
 	path = filepath.ToSlash(path)
 	_, filename := filepath.Split(path)
 	extension := filepath.Ext(path)
-	// contents, _ := ioutil.ReadFile(path)
 
 	return MatchFile{
 		Path:      path,
@@ -29,7 +28,7 @@ func NewMatchFile(path string) MatchFile {
 	}
 }
 
-// IsSkippableFile Checks if the path is blacklisted
+// IsSkippableDir Checks if the path is blacklisted
 func IsSkippableDir(path string, baseDir string) bool {
 	hostMountPath := *session.Options.HostMountPath
 	if hostMountPath != "" {
@@ -92,8 +91,8 @@ func ContainsBlacklistedString(input []byte) bool {
 	return false
 }
 
-//// GetMatchingFiles Return the list of all applicable files inside the given directory for scanning
-//func GetMatchingFiles(dir string, baseDir string) (*bytes.Buffer, *bytes.Buffer, error) {
+// // GetMatchingFiles Return the list of all applicable files inside the given directory for scanning
+// func GetMatchingFiles(dir string, baseDir string) (*bytes.Buffer, *bytes.Buffer, error) {
 //	findCmd := "find " + dir
 //	for _, skippableExt := range session.Config.BlacklistedExtensions {
 //		findCmd += " -not -name \"*" + skippableExt + "\""
@@ -110,7 +109,7 @@ func ContainsBlacklistedString(input []byte) bool {
 //	GetSession().Log.Info("find command: %s", findCmd)
 //
 //	return ExecuteCommand(findCmd)
-//}
+// }
 
 // UpdateDirsPermissionsRW Update permissions for dirs in container images, so that they can be properly deleted
 func UpdateDirsPermissionsRW(dir string) {

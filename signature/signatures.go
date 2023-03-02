@@ -28,6 +28,7 @@ const (
 )
 
 // Data structure for passing inputs and getting outputs for hyperscan
+
 type HsInputOutputData struct {
 	inputData []byte
 	// Avoids extra memory during blacklist comparison, reduces memory pressure
@@ -64,6 +65,7 @@ func init() {
 // layerID - layer ID of this file in the container image
 // @returns
 // []output.SecretFound - List of all secrets found
+
 func MatchSimpleSignatures(path string, filename string, extension string, layerID string, numSecrets *uint) []output.SecretFound {
 	var tempSecretsFound []output.SecretFound
 	var matchingPart string
@@ -99,6 +101,7 @@ func MatchSimpleSignatures(path string, filename string, extension string, layer
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
+
 func MatchPatternSignatures(contents []byte, path string, filename string, extension string, layerID string,
 	numSecrets *uint, matchedRuleSet map[uint]uint) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
@@ -152,6 +155,7 @@ func MatchPatternSignatures(contents []byte, path string, filename string, exten
 // store them in appropriate maps
 // @parameters
 // configSignatures - Extracted patterns from signature config file
+
 func ProcessSignatures(configSignatures []core.ConfigSignature) {
 	var simpleContentSignatures []core.ConfigSignature
 	var simpleExtSignatures []core.ConfigSignature
@@ -418,7 +422,7 @@ func printMatchedSignatures(sid int, from, to int, hsIOData HsInputOutputData) (
 	}
 
 	coloredMatch := fmt.Sprintf("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
-	//core.GetSession().Log.Info("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
+	// core.GetSession().Log.Info("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
 	core.GetSession().Log.Info(coloredMatch)
 
 	secret := output.SecretFound{
@@ -474,6 +478,7 @@ func calculateSeverity(inputMatch []byte, severity string, severityScore float64
 }
 
 // Find min of 2 int values
+
 func Min(value_0, value_1 int) int {
 	if value_0 < value_1 {
 		return value_0
@@ -482,6 +487,7 @@ func Min(value_0, value_1 int) int {
 }
 
 // Find max of 2 int values
+
 func Max(value_0, value_1 int) int {
 	if value_0 > value_1 {
 		return value_0

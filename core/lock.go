@@ -25,7 +25,7 @@ func getBootId() ([]byte, error) {
 	return bootId, nil
 }
 
-// Acquires a shared lock on the file.
+// LockFile Acquires a shared lock on the file.
 func (f *Flock) LockFile() error {
 	f.m.Lock()
 	defer f.m.Unlock()
@@ -51,7 +51,7 @@ func (f *Flock) LockFile() error {
 	return nil
 }
 
-// Releases the lock on the file.
+// UnlockFile Releases the lock on the file.
 func (f *Flock) UnlockFile() error {
 	f.m.Lock()
 	defer f.m.Unlock()

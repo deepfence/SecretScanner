@@ -120,7 +120,7 @@ func getDefaultConfig() (*Config, error) {
 
 func loadConfigFile(configPath string) (*Config, error) {
 	var (
-		config *Config = &Config{}
+		config = &Config{}
 		data   []byte
 		err    error
 	)

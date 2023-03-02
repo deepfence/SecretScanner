@@ -85,9 +85,9 @@ func GetTmpDir(imageName string) (string, error) {
 	dir := *session.Options.TempDirectory
 	tempPath := filepath.Join(dir, "Deepfence", TempDirSuffix, scanId)
 
-	//if runtime.GOOS == "windows" {
+	// if runtime.GOOS == "windows" {
 	//	tempPath = dir + "\temp\Deepfence\SecretScanning\df_" + scanId
-	//}
+	// }
 
 	completeTempPath := path.Join(tempPath, ExtractedImageFilesDir)
 
