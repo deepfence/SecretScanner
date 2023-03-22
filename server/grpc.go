@@ -41,7 +41,7 @@ func (s *gRPCServer) GetUID(context.Context, *pb.Empty) (*pb.Uid, error) {
 
 func (s *gRPCServer) FindSecretInfo(c context.Context, r *pb.FindRequest) (*pb.FindResult, error) {
 	var err error
-	res := jobs.StartStatusReporter(c, "")
+	res := jobs.StartStatusReporter(c, r.ScanId)
 	defer func() {
 		res <- err
 		close(res)
