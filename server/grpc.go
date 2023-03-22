@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/deepfence/SecretScanner/core"
+	"github.com/deepfence/SecretScanner/jobs"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
 	pb "github.com/deepfence/agent-plugins-grpc/proto"
@@ -21,6 +22,13 @@ type gRPCServer struct {
 	plugin_name string
 	pb.UnimplementedSecretScannerServer
 	pb.UnimplementedAgentPluginServer
+	pb.UnimplementedScannersServer
+}
+
+func (s *gRPCServer) ReportJobsStatus(context.Context, *pb.Empty) (*pb.JobReports, error) {
+	return &pb.JobReports{
+		RunningJobs: jobs.GetRunningJobCount(),
+	}, nil
 }
 
 func (s *gRPCServer) GetName(context.Context, *pb.Empty) (*pb.Name, error) {
@@ -31,7 +39,13 @@ func (s *gRPCServer) GetUID(context.Context, *pb.Empty) (*pb.Uid, error) {
 	return &pb.Uid{Str: fmt.Sprintf("%s-%s", s.plugin_name, s.socket_path)}, nil
 }
 
-func (s *gRPCServer) FindSecretInfo(_ context.Context, r *pb.FindRequest) (*pb.FindResult, error) {
+func (s *gRPCServer) FindSecretInfo(c context.Context, r *pb.FindRequest) (*pb.FindResult, error) {
+	var err error
+	res := jobs.StartStatusReporter(c, "")
+	defer func() {
+		res <- err
+		close(res)
+	}()
 	if r.GetPath() != "" {
 		var isFirstSecret bool = true
 		var numSecrets uint = 0
@@ -80,7 +94,8 @@ func (s *gRPCServer) FindSecretInfo(_ context.Context, r *pb.FindRequest) (*pb.F
 			},
 		}, nil
 	}
-	return nil, fmt.Errorf("Invalid request")
+	err = fmt.Errorf("Invalid request")
+	return nil, err
 }
 
 func RunServer(socket_path string, plugin_name string) error {
