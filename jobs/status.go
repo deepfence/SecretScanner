@@ -8,11 +8,30 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/deepfence/SecretScanner/output"
+	"github.com/deepfence/SecretScanner/scan"
+
+	pb "github.com/deepfence/agent-plugins-grpc/proto"
 )
 
 var (
 	scanStatusFilename = getDfInstallDir() + "/var/log/fenced/secret-scan-log/secret_scan_log.log"
+	scanFilename       = getDfInstallDir() + "/var/log/fenced/secret-scan/secret_scan.log"
+	SecretScanDir      = "/"
 )
+
+const (
+	HostMountDir = "/fenced/mnt/host"
+)
+
+func init() {
+	if os.Getenv("DF_SERVERLESS") == "true" {
+		SecretScanDir = "/"
+	} else {
+		SecretScanDir = HostMountDir
+	}
+}
 
 func writeSecretScanStatus(status, scan_id, scan_message string) {
 	var secretScanLogDoc = make(map[string]interface{})
@@ -58,7 +77,7 @@ func getDfInstallDir() string {
 	}
 }
 
-func StartStatusReporter(ctx context.Context, scan_id string) chan error {
+func startStatusReporter(ctx context.Context, scan_id string) chan error {
 	res := make(chan error)
 	startScanJob()
 	go func() {
@@ -87,4 +106,72 @@ func StartStatusReporter(ctx context.Context, scan_id string) chan error {
 		writeSecretScanStatus("COMPLETE", scan_id, "")
 	}()
 	return res
+}
+
+type SecretScanDoc struct {
+	pb.SecretInfo
+	ScanID string `json:"scan_id,omitempty"`
+}
+
+func writeScanData(secrets []*pb.SecretInfo, scan_id string) {
+	for _, secret := range secrets {
+		if SecretScanDir == HostMountDir {
+			secret.GetMatch().FullFilename = strings.Replace(secret.GetMatch().GetFullFilename(), SecretScanDir, "", 1)
+		}
+		secretScanDoc := SecretScanDoc{
+			SecretInfo: *secret,
+			ScanID:     scan_id,
+		}
+		byteJson, err := json.Marshal(secretScanDoc)
+		if err != nil {
+			fmt.Println("Error marshalling json: ", err)
+			continue
+		}
+		err = writeScanDataToFile(string(byteJson), scanFilename)
+		if err != nil {
+			fmt.Println("Error in sending data to secretScanIndex:" + err.Error())
+			continue
+		}
+	}
+}
+
+func DispatchScan(r *pb.FindRequest) {
+
+	go func() {
+		var err error
+		res := startStatusReporter(context.Background(), r.ScanId)
+		defer func() {
+			res <- err
+			close(res)
+		}()
+		var outputSecrets []*pb.SecretInfo
+
+		if r.GetPath() != "" {
+			var isFirstSecret bool = true
+			var numSecrets uint = 0
+
+			secrets, err := scan.ScanSecretsInDir("", r.GetPath(), r.GetPath(), &isFirstSecret, &numSecrets, nil)
+			if err != nil {
+				return
+			}
+			outputSecrets = output.SecretsToSecretInfos(secrets)
+		} else if r.GetImage() != nil && r.GetImage().Name != "" {
+			res, err := scan.ExtractAndScanImage(r.GetImage().Name)
+			if err != nil {
+				return
+			}
+			outputSecrets = output.SecretsToSecretInfos(res.Secrets)
+		} else if r.GetContainer() != nil && r.GetContainer().Id != "" {
+			res, err := scan.ExtractAndScanContainer(r.GetContainer().Id, r.GetContainer().Namespace)
+			if err != nil {
+				return
+			}
+			outputSecrets = output.SecretsToSecretInfos(res.Secrets)
+		} else {
+			err = fmt.Errorf("Invalid request")
+			return
+		}
+
+		writeScanData(outputSecrets, r.ScanId)
+	}()
 }
