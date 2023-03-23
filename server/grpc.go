@@ -38,7 +38,7 @@ func (s *gRPCServer) GetUID(context.Context, *pb.Empty) (*pb.Uid, error) {
 
 func (s *gRPCServer) FindSecretInfo(c context.Context, r *pb.FindRequest) (*pb.FindResult, error) {
 	jobs.DispatchScan(r)
-	return nil, nil
+	return &pb.FindResult{}, nil
 }
 
 func RunServer(socket_path string, plugin_name string) error {
