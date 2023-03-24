@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"time"
+
 	// "strings"
 	"github.com/deepfence/SecretScanner/core"
 	pb "github.com/deepfence/agent-plugins-grpc/proto"

@@ -90,6 +90,25 @@ func (containerScan *ContainerScan) scan() ([]output.SecretFound, error) {
 	return secrets, nil
 }
 
+// Function to scan extracted layers of container file system for secrets file by file
+// @parameters
+// containerScan - Structure with details of the container  to scan
+// @returns
+// []output.SecretFound - List of all secrets found
+// Error - Errors, if any. Otherwise, returns nil
+func (containerScan *ContainerScan) scanStream() (chan output.SecretFound, error) {
+	var isFirstSecret bool = true
+	var numSecrets uint = 0
+
+	stream, err := ScanSecretsInDirStream("", containerScan.tempDir, containerScan.tempDir, &isFirstSecret, &numSecrets, nil)
+	if err != nil {
+		core.GetSession().Log.Error("findSecretsInContainer: %s", err)
+		return nil, err
+	}
+
+	return stream, nil
+}
+
 type ContainerExtractionResult struct {
 	Secrets     []output.SecretFound
 	ContainerId string
@@ -115,4 +134,38 @@ func ExtractAndScanContainer(containerId string, namespace string) (*ContainerEx
 		return nil, err
 	}
 	return &ContainerExtractionResult{ContainerId: containerScan.containerId, Secrets: secrets}, nil
+}
+
+func ExtractAndScanContainerStream(containerId string, namespace string) (chan output.SecretFound, error) {
+	tempDir, err := core.GetTmpDir(containerId)
+	if err != nil {
+		return nil, err
+	}
+
+	containerScan := ContainerScan{containerId: containerId, tempDir: tempDir, namespace: namespace}
+	err = containerScan.extractFileSystem()
+
+	if err != nil {
+		core.DeleteTmpDir(tempDir)
+		return nil, err
+	}
+
+	stream, err := containerScan.scanStream()
+
+	if err != nil {
+		core.DeleteTmpDir(tempDir)
+		return nil, err
+	}
+
+	res := make(chan output.SecretFound, secret_pipeline_size)
+
+	go func() {
+		defer core.DeleteTmpDir(tempDir)
+		defer close(res)
+		for i := range stream {
+			res <- i
+		}
+	}()
+
+	return res, nil
 }
