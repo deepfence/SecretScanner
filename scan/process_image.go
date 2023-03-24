@@ -205,7 +205,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 		}
 		// No need to scan sym links. This avoids hangs when scanning stderr, stdour or special file descriptors
 		// Also, the pointed files will anyway be scanned directly
-		if core.IsSymLink(path) {
+		if !f.Mode().Type().IsRegular() {
 			return nil
 		}
 
@@ -326,9 +326,12 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 			}
 			// No need to scan sym links. This avoids hangs when scanning stderr, stdour or special file descriptors
 			// Also, the pointed files will anyway be scanned directly
-			if core.IsSymLink(path) {
+			if !f.Mode().Type().IsRegular() {
 				return nil
 			}
+			//if core.IsSymLink(path) {
+			//	return nil
+			//}
 
 			file = core.NewMatchFile(path)
 
@@ -368,6 +371,10 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 			}
 			for i := range secrets {
 				res <- secrets[i]
+			}
+			// Don't report secrets if number of secrets exceeds MAX value
+			if *numSecrets >= *session.Options.MaxSecrets {
+				return maxSecretsExceeded
 			}
 			return nil
 		})
