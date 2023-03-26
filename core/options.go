@@ -29,6 +29,7 @@ type Options struct {
 	ContainerId     *string
 	ContainerNS     *string
 	Quiet           *bool
+	WorkersPerScan  *int
 }
 
 type repeatableStringValue struct {
@@ -67,6 +68,7 @@ func ParseOptions() (*Options, error) {
 		ContainerId:     flag.String("container-id", "", "Id of existing container ID"),
 		ContainerNS:     flag.String("container-ns", "", "Namespace of existing container to scan, empty for docker runtime"),
 		Quiet:           flag.Bool("quiet", false, "Don't display any output in stdout"),
+		WorkersPerScan:  flag.Int("workers-per-scan", 1, "Number of concrrent workers per scan"),
 	}
 	flag.Var(options.ConfigPath, "config-path", "Searches for config.yaml from given directory. If not set, tries to find it from SecretScanner binary's and current directory.  Can be specified multiple times.")
 	flag.Parse()

@@ -114,7 +114,7 @@ func ContainsBlacklistedString(input []byte) bool {
 
 // UpdateDirsPermissionsRW Update permissions for dirs in container images, so that they can be properly deleted
 func UpdateDirsPermissionsRW(dir string) {
-	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+	filepath.WalkDir(dir, func(path string, f os.DirEntry, err error) error {
 		if f.IsDir() {
 			err := os.Chmod(path, 0700)
 			if err != nil {

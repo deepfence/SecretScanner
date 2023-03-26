@@ -21,6 +21,7 @@ import (
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/signature"
 	"github.com/deepfence/vessel"
+	"github.com/opencontainers/selinux/pkg/pwalkdir"
 )
 
 // Data type to store details about the container image after parsing manifest
@@ -149,16 +150,17 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 		matchedRuleSet = make(map[uint]uint)
 	}
 
+	session := core.GetSession()
+
 	if layer != "" {
 		core.UpdateDirsPermissionsRW(fullDir)
 	}
-	session := core.GetSession()
 
 	maxFileSize := *session.Options.MaximumFileSize * 1024
 	var file core.MatchFile
 	var relPath string
 
-	walkErr := filepath.Walk(fullDir, func(path string, f os.FileInfo, err error) error {
+	walkErr := pwalkdir.WalkN(fullDir, func(path string, f os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -179,12 +181,20 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			}
 			return nil
 		}
-		if uint(f.Size()) > maxFileSize || core.IsSkippableFileExtension(path) {
-			return nil
-		}
+
 		// No need to scan sym links. This avoids hangs when scanning stderr, stdour or special file descriptors
 		// Also, the pointed files will anyway be scanned directly
-		if core.IsSymLink(path) {
+		if !f.Type().IsRegular() {
+			return nil
+		}
+
+		finfo, err := f.Info()
+		if err != nil {
+			session.Log.Warn("Skipping %v as info could not be retrieved: %v", path, err)
+			return nil
+		}
+
+		if uint(finfo.Size()) > maxFileSize || core.IsSkippableFileExtension(path) {
 			return nil
 		}
 
@@ -229,7 +239,8 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			return maxSecretsExceeded
 		}
 		return nil
-	})
+	}, *session.Options.WorkersPerScan)
+
 	if walkErr != nil {
 		if walkErr == maxSecretsExceeded {
 			session.Log.Warn("filepath.Walk: %s", walkErr)
@@ -239,6 +250,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			fmt.Printf("Error in filepath.Walk: %s\n", walkErr)
 		}
 	}
+
 	return tempSecretsFound, nil
 }
 
