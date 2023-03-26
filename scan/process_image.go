@@ -21,6 +21,7 @@ import (
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/signature"
 	"github.com/deepfence/vessel"
+	"github.com/opencontainers/selinux/pkg/pwalkdir"
 )
 
 // Data type to store details about the container image after parsing manifest
@@ -163,16 +164,17 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 		matchedRuleSet = make(map[uint]uint)
 	}
 
+	session := core.GetSession()
+
 	if layer != "" {
 		core.UpdateDirsPermissionsRW(fullDir)
 	}
-	session := core.GetSession()
 
 	maxFileSize := *session.Options.MaximumFileSize * 1024
 	var file core.MatchFile
 	var relPath string
 
-	walkErr := filepath.WalkDir(fullDir, func(path string, d os.DirEntry, err error) error {
+	walkErr := pwalkdir.WalkN(fullDir, func(path string, f os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -187,25 +189,26 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			scanDirPath = path
 		}
 
-		if d.IsDir() {
+		if f.IsDir() {
 			if core.IsSkippableDir(scanDirPath, baseDir) {
 				return filepath.SkipDir
 			}
 			return nil
 		}
 
-		f, err := d.Info()
-		if err != nil {
-			session.Log.Error("Could not access regular file %v: %v", path, err)
+		// No need to scan sym links. This avoids hangs when scanning stderr, stdour or special file descriptors
+		// Also, the pointed files will anyway be scanned directly
+		if !f.Type().IsRegular() {
 			return nil
 		}
 
-		if uint(f.Size()) > maxFileSize || core.IsSkippableFileExtension(path) {
+		finfo, err := f.Info()
+		if err != nil {
+			session.Log.Warn("Skipping %v as info could not be retrieved: %v", path, err)
 			return nil
 		}
-		// No need to scan sym links. This avoids hangs when scanning stderr, stdour or special file descriptors
-		// Also, the pointed files will anyway be scanned directly
-		if !f.Mode().Type().IsRegular() {
+
+		if uint(finfo.Size()) > maxFileSize || core.IsSkippableFileExtension(path) {
 			return nil
 		}
 
@@ -250,7 +253,8 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			return maxSecretsExceeded
 		}
 		return nil
-	})
+	}, *session.Options.WorkersPerScan)
+
 	if walkErr != nil {
 		if walkErr == maxSecretsExceeded {
 			session.Log.Warn("filepath.Walk: %s", walkErr)
@@ -260,6 +264,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			fmt.Printf("Error in filepath.Walk: %s\n", walkErr)
 		}
 	}
+
 	return tempSecretsFound, nil
 }
 
