@@ -78,9 +78,8 @@ func findSecretsInImage(image string) (*output.JsonImageSecretsOutput, error) {
 // Error, if any. Otherwise, returns nil
 func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
 	var isFirstSecret bool = true
-	var numSecrets uint = 0
 
-	secrets, err := scan.ScanSecretsInDir("", "", dir, &isFirstSecret, &numSecrets, nil)
+	secrets, err := scan.ScanSecretsInDir("", "", dir, &isFirstSecret)
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInDir: %s", err)
 		return nil, err

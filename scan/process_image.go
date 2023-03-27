@@ -15,14 +15,12 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/signature"
 	"github.com/deepfence/vessel"
-	"github.com/opencontainers/selinux/pkg/pwalkdir"
 )
 
 // Data type to store details about the container image after parsing manifest
@@ -158,12 +156,9 @@ func scanFile(filePath, relPath, fileName, fileExtension, layer string, numSecre
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecret *bool,
-	numSecrets *uint, matchedRuleSet map[uint]uint) ([]output.SecretFound, error) {
-	var tempSecretsFound []output.SecretFound
-	if matchedRuleSet == nil {
-		matchedRuleSet = make(map[uint]uint)
-	}
+func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecret *bool) ([]output.SecretFound, error) {
+	var secretsFound []output.SecretFound
+	matchedRuleSet := map[uint]uint{}
 
 	session := core.GetSession()
 
@@ -172,10 +167,9 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 	}
 
 	maxFileSize := *session.Options.MaximumFileSize * 1024
-	var file core.MatchFile
-	var relPath string
+	numSecrets := uint(0)
 
-	walkErr := pwalkdir.WalkN(fullDir, func(path string, f os.DirEntry, err error) error {
+	walkErr := filepath.WalkDir(fullDir, func(path string, f os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -213,9 +207,9 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			return nil
 		}
 
-		file = core.NewMatchFile(path)
+		file := core.NewMatchFile(path)
 
-		relPath, err = filepath.Rel(filepath.Join(baseDir, layer), file.Path)
+		relPath, err := filepath.Rel(filepath.Join(baseDir, layer), file.Path)
 		if err != nil {
 			session.Log.Warn("scanSecretsInDir: Couldn't remove prefix of path: %s %s %s",
 				baseDir, layer, file.Path)
@@ -230,7 +224,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 			}
 		}
 
-		secrets, err := scanFile(file.Path, relPath, file.Filename, file.Extension, layer, numSecrets, matchedRuleSet)
+		secrets, err := scanFile(file.Path, relPath, file.Filename, file.Extension, layer, &numSecrets, matchedRuleSet)
 		if err != nil {
 			session.Log.Info("relPath: %s, Filename: %s, Extension: %s, layer: %s", relPath, file.Filename, file.Extension, layer)
 			session.Log.Error("scanSecretsInDir: %s", err)
@@ -239,22 +233,22 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 				if *session.Options.Quiet {
 					output.PrintColoredSecrets(secrets, isFirstSecret)
 				}
-				tempSecretsFound = append(tempSecretsFound, secrets...)
+				secretsFound = append(secretsFound, secrets...)
 			}
 		}
 
-		secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, numSecrets)
+		secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, &numSecrets)
 		if *session.Options.Quiet {
 			output.PrintColoredSecrets(secrets, isFirstSecret)
 		}
-		tempSecretsFound = append(tempSecretsFound, secrets...)
+		secretsFound = append(secretsFound, secrets...)
 
 		// Don't report secrets if number of secrets exceeds MAX value
-		if *numSecrets >= *session.Options.MaxSecrets {
+		if numSecrets >= *session.Options.MaxSecrets {
 			return maxSecretsExceeded
 		}
 		return nil
-	}, *session.Options.WorkersPerScan)
+	})
 
 	if walkErr != nil {
 		if walkErr == maxSecretsExceeded {
@@ -266,7 +260,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 		}
 	}
 
-	return tempSecretsFound, nil
+	return secretsFound, nil
 }
 
 // ScanSecretsInDirStream Scans a given directory recursively to find all secrets inside any file in the dir
@@ -283,7 +277,6 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 	res := make(chan output.SecretFound, secret_pipeline_size)
 
 	matchedRuleSet := map[uint]uint{}
-	mutex := sync.RWMutex{}
 	numSecrets := uint(0)
 
 	if layer != "" {
@@ -296,7 +289,7 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 		session := core.GetSession()
 		maxFileSize := *session.Options.MaximumFileSize * 1024
 
-		walkErr := pwalkdir.WalkN(fullDir, func(path string, f os.DirEntry, err error) error {
+		walkErr := filepath.WalkDir(fullDir, func(path string, f os.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -350,18 +343,7 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 					session.Log.Error("scanSecretsInDir changine file permission: %s", err)
 				}
 			}
-
-			tmpNum := uint(0)
-			tmpRuleSet := map[uint]uint{}
-			mutex.RLock()
-			secrets, err := scanFile(file.Path, relPath, file.Filename, file.Extension, layer, &tmpNum, tmpRuleSet)
-			mutex.RUnlock()
-			mutex.Lock()
-			numSecrets += tmpNum
-			for k, v := range tmpRuleSet {
-				matchedRuleSet[k] = v
-			}
-			mutex.Unlock()
+			secrets, err := scanFile(file.Path, relPath, file.Filename, file.Extension, layer, &numSecrets, matchedRuleSet)
 
 			if err != nil {
 				session.Log.Info("relPath: %s, Filename: %s, Extension: %s, layer: %s", relPath, file.Filename, file.Extension, layer)
@@ -377,14 +359,10 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 				}
 			}
 
-			tmpNum = 0
-			secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, &tmpNum)
+			secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, &numSecrets)
 			if *session.Options.Quiet {
 				output.PrintColoredSecrets(secrets, isFirstSecret)
 			}
-			mutex.Lock()
-			numSecrets += tmpNum
-			mutex.Unlock()
 			for i := range secrets {
 				res <- secrets[i]
 			}
@@ -393,7 +371,7 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 				return maxSecretsExceeded
 			}
 			return nil
-		}, *session.Options.WorkersPerScan)
+		})
 		if walkErr != nil {
 			if walkErr == maxSecretsExceeded {
 				session.Log.Warn("filepath.Walk: %s", walkErr)
@@ -423,7 +401,6 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string) ([]outp
 	extractPath := path.Join(imageManifestPath, core.ExtractedImageFilesDir)
 	layerIDs := imageScan.imageManifest.LayerIds
 	layerPaths := imageScan.imageManifest.Layers
-	matchedRuleSet := make(map[uint]uint)
 
 	loopCntr := len(layerPaths)
 	var secrets []output.SecretFound
@@ -449,7 +426,8 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string) ([]outp
 			// return tempSecretsFound, error
 		}
 		core.GetSession().Log.Debug("Analyzing dir: %s", targetDir)
-		secrets, err = ScanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret, &imageScan.numSecrets, matchedRuleSet)
+		secrets, err = ScanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret)
+		imageScan.numSecrets += uint(len(secrets))
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 		if err != nil {
 			core.GetSession().Log.Error("ProcessImageLayers: %s", err)
@@ -485,7 +463,6 @@ func (imageScan *ImageScan) processImageLayersStream(imageManifestPath string) (
 		extractPath := path.Join(imageManifestPath, core.ExtractedImageFilesDir)
 		layerIDs := imageScan.imageManifest.LayerIds
 		layerPaths := imageScan.imageManifest.Layers
-		matchedRuleSet := make(map[uint]uint)
 
 		loopCntr := len(layerPaths)
 		var secrets []output.SecretFound
@@ -511,7 +488,8 @@ func (imageScan *ImageScan) processImageLayersStream(imageManifestPath string) (
 				continue
 			}
 			core.GetSession().Log.Debug("Analyzing dir: %s", targetDir)
-			secrets, err = ScanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret, &imageScan.numSecrets, matchedRuleSet)
+			secrets, err = ScanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret)
+			imageScan.numSecrets += uint(len(secrets))
 			for i := range secrets {
 				res <- secrets[i]
 			}
