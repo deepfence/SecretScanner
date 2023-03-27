@@ -26,9 +26,7 @@ func DispatchScan(r *pb.FindRequest) {
 
 		if r.GetPath() != "" {
 			var isFirstSecret bool = true
-			var numSecrets uint = 0
-
-			secrets, err = scan.ScanSecretsInDirStream("", r.GetPath(), r.GetPath(), &isFirstSecret, &numSecrets, nil)
+			secrets, err = scan.ScanSecretsInDirStream("", r.GetPath(), r.GetPath(), &isFirstSecret)
 			if err != nil {
 				return
 			}

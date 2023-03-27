@@ -15,6 +15,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/deepfence/SecretScanner/core"
@@ -277,14 +278,13 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 // @returns
 // chan output.SecretFound - Channel of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirstSecret *bool,
-	numSecrets *uint, matchedRuleSet map[uint]uint) (chan output.SecretFound, error) {
+func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirstSecret *bool) (chan output.SecretFound, error) {
 
 	res := make(chan output.SecretFound, secret_pipeline_size)
 
-	if matchedRuleSet == nil {
-		matchedRuleSet = map[uint]uint{}
-	}
+	matchedRuleSet := map[uint]uint{}
+	mutex := sync.RWMutex{}
+	numSecrets := uint(0)
 
 	if layer != "" {
 		core.UpdateDirsPermissionsRW(fullDir)
@@ -353,7 +353,18 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 				}
 			}
 
-			secrets, err := scanFile(file.Path, relPath, file.Filename, file.Extension, layer, numSecrets, matchedRuleSet)
+			tmpNum := uint(0)
+			tmpRuleSet := map[uint]uint{}
+			mutex.RLock()
+			secrets, err := scanFile(file.Path, relPath, file.Filename, file.Extension, layer, &tmpNum, tmpRuleSet)
+			mutex.RUnlock()
+			mutex.Lock()
+			numSecrets += tmpNum
+			for k, v := range tmpRuleSet {
+				matchedRuleSet[k] = v
+			}
+			mutex.Unlock()
+
 			if err != nil {
 				session.Log.Info("relPath: %s, Filename: %s, Extension: %s, layer: %s", relPath, file.Filename, file.Extension, layer)
 				session.Log.Error("scanSecretsInDir: %s", err)
@@ -368,15 +379,19 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 				}
 			}
 
-			secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, numSecrets)
+			tmpNum = 0
+			secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, &tmpNum)
 			if *session.Options.Quiet {
 				output.PrintColoredSecrets(secrets, isFirstSecret)
 			}
+			mutex.Lock()
+			numSecrets += tmpNum
+			mutex.Unlock()
 			for i := range secrets {
 				res <- secrets[i]
 			}
 			// Don't report secrets if number of secrets exceeds MAX value
-			if *numSecrets >= *session.Options.MaxSecrets {
+			if numSecrets >= *session.Options.MaxSecrets {
 				return maxSecretsExceeded
 			}
 			return nil

@@ -98,9 +98,8 @@ func (containerScan *ContainerScan) scan() ([]output.SecretFound, error) {
 // Error - Errors, if any. Otherwise, returns nil
 func (containerScan *ContainerScan) scanStream() (chan output.SecretFound, error) {
 	var isFirstSecret bool = true
-	var numSecrets uint = 0
 
-	stream, err := ScanSecretsInDirStream("", containerScan.tempDir, containerScan.tempDir, &isFirstSecret, &numSecrets, nil)
+	stream, err := ScanSecretsInDirStream("", containerScan.tempDir, containerScan.tempDir, &isFirstSecret)
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInContainer: %s", err)
 		return nil, err
