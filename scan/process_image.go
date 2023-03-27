@@ -295,8 +295,6 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 		defer close(res)
 		session := core.GetSession()
 		maxFileSize := *session.Options.MaximumFileSize * 1024
-		var file core.MatchFile
-		var relPath string
 
 		walkErr := pwalkdir.WalkN(fullDir, func(path string, f os.DirEntry, err error) error {
 			if err != nil {
@@ -336,9 +334,9 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 				return nil
 			}
 
-			file = core.NewMatchFile(path)
+			file := core.NewMatchFile(path)
 
-			relPath, err = filepath.Rel(filepath.Join(baseDir, layer), file.Path)
+			relPath, err := filepath.Rel(filepath.Join(baseDir, layer), file.Path)
 			if err != nil {
 				session.Log.Warn("scanSecretsInDir: Couldn't remove prefix of path: %s %s %s",
 					baseDir, layer, file.Path)
