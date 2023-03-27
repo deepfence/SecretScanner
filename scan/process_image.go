@@ -298,7 +298,7 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 		var file core.MatchFile
 		var relPath string
 
-		walkErr := filepath.WalkDir(fullDir, func(path string, d os.DirEntry, err error) error {
+		walkErr := pwalkdir.WalkN(fullDir, func(path string, f os.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -313,30 +313,28 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 				scanDirPath = path
 			}
 
-			if d.IsDir() {
+			if f.IsDir() {
 				if core.IsSkippableDir(scanDirPath, baseDir) {
 					return filepath.SkipDir
 				}
 				return nil
 			}
 
-			f, err := d.Info()
-			if err != nil {
-				session.Log.Error("Could not access regular file %v: %v", path, err)
+			// No need to scan sym links. This avoids hangs when scanning stderr, stdour or special file descriptors
+			// Also, the pointed files will anyway be scanned directly
+			if !f.Type().IsRegular() {
 				return nil
 			}
 
-			if uint(f.Size()) > maxFileSize || core.IsSkippableFileExtension(path) {
+			finfo, err := f.Info()
+			if err != nil {
+				session.Log.Warn("Skipping %v as info could not be retrieved: %v", path, err)
 				return nil
 			}
-			// No need to scan sym links. This avoids hangs when scanning stderr, stdour or special file descriptors
-			// Also, the pointed files will anyway be scanned directly
-			if !f.Mode().Type().IsRegular() {
+
+			if uint(finfo.Size()) > maxFileSize || core.IsSkippableFileExtension(path) {
 				return nil
 			}
-			//if core.IsSymLink(path) {
-			//	return nil
-			//}
 
 			file = core.NewMatchFile(path)
 
@@ -382,7 +380,7 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 				return maxSecretsExceeded
 			}
 			return nil
-		})
+		}, *session.Options.WorkersPerScan)
 		if walkErr != nil {
 			if walkErr == maxSecretsExceeded {
 				session.Log.Warn("filepath.Walk: %s", walkErr)
