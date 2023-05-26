@@ -73,10 +73,11 @@ func (containerScan *ContainerScan) extractFileSystem() error {
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors, if any. Otherwise, returns nil
-func (containerScan *ContainerScan) scan() ([]output.SecretFound, error) {
+func (containerScan *ContainerScan) scan(scanCtx *ScanContext) ([]output.SecretFound, error) {
 	var isFirstSecret bool = true
 
-	secrets, err := ScanSecretsInDir("", containerScan.tempDir, containerScan.tempDir, &isFirstSecret)
+	secrets, err := ScanSecretsInDir("", containerScan.tempDir, containerScan.tempDir,
+		&isFirstSecret, scanCtx)
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInContainer: %s", err)
 		return nil, err
@@ -95,10 +96,12 @@ func (containerScan *ContainerScan) scan() ([]output.SecretFound, error) {
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors, if any. Otherwise, returns nil
-func (containerScan *ContainerScan) scanStream() (chan output.SecretFound, error) {
+func (containerScan *ContainerScan) scanStream(scanCtx *ScanContext) (chan output.SecretFound, error) {
 	var isFirstSecret bool = true
 
-	stream, err := ScanSecretsInDirStream("", containerScan.tempDir, containerScan.tempDir, &isFirstSecret)
+	stream, err := ScanSecretsInDirStream("", containerScan.tempDir,
+		containerScan.tempDir, &isFirstSecret, scanCtx)
+
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInContainer: %s", err)
 		return nil, err
@@ -112,7 +115,9 @@ type ContainerExtractionResult struct {
 	ContainerId string
 }
 
-func ExtractAndScanContainer(containerId string, namespace string) (*ContainerExtractionResult, error) {
+func ExtractAndScanContainer(containerId string, namespace string,
+	scanCtx *ScanContext) (*ContainerExtractionResult, error) {
+
 	tempDir, err := core.GetTmpDir(containerId)
 	if err != nil {
 		return nil, err
@@ -126,7 +131,7 @@ func ExtractAndScanContainer(containerId string, namespace string) (*ContainerEx
 		return nil, err
 	}
 
-	secrets, err := containerScan.scan()
+	secrets, err := containerScan.scan(scanCtx)
 
 	if err != nil {
 		return nil, err
@@ -134,7 +139,8 @@ func ExtractAndScanContainer(containerId string, namespace string) (*ContainerEx
 	return &ContainerExtractionResult{ContainerId: containerScan.containerId, Secrets: secrets}, nil
 }
 
-func ExtractAndScanContainerStream(containerId string, namespace string) (chan output.SecretFound, error) {
+func ExtractAndScanContainerStream(containerId string, namespace string,
+	scanCtx *ScanContext) (chan output.SecretFound, error) {
 	tempDir, err := core.GetTmpDir(containerId)
 	if err != nil {
 		return nil, err
@@ -148,7 +154,7 @@ func ExtractAndScanContainerStream(containerId string, namespace string) (chan o
 		return nil, err
 	}
 
-	stream, err := containerScan.scanStream()
+	stream, err := containerScan.scanStream(scanCtx)
 
 	if err != nil {
 		core.DeleteTmpDir(tempDir)
