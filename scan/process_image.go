@@ -92,11 +92,11 @@ func (imageScan *ImageScan) extractImage(saveImage bool) error {
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors, if any. Otherwise, returns nil
-func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
+func (imageScan *ImageScan) scan(scanCtx *ScanContext) ([]output.SecretFound, error) {
 	tempDir := imageScan.tempDir
 	defer core.DeleteTmpDir(tempDir)
 
-	tempSecretsFound, err := imageScan.processImageLayers(tempDir)
+	tempSecretsFound, err := imageScan.processImageLayers(tempDir, scanCtx)
 	if err != nil {
 		core.GetSession().Log.Error("scanImage: %s", err)
 		return tempSecretsFound, err
@@ -111,8 +111,8 @@ func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors, if any. Otherwise, returns nil
-func (imageScan *ImageScan) scanStream() (chan output.SecretFound, error) {
-	return imageScan.processImageLayersStream(imageScan.tempDir)
+func (imageScan *ImageScan) scanStream(scanCtx *ScanContext) (chan output.SecretFound, error) {
+	return imageScan.processImageLayersStream(imageScan.tempDir, scanCtx)
 }
 
 func readFile(path string) ([]byte, error) {
@@ -156,7 +156,8 @@ func scanFile(filePath, relPath, fileName, fileExtension, layer string, numSecre
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecret *bool) ([]output.SecretFound, error) {
+func ScanSecretsInDir(layer string, baseDir string, fullDir string,
+	isFirstSecret *bool, scanCtx *ScanContext) ([]output.SecretFound, error) {
 	var secretsFound []output.SecretFound
 	matchedRuleSet := map[uint]uint{}
 
@@ -170,6 +171,11 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 	numSecrets := uint(0)
 
 	walkErr := filepath.WalkDir(fullDir, func(path string, f os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		err = CheckScanStatus(scanCtx)
 		if err != nil {
 			return err
 		}
@@ -272,7 +278,8 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string, isFirstSecre
 // @returns
 // chan output.SecretFound - Channel of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirstSecret *bool) (chan output.SecretFound, error) {
+func ScanSecretsInDirStream(layer string, baseDir string, fullDir string,
+	isFirstSecret *bool, scanCtx *ScanContext) (chan output.SecretFound, error) {
 
 	res := make(chan output.SecretFound, secret_pipeline_size)
 
@@ -290,6 +297,11 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 		maxFileSize := *session.Options.MaximumFileSize * 1024
 
 		walkErr := filepath.WalkDir(fullDir, func(path string, f os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
+			err = CheckScanStatus(scanCtx)
 			if err != nil {
 				return err
 			}
@@ -392,7 +404,9 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string, isFirs
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func (imageScan *ImageScan) processImageLayers(imageManifestPath string) ([]output.SecretFound, error) {
+func (imageScan *ImageScan) processImageLayers(imageManifestPath string,
+	scanCtx *ScanContext) ([]output.SecretFound, error) {
+
 	var tempSecretsFound []output.SecretFound
 	var err error
 	var isFirstSecret bool = true
@@ -426,7 +440,9 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string) ([]outp
 			// return tempSecretsFound, error
 		}
 		core.GetSession().Log.Debug("Analyzing dir: %s", targetDir)
-		secrets, err = ScanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret)
+		secrets, err = ScanSecretsInDir(layerIDs[i], extractPath, targetDir,
+			&isFirstSecret, scanCtx)
+
 		imageScan.numSecrets += uint(len(secrets))
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 		if err != nil {
@@ -450,7 +466,8 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string) ([]outp
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func (imageScan *ImageScan) processImageLayersStream(imageManifestPath string) (chan output.SecretFound, error) {
+func (imageScan *ImageScan) processImageLayersStream(imageManifestPath string,
+	scanCtx *ScanContext) (chan output.SecretFound, error) {
 	res := make(chan output.SecretFound, secret_pipeline_size)
 
 	go func() {
@@ -488,7 +505,9 @@ func (imageScan *ImageScan) processImageLayersStream(imageManifestPath string) (
 				continue
 			}
 			core.GetSession().Log.Debug("Analyzing dir: %s", targetDir)
-			secrets, err = ScanSecretsInDir(layerIDs[i], extractPath, targetDir, &isFirstSecret)
+			secrets, err = ScanSecretsInDir(layerIDs[i], extractPath,
+				targetDir, &isFirstSecret, scanCtx)
+
 			imageScan.numSecrets += uint(len(secrets))
 			for i := range secrets {
 				res <- secrets[i]
@@ -725,7 +744,7 @@ type ImageExtractionResult struct {
 	ImageId string
 }
 
-func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
+func ExtractAndScanImage(image string, scanCtx *ScanContext) (*ImageExtractionResult, error) {
 	tempDir, err := core.GetTmpDir(image)
 	if err != nil {
 		return nil, err
@@ -739,7 +758,7 @@ func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
 		return nil, err
 	}
 
-	secrets, err := imageScan.scan()
+	secrets, err := imageScan.scan(scanCtx)
 
 	if err != nil {
 		return nil, err
@@ -747,7 +766,7 @@ func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
 	return &ImageExtractionResult{ImageId: imageScan.imageId, Secrets: secrets}, nil
 }
 
-func ExtractAndScanImageStream(image string) (chan output.SecretFound, error) {
+func ExtractAndScanImageStream(image string, scanCtx *ScanContext) (chan output.SecretFound, error) {
 	tempDir, err := core.GetTmpDir(image)
 	if err != nil {
 		return nil, err
@@ -761,7 +780,7 @@ func ExtractAndScanImageStream(image string) (chan output.SecretFound, error) {
 		return nil, err
 	}
 
-	stream, err := imageScan.scanStream()
+	stream, err := imageScan.scanStream(scanCtx)
 
 	if err != nil {
 		core.DeleteTmpDir(tempDir)
@@ -782,7 +801,8 @@ func ExtractAndScanImageStream(image string) (chan output.SecretFound, error) {
 
 }
 
-func ExtractAndScanFromTar(tarFolder string, imageName string) (*ImageExtractionResult, error) {
+func ExtractAndScanFromTar(tarFolder string, imageName string,
+	scanCtx *ScanContext) (*ImageExtractionResult, error) {
 	// defer core.DeleteTmpDir(tarFolder)
 
 	imageScan := ImageScan{imageName: imageName, imageId: "", tempDir: tarFolder}
@@ -792,10 +812,23 @@ func ExtractAndScanFromTar(tarFolder string, imageName string) (*ImageExtraction
 		return nil, err
 	}
 
-	secrets, err := imageScan.scan()
+	secrets, err := imageScan.scan(scanCtx)
 
 	if err != nil {
 		return nil, err
 	}
 	return &ImageExtractionResult{ImageId: imageScan.imageId, Secrets: secrets}, nil
+}
+
+func CheckScanStatus(scanCtx *ScanContext) error {
+	if scanCtx != nil {
+		if scanCtx.Aborted == true {
+			close(scanCtx.ScanStatusChan)
+			session.Log.Error("Scan aborted due to inactivity, scanid:", scanCtx.ScanID)
+			return fmt.Errorf("Scan aborted due to inactivity")
+		} else {
+			scanCtx.ScanStatusChan <- true
+		}
+	}
+	return nil
 }

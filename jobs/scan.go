@@ -15,8 +15,9 @@ import (
 func DispatchScan(r *pb.FindRequest) {
 
 	go func() {
+		scanCtx := scan.NewScanContext(r.ScanId)
 		var err error
-		res := startStatusReporter(context.Background(), r.ScanId)
+		res := StartStatusReporter(context.Background(), scanCtx)
 		defer func() {
 			res <- err
 			close(res)
@@ -26,17 +27,19 @@ func DispatchScan(r *pb.FindRequest) {
 
 		if r.GetPath() != "" {
 			var isFirstSecret bool = true
-			secrets, err = scan.ScanSecretsInDirStream("", r.GetPath(), r.GetPath(), &isFirstSecret)
+			secrets, err = scan.ScanSecretsInDirStream("", r.GetPath(), r.GetPath(),
+				&isFirstSecret, scanCtx)
 			if err != nil {
 				return
 			}
 		} else if r.GetImage() != nil && r.GetImage().Name != "" {
-			secrets, err = scan.ExtractAndScanImageStream(r.GetImage().Name)
+			secrets, err = scan.ExtractAndScanImageStream(r.GetImage().Name, scanCtx)
 			if err != nil {
 				return
 			}
 		} else if r.GetContainer() != nil && r.GetContainer().Id != "" {
-			secrets, err = scan.ExtractAndScanContainerStream(r.GetContainer().Id, r.GetContainer().Namespace)
+			secrets, err = scan.ExtractAndScanContainerStream(r.GetContainer().Id,
+				r.GetContainer().Namespace, scanCtx)
 			if err != nil {
 				return
 			}

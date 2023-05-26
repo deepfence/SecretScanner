@@ -8,6 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/deepfence/SecretScanner/core"
+	"github.com/deepfence/SecretScanner/scan"
+	log "github.com/sirupsen/logrus"
 )
 
 func writeSecretScanStatus(status, scan_id, scan_message string) {
@@ -54,12 +58,20 @@ func getDfInstallDir() string {
 	}
 }
 
-func startStatusReporter(ctx context.Context, scan_id string) chan error {
+func StartStatusReporter(ctx context.Context, scanCtx *scan.ScanContext) chan error {
 	res := make(chan error)
 	startScanJob()
+	scan_id := scanCtx.ScanID
+	opts := core.GetSession().Options
+
+	//If we don't get any active status back within threshold,
+	//we consider the scan job as dead
+	threshold := *opts.InactiveThreshold
+
 	go func() {
 		defer stopScanJob()
 		var err, abort error
+		ts := time.Now()
 	loop:
 		for {
 			select {
@@ -68,8 +80,18 @@ func startStatusReporter(ctx context.Context, scan_id string) chan error {
 			case <-ctx.Done():
 				abort = ctx.Err()
 				break loop
+			case <-scanCtx.ScanStatusChan:
+				ts = time.Now()
 			case <-time.After(30 * time.Second):
-				writeSecretScanStatus("IN_PROGRESS", scan_id, "")
+				elapsed := int(time.Since(ts).Seconds())
+				if elapsed > threshold {
+					err = fmt.Errorf("Scan job aborted due to inactivity")
+					log.Error("Scanner job aborted as no update within threshold, Scan id:" + scan_id)
+					scanCtx.Aborted = true
+					break loop
+				} else {
+					writeSecretScanStatus("IN_PROGRESS", scan_id, "")
+				}
 			}
 		}
 		if abort != nil {
