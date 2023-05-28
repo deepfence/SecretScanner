@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,7 +16,6 @@ import (
 
 	"github.com/Jeffail/tunny"
 	"github.com/deepfence/SecretScanner/core"
-	"github.com/deepfence/SecretScanner/jobs"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
 )
@@ -92,14 +90,7 @@ func runSecretScanStandalone(writer http.ResponseWriter, request *http.Request) 
 	}
 	fmt.Printf("Secret Scan triggered for %s: ", req.ImageNameWithTag)
 
-	scanCtx := scan.NewScanContext("")
-	statusRes := jobs.StartStatusReporter(context.Background(), scanCtx)
-	defer func() {
-		statusRes <- err
-		close(statusRes)
-	}()
-
-	res, err := scan.ExtractAndScanImage(req.ImageNameWithTag, scanCtx)
+	res, err := scan.ExtractAndScanImage(req.ImageNameWithTag)
 	if err != nil {
 		fmt.Fprintf(writer, "Image scan err: %v", err)
 		return
@@ -181,14 +172,8 @@ func scanAndPublish(imageName string, scanId string, tempDir string, postForm ur
 			fmt.Println("Error in updating in_progress log" + err.Error())
 		}
 	}
-	scanCtx := scan.NewScanContext("")
-	statusRes := jobs.StartStatusReporter(context.Background(), scanCtx)
-	defer func() {
-		statusRes <- err
-		close(statusRes)
-	}()
 
-	res, err := scan.ExtractAndScanFromTar(tempDir, imageName, scanCtx)
+	res, err := scan.ExtractAndScanFromTar(tempDir, imageName)
 	if err != nil {
 		secretScanLogDoc["scan_status"] = "ERROR"
 		secretScanLogDoc["scan_message"] = err.Error()

@@ -11,7 +11,6 @@ import (
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/scan"
-	log "github.com/sirupsen/logrus"
 )
 
 func writeSecretScanStatus(status, scan_id, scan_message string) {
@@ -67,7 +66,6 @@ func StartStatusReporter(ctx context.Context, scanCtx *scan.ScanContext) chan er
 	//If we don't get any active status back within threshold,
 	//we consider the scan job as dead
 	threshold := *opts.InactiveThreshold
-
 	go func() {
 		defer stopScanJob()
 		var err, abort error
@@ -86,7 +84,7 @@ func StartStatusReporter(ctx context.Context, scanCtx *scan.ScanContext) chan er
 				elapsed := int(time.Since(ts).Seconds())
 				if elapsed > threshold {
 					err = fmt.Errorf("Scan job aborted due to inactivity")
-					log.Error("Scanner job aborted as no update within threshold, Scan id:" + scan_id)
+					core.GetSession().Log.Error("Scanner job aborted as no update within threshold, Scan id:" + scan_id)
 					scanCtx.Aborted = true
 					break loop
 				} else {

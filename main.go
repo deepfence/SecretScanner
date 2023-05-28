@@ -25,12 +25,10 @@ package main
 // ------------------------------------------------------------------------------
 
 import (
-	"context"
 	"flag"
 	"fmt"
 
 	"github.com/deepfence/SecretScanner/core"
-	"github.com/deepfence/SecretScanner/jobs"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
 	"github.com/deepfence/SecretScanner/server"
@@ -57,9 +55,9 @@ var session = core.GetSession()
 // image - Name of the container image to scan (e.g. "alpine:3.5")
 // @returns
 // Error, if any. Otherwise, returns nil
-func findSecretsInImage(image string, scanCtx *scan.ScanContext) (*output.JsonImageSecretsOutput, error) {
+func findSecretsInImage(image string) (*output.JsonImageSecretsOutput, error) {
 
-	res, err := scan.ExtractAndScanImage(image, scanCtx)
+	res, err := scan.ExtractAndScanImage(image)
 	if err != nil {
 		return nil, err
 	}
@@ -78,10 +76,10 @@ func findSecretsInImage(image string, scanCtx *scan.ScanContext) (*output.JsonIm
 // dir - Complete path of the directory to be scanned
 // @returns
 // Error, if any. Otherwise, returns nil
-func findSecretsInDir(dir string, scanCtx *scan.ScanContext) (*output.JsonDirSecretsOutput, error) {
+func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
 	var isFirstSecret bool = true
 
-	secrets, err := scan.ScanSecretsInDir("", "", dir, &isFirstSecret, scanCtx)
+	secrets, err := scan.ScanSecretsInDir("", "", dir, &isFirstSecret, nil)
 	if err != nil {
 		core.GetSession().Log.Error("findSecretsInDir: %s", err)
 		return nil, err
@@ -101,10 +99,9 @@ func findSecretsInDir(dir string, scanCtx *scan.ScanContext) (*output.JsonDirSec
 // containerId - Id of the container to scan (e.g. "0fdasf989i0")
 // @returns
 // Error, if any. Otherwise, returns nil
-func findSecretsInContainer(containerId string, containerNS string,
-	scanCtx *scan.ScanContext) (*output.JsonImageSecretsOutput, error) {
+func findSecretsInContainer(containerId string, containerNS string) (*output.JsonImageSecretsOutput, error) {
 
-	res, err := scan.ExtractAndScanContainer(containerId, containerNS, scanCtx)
+	res, err := scan.ExtractAndScanContainer(containerId, containerNS, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -127,17 +124,9 @@ func runOnce() {
 	var input string
 
 	// Scan container image for secrets
-	var err error
-	scanCtx := scan.NewScanContext("")
-	statusRes := jobs.StartStatusReporter(context.Background(), scanCtx)
-	defer func() {
-		statusRes <- err
-		close(statusRes)
-	}()
-
 	if len(*session.Options.ImageName) > 0 {
 		fmt.Printf("Scanning image %s for secrets...\n", *session.Options.ImageName)
-		jsonOutput, err := findSecretsInImage(*session.Options.ImageName, scanCtx)
+		jsonOutput, err := findSecretsInImage(*session.Options.ImageName)
 		if err != nil {
 			core.GetSession().Log.Fatal("main: error while scanning image: %s", err)
 		}
@@ -147,7 +136,7 @@ func runOnce() {
 	// Scan local directory for secrets
 	if len(*session.Options.Local) > 0 {
 		fmt.Printf("[*] Scanning local directory: %s\n", color.BlueString(*session.Options.Local))
-		jsonOutput, err := findSecretsInDir(*session.Options.Local, scanCtx)
+		jsonOutput, err := findSecretsInDir(*session.Options.Local)
 		if err != nil {
 			core.GetSession().Log.Fatal("main: error while scanning dir: %s", err)
 		}
@@ -157,8 +146,7 @@ func runOnce() {
 	// Scan existing container for secrets
 	if len(*session.Options.ContainerId) > 0 {
 		fmt.Printf("Scanning container %s for secrets...\n", *session.Options.ContainerId)
-		jsonOutput, err := findSecretsInContainer(*session.Options.ContainerId,
-			*session.Options.ContainerNS, scanCtx)
+		jsonOutput, err := findSecretsInContainer(*session.Options.ContainerId, *session.Options.ContainerNS)
 		if err != nil {
 			core.GetSession().Log.Fatal("main: error while scanning container: %s", err)
 		}
