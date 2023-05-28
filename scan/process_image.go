@@ -92,11 +92,11 @@ func (imageScan *ImageScan) extractImage(saveImage bool) error {
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors, if any. Otherwise, returns nil
-func (imageScan *ImageScan) scan(scanCtx *ScanContext) ([]output.SecretFound, error) {
+func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
 	tempDir := imageScan.tempDir
 	defer core.DeleteTmpDir(tempDir)
 
-	tempSecretsFound, err := imageScan.processImageLayers(tempDir, scanCtx)
+	tempSecretsFound, err := imageScan.processImageLayers(tempDir, nil)
 	if err != nil {
 		core.GetSession().Log.Error("scanImage: %s", err)
 		return tempSecretsFound, err
@@ -744,7 +744,7 @@ type ImageExtractionResult struct {
 	ImageId string
 }
 
-func ExtractAndScanImage(image string, scanCtx *ScanContext) (*ImageExtractionResult, error) {
+func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
 	tempDir, err := core.GetTmpDir(image)
 	if err != nil {
 		return nil, err
@@ -758,7 +758,7 @@ func ExtractAndScanImage(image string, scanCtx *ScanContext) (*ImageExtractionRe
 		return nil, err
 	}
 
-	secrets, err := imageScan.scan(scanCtx)
+	secrets, err := imageScan.scan()
 
 	if err != nil {
 		return nil, err
@@ -801,8 +801,7 @@ func ExtractAndScanImageStream(image string, scanCtx *ScanContext) (chan output.
 
 }
 
-func ExtractAndScanFromTar(tarFolder string, imageName string,
-	scanCtx *ScanContext) (*ImageExtractionResult, error) {
+func ExtractAndScanFromTar(tarFolder string, imageName string) (*ImageExtractionResult, error) {
 	// defer core.DeleteTmpDir(tarFolder)
 
 	imageScan := ImageScan{imageName: imageName, imageId: "", tempDir: tarFolder}
@@ -812,7 +811,7 @@ func ExtractAndScanFromTar(tarFolder string, imageName string,
 		return nil, err
 	}
 
-	secrets, err := imageScan.scan(scanCtx)
+	secrets, err := imageScan.scan()
 
 	if err != nil {
 		return nil, err
@@ -824,7 +823,7 @@ func CheckScanStatus(scanCtx *ScanContext) error {
 	if scanCtx != nil {
 		if scanCtx.Aborted == true {
 			close(scanCtx.ScanStatusChan)
-			session.Log.Error("Scan aborted due to inactivity, scanid:", scanCtx.ScanID)
+			core.GetSession().Log.Error("Scan aborted due to inactivity, scanid:", scanCtx.ScanID)
 			return fmt.Errorf("Scan aborted due to inactivity")
 		} else {
 			scanCtx.ScanStatusChan <- true

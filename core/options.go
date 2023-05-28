@@ -70,7 +70,7 @@ func ParseOptions() (*Options, error) {
 		ContainerNS:       flag.String("container-ns", "", "Namespace of existing container to scan, empty for docker runtime"),
 		Quiet:             flag.Bool("quiet", false, "Don't display any output in stdout"),
 		WorkersPerScan:    flag.Int("workers-per-scan", 1, "Number of concrrent workers per scan"),
-		InactiveThreshold: flag.Int("inactive-threshold", 60, "Threshold for Inactive scan in seconds"),
+		InactiveThreshold: flag.Int("inactive-threshold", 600, "Threshold for Inactive scan in seconds"),
 	}
 	flag.Var(options.ConfigPath, "config-path", "Searches for config.yaml from given directory. If not set, tries to find it from SecretScanner binary's and current directory.  Can be specified multiple times.")
 	flag.Parse()
