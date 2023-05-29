@@ -68,6 +68,7 @@ func StartStatusReporter(ctx context.Context, scanCtx *scan.ScanContext) chan er
 	threshold := *opts.InactiveThreshold
 	go func() {
 		defer stopScanJob()
+		ticker := time.NewTicker(30 * time.Second)
 		var err, abort error
 		ts := time.Now()
 	loop:
@@ -80,7 +81,7 @@ func StartStatusReporter(ctx context.Context, scanCtx *scan.ScanContext) chan er
 				break loop
 			case <-scanCtx.ScanStatusChan:
 				ts = time.Now()
-			case <-time.After(30 * time.Second):
+			case <-ticker.C:
 				elapsed := int(time.Since(ts).Seconds())
 				if elapsed > threshold {
 					err = fmt.Errorf("Scan job aborted due to inactivity")
