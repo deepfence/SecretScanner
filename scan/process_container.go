@@ -9,10 +9,10 @@ import (
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/vessel"
-	vesselConstants "github.com/deepfence/vessel/constants"
 	containerdRuntime "github.com/deepfence/vessel/containerd"
 	crioRuntime "github.com/deepfence/vessel/crio"
 	dockerRuntime "github.com/deepfence/vessel/docker"
+	vesselConstants "github.com/deepfence/vessel/utils"
 )
 
 var (
@@ -52,8 +52,7 @@ func (containerScan *ContainerScan) extractFileSystem() error {
 	}
 	err = containerRuntimeInterface.ExtractFileSystemContainer(
 		containerScan.containerId, containerScan.namespace,
-		containerScan.tempDir+".tar", endpoint,
-	)
+		containerScan.tempDir+".tar")
 
 	if err != nil {
 		return err
