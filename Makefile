@@ -9,6 +9,6 @@ clean:
 SecretScanner: $(PWD)/**/*.go $(PWD)/agent-plugins-grpc/**/*.go
 	go mod tidy -v
 	go mod vendor
-	go build -ldflags="-extldflags 'static'" -buildvcs=false -v .
+	go build -ldflags="-extldflags=-static" -buildvcs=false -v .
 
 .PHONY: clean bootstrap
