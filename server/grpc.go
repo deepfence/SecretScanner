@@ -10,7 +10,7 @@ import (
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/jobs"
-	pb "github.com/deepfence/agent-plugins-grpc/proto"
+	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 	"google.golang.org/grpc"
 )
 

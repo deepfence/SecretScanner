@@ -9,7 +9,7 @@ import (
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
 
-	pb "github.com/deepfence/agent-plugins-grpc/proto"
+	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 )
 
 func DispatchScan(r *pb.FindRequest) {

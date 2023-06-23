@@ -8,7 +8,7 @@ import (
 
 	// "strings"
 	"github.com/deepfence/SecretScanner/core"
-	pb "github.com/deepfence/agent-plugins-grpc/proto"
+	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 	"github.com/fatih/color"
 )
 
