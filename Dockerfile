@@ -2,14 +2,11 @@ FROM golang:1.20-alpine3.18 AS builder
 MAINTAINER DeepFence
 
 RUN apk update  \
-    && apk add --upgrade gcc musl-dev pkgconfig g++ make git protoc \
+    && apk add --upgrade gcc musl-dev pkgconfig g++ make git \
     && apk add hyperscan-dev --repository=https://dl-cdn.alpinelinux.org/alpine/v3.13/community
 ENV PKG_CONFIG_PATH=/usr/local/include/hs/ \
     CGO_CFLAGS="-I/usr/local/include/hyperscan/src" \
     LD_LIBRARY_PATH=/usr/local/lib:/usr/local/include/hs/lib:$LD_LIBRARY_PATH
-
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.30.0 \
-    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
 
 WORKDIR /home/deepfence/src/SecretScanner
 COPY . .
