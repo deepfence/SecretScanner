@@ -12,3 +12,7 @@ SecretScanner: $(PWD)/**/*.go $(PWD)/agent-plugins-grpc/**/*.go
 	go build -ldflags="-extldflags=-static" -buildvcs=false -v .
 
 .PHONY: clean bootstrap
+
+.PHONY: docker
+docker:
+	docker build -t deepfenceio/deepfence_secret_scanner:latest .

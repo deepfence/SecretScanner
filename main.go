@@ -117,54 +117,63 @@ func findSecretsInContainer(containerId string, containerNS string) (*output.Jso
 
 type SecretsWriter interface {
 	WriteSecrets(jsonFilename string) error
+	WriteTable() error
 }
 
-func runOnce() {
-	var output SecretsWriter
+func runOnce(format string) {
+	var result SecretsWriter
 	var input string
+	var err error
 
 	// Scan container image for secrets
 	if len(*session.Options.ImageName) > 0 {
+		input = *session.Options.ImageName
 		fmt.Printf("Scanning image %s for secrets...\n", *session.Options.ImageName)
-		jsonOutput, err := findSecretsInImage(*session.Options.ImageName)
+		result, err = findSecretsInImage(*session.Options.ImageName)
 		if err != nil {
 			core.GetSession().Log.Fatal("main: error while scanning image: %s", err)
 		}
-		output = jsonOutput
 	}
 
 	// Scan local directory for secrets
 	if len(*session.Options.Local) > 0 {
+		input = *session.Options.Local
 		fmt.Printf("[*] Scanning local directory: %s\n", color.BlueString(*session.Options.Local))
-		jsonOutput, err := findSecretsInDir(*session.Options.Local)
+		result, err = findSecretsInDir(*session.Options.Local)
 		if err != nil {
 			core.GetSession().Log.Fatal("main: error while scanning dir: %s", err)
 		}
-		output = jsonOutput
 	}
 
 	// Scan existing container for secrets
 	if len(*session.Options.ContainerId) > 0 {
+		input = *session.Options.ContainerId
 		fmt.Printf("Scanning container %s for secrets...\n", *session.Options.ContainerId)
-		jsonOutput, err := findSecretsInContainer(*session.Options.ContainerId, *session.Options.ContainerNS)
+		result, err = findSecretsInContainer(*session.Options.ContainerId, *session.Options.ContainerNS)
 		if err != nil {
 			core.GetSession().Log.Fatal("main: error while scanning container: %s", err)
 		}
-		output = jsonOutput
 	}
 
-	if output == nil {
+	if result == nil {
 		core.GetSession().Log.Error("set either -local or -image-name flag")
 		return
 	}
 
-	jsonFilename, err := core.GetJsonFilepath(input)
-	if err != nil {
-		core.GetSession().Log.Fatal("main: error while retrieving json output: %s", err)
-	}
-	err = output.WriteSecrets(jsonFilename)
-	if err != nil {
-		core.GetSession().Log.Fatal("main: error whilewriting secrets: %s", err)
+	if format == core.JsonOutput {
+		jsonFilename, err := core.GetJsonFilepath(input)
+		if err != nil {
+			core.GetSession().Log.Fatal("main: error while retrieving json output: %s", err)
+		}
+		err = result.WriteSecrets(jsonFilename)
+		if err != nil {
+			core.GetSession().Log.Fatal("main: error while writing secrets: %s", err)
+		}
+	} else {
+		err = result.WriteTable()
+		if err != nil {
+			core.GetSession().Log.Fatal("main: error while writing secrets: %s", err)
+		}
 	}
 }
 
@@ -193,6 +202,6 @@ func main() {
 			core.GetSession().Log.Fatal("main: failed to serve through http: %v", err)
 		}
 	} else {
-		runOnce()
+		runOnce(*core.GetSession().Options.OutFormat)
 	}
 }

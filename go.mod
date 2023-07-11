@@ -11,6 +11,7 @@ require (
 	github.com/fatih/color v1.15.0
 	github.com/flier/gohs v1.2.2
 	google.golang.org/grpc v1.56.1
+	github.com/olekukonko/tablewriter v0.0.5
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -42,6 +43,7 @@ require (
 	github.com/klauspost/compress v1.16.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect

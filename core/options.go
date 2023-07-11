@@ -9,6 +9,8 @@ import (
 const (
 	TempDirSuffix          = "SecretScanning"
 	ExtractedImageFilesDir = "ExtractedFiles"
+	JsonOutput             = "json"
+	TableOutput            = "table"
 )
 
 type Options struct {
@@ -31,6 +33,7 @@ type Options struct {
 	Quiet             *bool
 	WorkersPerScan    *int
 	InactiveThreshold *int
+	OutFormat         *string
 }
 
 type repeatableStringValue struct {
@@ -71,6 +74,7 @@ func ParseOptions() (*Options, error) {
 		Quiet:             flag.Bool("quiet", false, "Don't display any output in stdout"),
 		WorkersPerScan:    flag.Int("workers-per-scan", 1, "Number of concrrent workers per scan"),
 		InactiveThreshold: flag.Int("inactive-threshold", 600, "Threshold for Inactive scan in seconds"),
+		OutFormat:         flag.String("output", TableOutput, "Output format: json or table"),
 	}
 	flag.Var(options.ConfigPath, "config-path", "Searches for config.yaml from given directory. If not set, tries to find it from SecretScanner binary's and current directory.  Can be specified multiple times.")
 	flag.Parse()

@@ -10,6 +10,7 @@ import (
 	"github.com/deepfence/SecretScanner/core"
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 	"github.com/fatih/color"
+	tw "github.com/olekukonko/tablewriter"
 )
 
 const (
@@ -67,8 +68,12 @@ func (imageOutput *JsonImageSecretsOutput) SetSecrets(Secrets []SecretFound) {
 }
 
 func (imageOutput JsonImageSecretsOutput) WriteSecrets(outputFilename string) error {
-	err := printSecretsToJsonFile(imageOutput, outputFilename)
-	return err
+	return printSecretsToJsonFile(imageOutput, outputFilename)
+
+}
+
+func (imageOutput JsonImageSecretsOutput) WriteTable() error {
+	return WriteTableOutput(&imageOutput.Secrets)
 }
 
 func (dirOutput *JsonDirSecretsOutput) SetDirName(dirName string) {
@@ -84,8 +89,11 @@ func (dirOutput *JsonDirSecretsOutput) SetSecrets(Secrets []SecretFound) {
 }
 
 func (dirOutput JsonDirSecretsOutput) WriteSecrets(outputFilename string) error {
-	err := printSecretsToJsonFile(dirOutput, outputFilename)
-	return err
+	return printSecretsToJsonFile(dirOutput, outputFilename)
+}
+
+func (dirOutput JsonDirSecretsOutput) WriteTable() error {
+	return WriteTableOutput(&dirOutput.Secrets)
 }
 
 func printSecretsToJsonFile(secretsJson interface{}, outputFilename string) error {
@@ -219,4 +227,24 @@ func SecretToSecretInfo(out SecretFound) *pb.SecretInfo {
 			Score: float32(out.SeverityScore),
 		},
 	}
+}
+
+func WriteTableOutput(report *[]SecretFound) error {
+	table := tw.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Matched Part", "Rule Name", "Severity", "File Name", "Signature"})
+	table.SetHeaderLine(true)
+	table.SetBorder(true)
+	table.SetAutoWrapText(true)
+	table.SetAutoFormatHeaders(true)
+	table.SetColMinWidth(0, 30)
+	table.SetColMinWidth(1, 10)
+	table.SetColMinWidth(2, 30)
+	table.SetColMinWidth(3, 20)
+	table.SetColMinWidth(4, 30)
+
+	for _, r := range *report {
+		table.Append([]string{r.PartToMatch, r.RuleName, r.Severity, r.CompleteFilename, r.Regex})
+	}
+	table.Render()
+	return nil
 }
