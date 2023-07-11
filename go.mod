@@ -10,8 +10,8 @@ require (
 	github.com/deepfence/vessel v0.11.1
 	github.com/fatih/color v1.15.0
 	github.com/flier/gohs v1.2.2
-	google.golang.org/grpc v1.56.1
 	github.com/olekukonko/tablewriter v0.0.5
+	google.golang.org/grpc v1.56.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
