@@ -236,17 +236,11 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string,
 			session.Log.Error("scanSecretsInDir: %s", err)
 		} else {
 			if len(secrets) > 0 {
-				if *session.Options.Quiet {
-					output.PrintColoredSecrets(secrets, isFirstSecret)
-				}
 				secretsFound = append(secretsFound, secrets...)
 			}
 		}
 
 		secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, &numSecrets)
-		if *session.Options.Quiet {
-			output.PrintColoredSecrets(secrets, isFirstSecret)
-		}
 		secretsFound = append(secretsFound, secrets...)
 
 		// Don't report secrets if number of secrets exceeds MAX value
@@ -362,9 +356,6 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string,
 				session.Log.Error("scanSecretsInDir: %s", err)
 			} else {
 				if len(secrets) > 0 {
-					if *session.Options.Quiet {
-						output.PrintColoredSecrets(secrets, isFirstSecret)
-					}
 					for i := range secrets {
 						res <- secrets[i]
 					}
@@ -372,9 +363,6 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string,
 			}
 
 			secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, &numSecrets)
-			if *session.Options.Quiet {
-				output.PrintColoredSecrets(secrets, isFirstSecret)
-			}
 			for i := range secrets {
 				res <- secrets[i]
 			}
@@ -821,7 +809,7 @@ func ExtractAndScanFromTar(tarFolder string, imageName string) (*ImageExtraction
 
 func CheckScanStatus(scanCtx *ScanContext) error {
 	if scanCtx != nil {
-		if scanCtx.Aborted.Load() == true {
+		if scanCtx.Aborted.Load() {
 			close(scanCtx.ScanStatusChan)
 			core.GetSession().Log.Error("Scan aborted due to inactivity, scanid:", scanCtx.ScanID)
 			return fmt.Errorf("Scan aborted due to inactivity")

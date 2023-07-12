@@ -22,15 +22,12 @@ type Options struct {
 	HostMountPath     *string
 	ConfigPath        *repeatableStringValue
 	MergeConfigs      *bool
-	OutputPath        *string
-	JsonFilename      *string
 	ImageName         *string
 	MultipleMatch     *bool
 	MaxMultiMatch     *uint
 	MaxSecrets        *uint
 	ContainerId       *string
 	ContainerNS       *string
-	Quiet             *bool
 	WorkersPerScan    *int
 	InactiveThreshold *int
 	OutFormat         *string
@@ -63,16 +60,13 @@ func ParseOptions() (*Options, error) {
 		HostMountPath:     flag.String("host-mount-path", "", "If scanning the host, specify the host mount path for path exclusions to work correctly."),
 		ConfigPath:        &repeatableStringValue{},
 		MergeConfigs:      flag.Bool("merge-configs", false, "Merge config files specified by --config-path into the default config"),
-		OutputPath:        flag.String("output-path", ".", "Output directory where json file will be stored. If not set, it will output to current directory"),
-		JsonFilename:      flag.String("json-filename", "", "Output json file name. If not set, it will automatically create a filename based on image or dir name"),
 		ImageName:         flag.String("image-name", "", "Name of the image along with tag to scan for secrets"),
 		MultipleMatch:     flag.Bool("multi-match", false, "Output multiple matches of same pattern in one file. By default, only one match of a pattern is output for a file for better performance"),
 		MaxMultiMatch:     flag.Uint("max-multi-match", 3, "Maximum number of matches of same pattern in one file. This is used only when multi-match option is enabled."),
 		MaxSecrets:        flag.Uint("max-secrets", 1000, "Maximum number of secrets to find in one container image or file system."),
 		ContainerId:       flag.String("container-id", "", "Id of existing container ID"),
 		ContainerNS:       flag.String("container-ns", "", "Namespace of existing container to scan, empty for docker runtime"),
-		Quiet:             flag.Bool("quiet", false, "Don't display any output in stdout"),
-		WorkersPerScan:    flag.Int("workers-per-scan", 1, "Number of concrrent workers per scan"),
+		WorkersPerScan:    flag.Int("workers-per-scan", 1, "Number of concurrent workers per scan"),
 		InactiveThreshold: flag.Int("inactive-threshold", 600, "Threshold for Inactive scan in seconds"),
 		OutFormat:         flag.String("output", TableOutput, "Output format: json or table"),
 	}

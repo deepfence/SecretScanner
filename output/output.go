@@ -67,8 +67,8 @@ func (imageOutput *JsonImageSecretsOutput) SetSecrets(Secrets []SecretFound) {
 	imageOutput.Secrets = Secrets
 }
 
-func (imageOutput JsonImageSecretsOutput) WriteSecrets(outputFilename string) error {
-	return printSecretsToJsonFile(imageOutput, outputFilename)
+func (imageOutput JsonImageSecretsOutput) WriteJson() error {
+	return printSecretsToJson(imageOutput)
 
 }
 
@@ -88,58 +88,25 @@ func (dirOutput *JsonDirSecretsOutput) SetSecrets(Secrets []SecretFound) {
 	dirOutput.Secrets = Secrets
 }
 
-func (dirOutput JsonDirSecretsOutput) WriteSecrets(outputFilename string) error {
-	return printSecretsToJsonFile(dirOutput, outputFilename)
+func (dirOutput JsonDirSecretsOutput) WriteJson() error {
+	return printSecretsToJson(dirOutput)
 }
 
 func (dirOutput JsonDirSecretsOutput) WriteTable() error {
 	return WriteTableOutput(&dirOutput.Secrets)
 }
 
-func printSecretsToJsonFile(secretsJson interface{}, outputFilename string) error {
+func printSecretsToJson(secretsJson interface{}) error {
 	file, err := json.MarshalIndent(secretsJson, "", Indent)
 	if err != nil {
 		core.GetSession().Log.Error("printSecretsToJsonFile: Couldn't format json output: %s", err)
 		return err
 	}
 
-	err = os.WriteFile(outputFilename, file, os.ModePerm)
-	if err != nil {
-		core.GetSession().Log.Error("printSecretsToJsonFile: Couldn't write json output to file: %s", err)
-		return err
-	}
-
-	// fmt.Println(string(file))
+	fmt.Println()
+	fmt.Println(string(file))
 
 	return nil
-}
-
-func (imageOutput JsonImageSecretsOutput) PrintJsonHeader() {
-	fmt.Printf("{\n")
-	fmt.Printf(Indent+"\"Timestamp\": \"%s\",\n", time.Now().Format("2006-01-02 15:04:05.000000000 -07:00"))
-	fmt.Printf(Indent+"\"Image Name\": \"%s\",\n", imageOutput.ImageName)
-	fmt.Printf(Indent+"\"Image ID\": \"%s\",\n", imageOutput.ImageId)
-	fmt.Printf(Indent + "\"Secrets\": [\n")
-}
-
-func (imageOutput JsonImageSecretsOutput) PrintJsonFooter() {
-	printJsonFooter()
-}
-
-func (dirOutput JsonDirSecretsOutput) PrintJsonHeader() {
-	fmt.Printf("{\n")
-	fmt.Printf(Indent+"\"Timestamp\": \"%s\",\n", time.Now().Format("2006-01-02 15:04:05.000000000 -07:00"))
-	fmt.Printf(Indent+"\"Directory Name\": \"%s\",\n", dirOutput.DirName)
-	fmt.Printf(Indent + "\"Secrets\": [\n")
-}
-
-func (dirOutput JsonDirSecretsOutput) PrintJsonFooter() {
-	printJsonFooter()
-}
-
-func printJsonFooter() {
-	fmt.Printf("\n" + Indent + "]\n")
-	fmt.Printf("}\n")
 }
 
 func PrintColoredSecrets(secrets []SecretFound, isFirstSecret *bool) {
@@ -236,11 +203,11 @@ func WriteTableOutput(report *[]SecretFound) error {
 	table.SetBorder(true)
 	table.SetAutoWrapText(true)
 	table.SetAutoFormatHeaders(true)
-	table.SetColMinWidth(0, 30)
+	table.SetColMinWidth(0, 10)
 	table.SetColMinWidth(1, 10)
-	table.SetColMinWidth(2, 30)
+	table.SetColMinWidth(2, 10)
 	table.SetColMinWidth(3, 20)
-	table.SetColMinWidth(4, 30)
+	table.SetColMinWidth(4, 20)
 
 	for _, r := range *report {
 		table.Append([]string{r.PartToMatch, r.RuleName, r.Severity, r.CompleteFilename, r.Regex})
