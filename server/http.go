@@ -99,8 +99,6 @@ func runSecretScanStandalone(writer http.ResponseWriter, request *http.Request) 
 	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ImageName: req.ImageNameWithTag}
 	jsonImageSecretsOutput.SetTime()
 	jsonImageSecretsOutput.SetImageId(res.ImageId)
-	jsonImageSecretsOutput.PrintJsonHeader()
-	jsonImageSecretsOutput.PrintJsonFooter()
 	jsonImageSecretsOutput.SetSecrets(res.Secrets)
 
 	outByte, err := json.Marshal(jsonImageSecretsOutput)

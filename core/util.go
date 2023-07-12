@@ -48,30 +48,6 @@ func getSanitizedString(imageName string) string {
 	return sanitizedName
 }
 
-// GetJsonFilepath Return complete path and filename for json output file
-// @parameters
-// image - Name of the container image or dir, for which json filename and path will be created
-// @returns
-// string - Sanitized string which can used as path and filename of json output file
-// Error - Errors if path can't be created. Otherwise, returns nil
-func GetJsonFilepath(input string) (string, error) {
-	outputDir := *GetSession().Options.OutputPath
-	JsonFilename := *GetSession().Options.JsonFilename
-	if !PathExists(outputDir) {
-		err := CreateRecursiveDir(outputDir)
-		if err != nil {
-			GetSession().Log.Error("GetJsonFilepath: Could not create output dir: %s", err)
-			return "", err
-		}
-	}
-	if JsonFilename == "" {
-		JsonFilename = getSanitizedString(input) + "-secrets.json"
-	}
-	jsonFilePath := filepath.Join(outputDir, JsonFilename)
-	GetSession().Log.Info("Complete json file path and name: %s", jsonFilePath)
-	return jsonFilePath, nil
-}
-
 // GetTmpDir Create a temporrary directory to extract the conetents of container image
 // @parameters
 // imageName - Name of the container image
@@ -124,7 +100,6 @@ func DeleteTmpDir(outputDir string) error {
 // path - Directory whose contents need to be deleted
 // wildcard - patterns to match the filenames (e.g. '*')
 func DeleteFiles(path string, wildCard string) {
-
 	var val string
 	files, _ := filepath.Glob(path + wildCard)
 	for _, val = range files {

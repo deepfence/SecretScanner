@@ -31,5 +31,5 @@ COPY --from=builder /home/deepfence/src/SecretScanner/SecretScanner .
 COPY --from=builder /home/deepfence/src/SecretScanner/config.yaml .
 WORKDIR /home/deepfence/output
 
-ENTRYPOINT ["/home/deepfence/usr/SecretScanner", "-config-path", "/home/deepfence/usr", "-quiet"]
+ENTRYPOINT ["/home/deepfence/usr/SecretScanner", "-config-path", "/home/deepfence/usr"]
 CMD ["-h"]
