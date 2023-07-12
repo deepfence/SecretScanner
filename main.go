@@ -169,9 +169,12 @@ func runOnce(format string) {
 		if err != nil {
 			core.GetSession().Log.Error(err.Error())
 		}
-		scanId := fmt.Sprintf("%s-%d", node_id, time.Now().UnixMilli())
+
 		pub.SendReport(output.GetHostname(), *session.Options.ImageName, *session.Options.ContainerId, node_type)
-		pub.StartScan(node_id, node_type)
+		scanId := pub.StartScan(node_id, node_type)
+		if len(scanId) == 0 {
+			scanId = fmt.Sprintf("%s-%d", node_id, time.Now().UnixMilli())
+		}
 		pub.IngestSecretScanResults(scanId, result.GetSecrets())
 		core.GetSession().Log.Info("scan id %s", scanId)
 	}
