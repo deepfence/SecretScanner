@@ -128,6 +128,7 @@ func processImageWrapper(imageParamsInterface interface{}) interface{} {
 	return nil
 }
 
+// TODO: remove this code block
 func processImage(imageName string, scanId string, form url.Values) {
 	tempFolder, err := core.GetTmpDir(imageName)
 	if err != nil {
