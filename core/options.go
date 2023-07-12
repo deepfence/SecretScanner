@@ -31,6 +31,9 @@ type Options struct {
 	WorkersPerScan    *int
 	InactiveThreshold *int
 	OutFormat         *string
+	ConsoleUrl        *string
+	ConsolePort       *int
+	DeepfenceKey      *string
 }
 
 type repeatableStringValue struct {
@@ -69,6 +72,9 @@ func ParseOptions() (*Options, error) {
 		WorkersPerScan:    flag.Int("workers-per-scan", 1, "Number of concurrent workers per scan"),
 		InactiveThreshold: flag.Int("inactive-threshold", 600, "Threshold for Inactive scan in seconds"),
 		OutFormat:         flag.String("output", TableOutput, "Output format: json or table"),
+		ConsoleUrl:        flag.String("console-url", "", "Deepfence Management Console URL"),
+		ConsolePort:       flag.Int("console-port", 443, "Deepfence Management Console Port"),
+		DeepfenceKey:      flag.String("deepfence-key", "", "Deepfence key for auth"),
 	}
 	flag.Var(options.ConfigPath, "config-path", "Searches for config.yaml from given directory. If not set, tries to find it from SecretScanner binary's and current directory.  Can be specified multiple times.")
 	flag.Parse()

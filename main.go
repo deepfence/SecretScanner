@@ -27,6 +27,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
@@ -112,14 +114,19 @@ func findSecretsInContainer(containerId string, containerNS string) (*output.Jso
 type SecretsWriter interface {
 	WriteJson() error
 	WriteTable() error
+	GetSecrets() []output.SecretFound
 }
 
 func runOnce(format string) {
 	var result SecretsWriter
 	var err error
+	node_type := ""
+	node_id := ""
 
 	// Scan container image for secrets
 	if len(*session.Options.ImageName) > 0 {
+		node_type = "image"
+		node_id = *session.Options.ImageName
 		fmt.Printf("Scanning image %s for secrets...\n", *session.Options.ImageName)
 		result, err = findSecretsInImage(*session.Options.ImageName)
 		if err != nil {
@@ -129,6 +136,7 @@ func runOnce(format string) {
 
 	// Scan local directory for secrets
 	if len(*session.Options.Local) > 0 {
+		node_id = output.GetHostname()
 		fmt.Printf("[*] Scanning local directory: %s\n", color.BlueString(*session.Options.Local))
 		result, err = findSecretsInDir(*session.Options.Local)
 		if err != nil {
@@ -138,6 +146,8 @@ func runOnce(format string) {
 
 	// Scan existing container for secrets
 	if len(*session.Options.ContainerId) > 0 {
+		node_type = "container_image"
+		node_id = *session.Options.ContainerId
 		fmt.Printf("Scanning container %s for secrets...\n", *session.Options.ContainerId)
 		result, err = findSecretsInContainer(*session.Options.ContainerId, *session.Options.ContainerNS)
 		if err != nil {
@@ -148,6 +158,22 @@ func runOnce(format string) {
 	if result == nil {
 		core.GetSession().Log.Error("set either -local or -image-name flag")
 		return
+	}
+
+	if len(*core.GetSession().Options.ConsoleUrl) != 0 && len(*core.GetSession().Options.DeepfenceKey) != 0 {
+		pub, err := output.NewPublisher(
+			*core.GetSession().Options.ConsoleUrl,
+			strconv.Itoa(*core.GetSession().Options.ConsolePort),
+			*core.GetSession().Options.DeepfenceKey,
+		)
+		if err != nil {
+			core.GetSession().Log.Error(err.Error())
+		}
+		scanId := fmt.Sprintf("%s-%d", node_id, time.Now().UnixMilli())
+		pub.SendReport(output.GetHostname(), *session.Options.ImageName, *session.Options.ContainerId, node_type)
+		pub.StartScan(node_id, node_type)
+		pub.IngestSecretScanResults(scanId, result.GetSecrets())
+		core.GetSession().Log.Info("scan id %s", scanId)
 	}
 
 	if format == core.JsonOutput {

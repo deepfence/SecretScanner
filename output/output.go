@@ -33,10 +33,6 @@ type SecretFound struct {
 	MatchedContents       string  `json:"Matched Contents,omitempty"`
 }
 
-type SecretstOutput interface {
-	WriteSecrets(string) error
-}
-
 type JsonDirSecretsOutput struct {
 	Timestamp time.Time
 	DirName   string `json:"Directory Name"`
@@ -67,6 +63,10 @@ func (imageOutput *JsonImageSecretsOutput) SetSecrets(Secrets []SecretFound) {
 	imageOutput.Secrets = Secrets
 }
 
+func (imageOutput *JsonImageSecretsOutput) GetSecrets() []SecretFound {
+	return imageOutput.Secrets
+}
+
 func (imageOutput JsonImageSecretsOutput) WriteJson() error {
 	return printSecretsToJson(imageOutput)
 
@@ -86,6 +86,9 @@ func (dirOutput *JsonDirSecretsOutput) SetTime() {
 
 func (dirOutput *JsonDirSecretsOutput) SetSecrets(Secrets []SecretFound) {
 	dirOutput.Secrets = Secrets
+}
+func (dirOutput *JsonDirSecretsOutput) GetSecrets() []SecretFound {
+	return dirOutput.Secrets
 }
 
 func (dirOutput JsonDirSecretsOutput) WriteJson() error {
