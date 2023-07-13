@@ -92,11 +92,11 @@ func (imageScan *ImageScan) extractImage(saveImage bool) error {
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors, if any. Otherwise, returns nil
-func (imageScan *ImageScan) scan() ([]output.SecretFound, error) {
+func (imageScan *ImageScan) scan(scanCtx *ScanContext) ([]output.SecretFound, error) {
 	tempDir := imageScan.tempDir
 	defer core.DeleteTmpDir(tempDir)
 
-	tempSecretsFound, err := imageScan.processImageLayers(tempDir, nil)
+	tempSecretsFound, err := imageScan.processImageLayers(tempDir, scanCtx)
 	if err != nil {
 		core.GetSession().Log.Error("scanImage: %s", err)
 		return tempSecretsFound, err
@@ -758,7 +758,7 @@ func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
 		return nil, err
 	}
 
-	secrets, err := imageScan.scan()
+	secrets, err := imageScan.scan(nil)
 
 	if err != nil {
 		return nil, err
@@ -801,7 +801,8 @@ func ExtractAndScanImageStream(image string, scanCtx *ScanContext) (chan output.
 
 }
 
-func ExtractAndScanFromTar(tarFolder string, imageName string) (*ImageExtractionResult, error) {
+func ExtractAndScanFromTar(tarFolder string, imageName string,
+	scanCtx *ScanContext) (*ImageExtractionResult, error) {
 	// defer core.DeleteTmpDir(tarFolder)
 
 	imageScan := ImageScan{imageName: imageName, imageId: "", tempDir: tarFolder}
@@ -811,7 +812,7 @@ func ExtractAndScanFromTar(tarFolder string, imageName string) (*ImageExtraction
 		return nil, err
 	}
 
-	secrets, err := imageScan.scan()
+	secrets, err := imageScan.scan(scanCtx)
 
 	if err != nil {
 		return nil, err
@@ -825,6 +826,10 @@ func CheckScanStatus(scanCtx *ScanContext) error {
 			close(scanCtx.ScanStatusChan)
 			core.GetSession().Log.Error("Scan aborted due to inactivity, scanid:", scanCtx.ScanID)
 			return fmt.Errorf("Scan aborted due to inactivity")
+		} else if scanCtx.Stopped.Load() == true {
+			close(scanCtx.ScanStatusChan)
+			core.GetSession().Log.Error("Scan Stopped by user request, scanid:", scanCtx.ScanID)
+			return fmt.Errorf("Scan Stopped by user request")
 		} else {
 			scanCtx.ScanStatusChan <- true
 		}
