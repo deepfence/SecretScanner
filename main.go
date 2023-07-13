@@ -179,6 +179,13 @@ func runOnce(format string) {
 		core.GetSession().Log.Info("scan id %s", scanId)
 	}
 
+	counts := output.CountBySeverity(result.GetSecrets())
+	core.GetSession().Log.Info("result severity counts: %+v", counts)
+
+	fmt.Println("summary:")
+	fmt.Printf("  total=%d high=%d medium=%d low=%d\n",
+		counts.Total, counts.High, counts.Medium, counts.Low)
+
 	if format == core.JsonOutput {
 		err = result.WriteJson()
 		if err != nil {
@@ -190,6 +197,14 @@ func runOnce(format string) {
 			core.GetSession().Log.Fatal("main: error while writing secrets: %s", err)
 		}
 	}
+
+	output.FailOn(
+		counts,
+		*core.GetSession().Options.FailOnHighCount,
+		*core.GetSession().Options.FailOnMediumCount,
+		*core.GetSession().Options.FailOnLowCount,
+		*core.GetSession().Options.FailOnCount,
+	)
 }
 
 func main() {

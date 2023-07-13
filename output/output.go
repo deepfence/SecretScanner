@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	// "strings"
 	"github.com/deepfence/SecretScanner/core"
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 	"github.com/fatih/color"
@@ -15,6 +14,13 @@ import (
 
 const (
 	Indent = "  " // Indentation for Json printing
+)
+
+// severity
+const (
+	HIGH   = "high"
+	MEDIUM = "medium"
+	LOW    = "low"
 )
 
 type SecretFound struct {
@@ -217,4 +223,56 @@ func WriteTableOutput(report *[]SecretFound) error {
 	}
 	table.Render()
 	return nil
+}
+
+type SevCount struct {
+	Total  int
+	High   int
+	Medium int
+	Low    int
+}
+
+func CountBySeverity(report []SecretFound) SevCount {
+	detail := SevCount{}
+
+	for _, r := range report {
+		detail.Total += 1
+		switch r.Severity {
+		case HIGH:
+			detail.High += 1
+		case MEDIUM:
+			detail.Medium += 1
+		case LOW:
+			detail.Low += 1
+		}
+	}
+
+	return detail
+}
+
+func ExitOnSeverity(severity string, count int, failOnCount int) {
+	core.GetSession().Log.Debug("ExitOnSeverity severity=%s count=%d failOnCount=%d",
+		severity, count, failOnCount)
+	if count >= failOnCount {
+		if len(severity) > 0 {
+			msg := "Exit secret scan. Number of %s secrets (%d) reached/exceeded the limit (%d).\n"
+			fmt.Printf(msg, severity, count, failOnCount)
+			os.Exit(1)
+		}
+		msg := "Exit secret scan. Number of secrets (%d) reached/exceeded the limit (%d).\n"
+		fmt.Printf(msg, count, failOnCount)
+		os.Exit(1)
+	}
+}
+
+func FailOn(details SevCount, failOnHighCount int, failOnMediumCount int, failOnLowCount int, failOnCount int) {
+	if failOnHighCount > 0 {
+		ExitOnSeverity(HIGH, details.High, failOnHighCount)
+	} else if failOnMediumCount > 0 {
+		ExitOnSeverity(MEDIUM, details.Medium, failOnMediumCount)
+	} else if failOnLowCount > 0 {
+		ExitOnSeverity(LOW, details.Low, failOnLowCount)
+	} else if failOnCount > 0 {
+		ExitOnSeverity("", details.Total, failOnCount)
+	}
 }
