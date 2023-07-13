@@ -173,7 +173,7 @@ func scanAndPublish(imageName string, scanId string, tempDir string, postForm ur
 		}
 	}
 
-	res, err := scan.ExtractAndScanFromTar(tempDir, imageName)
+	res, err := scan.ExtractAndScanFromTar(tempDir, imageName, nil)
 	if err != nil {
 		secretScanLogDoc["scan_status"] = "ERROR"
 		secretScanLogDoc["scan_message"] = err.Error()

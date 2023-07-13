@@ -68,24 +68,31 @@ func StartStatusReporter(ctx context.Context, scanCtx *scan.ScanContext) chan er
 	threshold := *opts.InactiveThreshold
 	go func() {
 		defer stopScanJob()
-		ticker := time.NewTicker(30 * time.Second)
-		var err, abort error
+		ticker := time.NewTicker(1 * time.Second)
+		var err error
 		ts := time.Now()
+		core.GetSession().Log.Error("SecretScan StatusReporter started, scan_id: %s", scan_id)
 	loop:
 		for {
 			select {
 			case err = <-res:
 				break loop
 			case <-ctx.Done():
-				abort = ctx.Err()
+				err = ctx.Err()
 				break loop
 			case <-scanCtx.ScanStatusChan:
 				ts = time.Now()
 			case <-ticker.C:
+				//We perform the check once per 30 seconds
+				if scanCtx.Stopped.Load() == true {
+					core.GetSession().Log.Error("Scanner job stopped, scan_id: %s", scan_id)
+					break loop
+				}
+
 				elapsed := int(time.Since(ts).Seconds())
 				if elapsed > threshold {
 					err = fmt.Errorf("Scan job aborted due to inactivity")
-					core.GetSession().Log.Error("Scanner job aborted as no update within threshold, Scan id:" + scan_id)
+					core.GetSession().Log.Error("Scanner job aborted due to inactivity, scan_id: %s", scan_id)
 					scanCtx.Aborted.Store(true)
 					break loop
 				} else {
@@ -93,15 +100,16 @@ func StartStatusReporter(ctx context.Context, scanCtx *scan.ScanContext) chan er
 				}
 			}
 		}
-		if abort != nil {
-			writeSecretScanStatus("CANCELLED", scan_id, abort.Error())
-			return
-		}
-		if err != nil {
+
+		if scanCtx.Stopped.Load() == true {
+			writeSecretScanStatus("CANCELLED", scan_id, "Scan stopped by user")
+		} else if err != nil {
 			writeSecretScanStatus("ERROR", scan_id, err.Error())
-			return
+		} else {
+			writeSecretScanStatus("COMPLETE", scan_id, "")
 		}
-		writeSecretScanStatus("COMPLETE", scan_id, "")
+
+		core.GetSession().Log.Error("SecretScan StatusReporter stopped, scan_id: %s", scan_id)
 	}()
 	return res
 }

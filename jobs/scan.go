@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
@@ -12,13 +13,19 @@ import (
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 )
 
+var ScanMap sync.Map
+
 func DispatchScan(r *pb.FindRequest) {
 
 	go func() {
 		scanCtx := scan.NewScanContext(r.ScanId)
 		var err error
 		res := StartStatusReporter(context.Background(), scanCtx)
+
+		ScanMap.Store(scanCtx.ScanID, scanCtx)
+
 		defer func() {
+			ScanMap.Delete(scanCtx.ScanID)
 			res <- err
 			close(res)
 		}()
