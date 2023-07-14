@@ -268,11 +268,14 @@ func ExitOnSeverity(severity string, count int, failOnCount int) {
 func FailOn(details SevCount, failOnHighCount int, failOnMediumCount int, failOnLowCount int, failOnCount int) {
 	if failOnHighCount > 0 {
 		ExitOnSeverity(HIGH, details.High, failOnHighCount)
-	} else if failOnMediumCount > 0 {
+	}
+	if failOnMediumCount > 0 {
 		ExitOnSeverity(MEDIUM, details.Medium, failOnMediumCount)
-	} else if failOnLowCount > 0 {
+	}
+	if failOnLowCount > 0 {
 		ExitOnSeverity(LOW, details.Low, failOnLowCount)
-	} else if failOnCount > 0 {
+	}
+	if failOnCount > 0 {
 		ExitOnSeverity("", details.Total, failOnCount)
 	}
 }
