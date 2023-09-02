@@ -27,7 +27,7 @@ var (
 )
 
 func (s *Session) Start() {
-	rand.Seed(time.Now().Unix())
+	rand.New(rand.NewSource(time.Now().Unix()))
 
 	s.InitLogger()
 	s.InitThreads()

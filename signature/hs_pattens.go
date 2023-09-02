@@ -9,6 +9,7 @@ import (
 
 // Build hyperscan Databases for matching different parts in the beginning
 // This can be used for repeated scanning
+
 func BuildHsDb() {
 	for _, part := range []string{ContentsPart, FilenamePart, PathPart, ExtPart} {
 		core.GetSession().Log.Info("Creating hyperscan database for %s", part)
@@ -27,6 +28,7 @@ func BuildHsDb() {
 // @returns
 // []*hyperscan.Pattern - List of hyperscan patterns
 // error - Errors if any. Otherwise, returns nil
+
 func CreateHsPatterns(part string) ([]*hyperscan.Pattern, error) {
 	var hsPatterns []*hyperscan.Pattern
 
@@ -56,6 +58,7 @@ func CreateHsPatterns(part string) ([]*hyperscan.Pattern, error) {
 // hsPatterns -  List of hyperscan patterns
 // @returns
 // BlockDatabase - Hyperscan database for the given list of patterns
+
 func CreateHsDb(hsPatterns []*hyperscan.Pattern) hyperscan.BlockDatabase {
 	hyperscanBlockDb, err := hyperscan.NewBlockDatabase(hsPatterns...)
 	if err != nil {
@@ -71,6 +74,7 @@ func CreateHsDb(hsPatterns []*hyperscan.Pattern) hyperscan.BlockDatabase {
 // hsIOData - Metadata containing the contents being matched, filename, layerID etc.
 // @returns
 // Error - Errors if any. Otherwise, returns nil
+
 func RunHyperscan(hyperscanBlockDb hyperscan.BlockDatabase, hsIOData HsInputOutputData) error {
 	hyperscanScratch, err := hyperscan.NewScratch(hyperscanBlockDb)
 	if err != nil {
