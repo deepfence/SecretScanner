@@ -14,7 +14,7 @@ func BuildHsDb() {
 		core.GetSession().Log.Info("Creating hyperscan database for %s", part)
 		hspatterns, err := CreateHsPatterns(part)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "ERROR: Unable to create patterns \"%s\": %s\n", err.Error())
+			fmt.Fprintf(os.Stderr, "ERROR: Unable to create patterns \"%s\": %s\n", part, err.Error())
 			os.Exit(1)
 		}
 		hyperscanBlockDbMap[part] = CreateHsDb(hspatterns)
