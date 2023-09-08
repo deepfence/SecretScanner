@@ -32,11 +32,11 @@ func (s *gRPCServer) GetUID(context.Context, *pb.Empty) (*pb.Uid, error) {
 }
 
 func (s *gRPCServer) FindSecretInfo(_ context.Context, r *pb.FindRequest) (*pb.FindResult, error) {
-	flock := core.NewFlock()
-	if err := flock.LockFile(); err != nil {
-		return nil, err
-	}
-	defer flock.UnlockFile()
+	//flock := core.NewFlock()
+	//if err := flock.LockFile(); err != nil {
+	//	return nil, err
+	//}
+	//defer flock.UnlockFile()
 
 	if r.GetPath() != "" {
 		var isFirstSecret bool = true
