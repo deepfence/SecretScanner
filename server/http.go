@@ -6,10 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"github.com/Jeffail/tunny"
-	"github.com/deepfence/SecretScanner/core"
-	"github.com/deepfence/SecretScanner/output"
-	"github.com/deepfence/SecretScanner/scan"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -17,6 +13,11 @@ import (
 	"os/exec"
 	"reflect"
 	"strconv"
+
+	"github.com/Jeffail/tunny"
+	"github.com/deepfence/SecretScanner/core"
+	"github.com/deepfence/SecretScanner/output"
+	"github.com/deepfence/SecretScanner/scan"
 )
 
 const (
@@ -88,11 +89,11 @@ func runSecretScanStandalone(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	flock := core.NewFlock()
-	if err := flock.LockFile(); err != nil {
-		fmt.Fprintf(writer, err.Error())
-		return
-	}
+	//flock := core.NewFlock()
+	//if err := flock.LockFile(); err != nil {
+	//	fmt.Fprintf(writer, err.Error())
+	//	return
+	//}
 
 	fmt.Printf("Secret Scan triggered for %s: ", req.ImageNameWithTag)
 	res, err := scan.ExtractAndScanImage(req.ImageNameWithTag)
@@ -101,7 +102,7 @@ func runSecretScanStandalone(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	flock.UnlockFile()
+	//flock.UnlockFile()
 
 	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ImageName: req.ImageNameWithTag}
 	jsonImageSecretsOutput.SetTime()
@@ -121,12 +122,12 @@ func runSecretScanStandalone(writer http.ResponseWriter, request *http.Request) 
 }
 
 func processScans(form url.Values) {
-	flock := core.NewFlock()
-	if err := flock.LockFile(); err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	defer flock.UnlockFile()
+	//flock := core.NewFlock()
+	//if err := flock.LockFile(); err != nil {
+	//	fmt.Println(err.Error())
+	//	return
+	//}
+	//defer flock.UnlockFile()
 
 	imageNameList := form["image_name_with_tag_list"]
 	for index, imageName := range imageNameList {
