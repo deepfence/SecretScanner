@@ -10,7 +10,7 @@ type ScanContext struct {
 }
 
 func NewScanContext(scanID string) *ScanContext {
-	statusChan := make(chan bool)
+	statusChan := make(chan bool, 100)
 	obj := ScanContext{scanID, atomic.Bool{}, atomic.Bool{}, statusChan}
 	obj.Aborted.Store(false)
 	obj.Stopped.Store(false)

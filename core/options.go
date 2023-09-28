@@ -74,7 +74,7 @@ func ParseOptions() (*Options, error) {
 		ContainerId:       flag.String("container-id", "", "Id of existing container ID"),
 		ContainerNS:       flag.String("container-ns", "", "Namespace of existing container to scan, empty for docker runtime"),
 		WorkersPerScan:    flag.Int("workers-per-scan", 1, "Number of concurrent workers per scan"),
-		InactiveThreshold: flag.Int("inactive-threshold", 600, "Threshold for Inactive scan in seconds"),
+		InactiveThreshold: flag.Int("inactive-threshold", 1200, "Threshold for Inactive scan in seconds"),
 		OutFormat:         flag.String("output", TableOutput, "Output format: json or table"),
 		ConsoleUrl:        flag.String("console-url", "", "Deepfence Management Console URL"),
 		ConsolePort:       flag.Int("console-port", 443, "Deepfence Management Console Port"),

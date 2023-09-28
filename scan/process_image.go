@@ -34,6 +34,8 @@ type manifestItem struct {
 var (
 	imageTarFileName   = "save-output.tar"
 	maxSecretsExceeded = errors.New("number of secrets exceeded max-secrets")
+	AbortError         = errors.New("Scan aborted due to inactivity")
+	StopError          = errors.New("Scan Stopped by user request")
 )
 
 const (
@@ -254,7 +256,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string,
 		if walkErr == maxSecretsExceeded {
 			session.Log.Warn("filepath.Walk: %s", walkErr)
 			fmt.Printf("filepath.Walk: %s\n", walkErr)
-		} else {
+		} else if walkErr != AbortError && walkErr != StopError {
 			session.Log.Error("Error in filepath.Walk: %s", walkErr)
 			fmt.Printf("Error in filepath.Walk: %s\n", walkErr)
 		}
@@ -811,13 +813,9 @@ func ExtractAndScanFromTar(tarFolder string, imageName string,
 func CheckScanStatus(scanCtx *ScanContext) error {
 	if scanCtx != nil {
 		if scanCtx.Aborted.Load() {
-			close(scanCtx.ScanStatusChan)
-			core.GetSession().Log.Error("Scan aborted due to inactivity, scanid:", scanCtx.ScanID)
-			return fmt.Errorf("Scan aborted due to inactivity")
+			return AbortError
 		} else if scanCtx.Stopped.Load() == true {
-			close(scanCtx.ScanStatusChan)
-			core.GetSession().Log.Error("Scan Stopped by user request, scanid:", scanCtx.ScanID)
-			return fmt.Errorf("Scan Stopped by user request")
+			return StopError
 		} else {
 			scanCtx.ScanStatusChan <- true
 		}

@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -57,7 +56,7 @@ func getDfInstallDir() string {
 	}
 }
 
-func StartStatusReporter(ctx context.Context, scanCtx *scan.ScanContext) chan error {
+func StartStatusReporter(scanCtx *scan.ScanContext) chan error {
 	res := make(chan error)
 	startScanJob()
 	scan_id := scanCtx.ScanID
@@ -68,7 +67,7 @@ func StartStatusReporter(ctx context.Context, scanCtx *scan.ScanContext) chan er
 	threshold := *opts.InactiveThreshold
 	go func() {
 		defer stopScanJob()
-		ticker := time.NewTicker(1 * time.Second)
+		ticker := time.NewTicker(30 * time.Second)
 		var err error
 		ts := time.Now()
 		core.GetSession().Log.Error("SecretScan StatusReporter started, scan_id: %s", scan_id)
@@ -77,31 +76,25 @@ func StartStatusReporter(ctx context.Context, scanCtx *scan.ScanContext) chan er
 			select {
 			case err = <-res:
 				break loop
-			case <-ctx.Done():
-				err = ctx.Err()
-				break loop
 			case <-scanCtx.ScanStatusChan:
 				ts = time.Now()
 			case <-ticker.C:
-				//We perform the check once per 30 seconds
-				if scanCtx.Stopped.Load() == true {
-					core.GetSession().Log.Error("Scanner job stopped, scan_id: %s", scan_id)
-					break loop
+				if scanCtx.Stopped.Load() || scanCtx.Aborted.Load() {
+					continue loop
 				}
 
 				elapsed := int(time.Since(ts).Seconds())
 				if elapsed > threshold {
-					err = fmt.Errorf("Scan job aborted due to inactivity")
-					core.GetSession().Log.Error("Scanner job aborted due to inactivity, scan_id: %s", scan_id)
 					scanCtx.Aborted.Store(true)
-					break loop
 				} else {
 					writeSecretScanStatus("IN_PROGRESS", scan_id, "")
 				}
 			}
 		}
 
-		if scanCtx.Stopped.Load() == true {
+		if scanCtx.Aborted.Load() == true {
+			writeSecretScanStatus("ERROR", scan_id, scan.AbortError.Error())
+		} else if scanCtx.Stopped.Load() == true {
 			writeSecretScanStatus("CANCELLED", scan_id, "Scan stopped by user")
 		} else if err != nil {
 			writeSecretScanStatus("ERROR", scan_id, err.Error())
