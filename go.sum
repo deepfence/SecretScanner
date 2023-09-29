@@ -6,8 +6,6 @@ github.com/AdamKorcz/go-118-fuzz-build v0.0.0-20221215162035-5330a85ea652/go.mod
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25UVaW/CKtUDjefjrs0SPonmDGUVOYP0=
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/Jeffail/tunny v0.1.4 h1:chtpdz+nUtaYQeCKlNBg6GycFF/kGVHOr6A3cmzTJXs=
-github.com/Jeffail/tunny v0.1.4/go.mod h1:P8xAx4XQl0xsuhjX1DtfaMDCSuavzdb2rwbd0lk+fvo=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/Microsoft/hcsshim v0.10.0-rc.8 h1:YSZVvlIIDD1UxQpJp0h+dnpLUw+TrY0cx8obKsp3bek=
@@ -39,8 +37,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20230817093436-faaacc23dfd8 h1:UEXPp4E4FRSkTog0CercXVQRv4z1My6Q29xYazb/iXU=
 github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20230817093436-faaacc23dfd8/go.mod h1:+rchMc4YNjCoHo0YAwKsT+DRBNr1hdDG0WrvAOOCc5k=
-github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20230817093436-faaacc23dfd8 h1:dR65mjFib0ygj9kyn45q+64PuJfYsYBiRt08RWNklPw=
-github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20230817093436-faaacc23dfd8/go.mod h1:C3CqMr7oE9RmHZWXIVDWFLuGaNDDaoSBSlILLQJxlew=
+github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20230929125743-1713a043efe5 h1:6rE9xqyf4VgWIkpv51ihiSPMrXJ9mZ6pFXtBRfJEFNE=
+github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20230929125743-1713a043efe5/go.mod h1:C3CqMr7oE9RmHZWXIVDWFLuGaNDDaoSBSlILLQJxlew=
 github.com/deepfence/vessel v0.11.1 h1:RSnPHv/HX9Vrcujxzp6l4cjzF7a/34lVvh+jr8Hq8YA=
 github.com/deepfence/vessel v0.11.1/go.mod h1:uSMZ7HZePuQzHH2kKdRJ/r8kYPz9ZgkffYhFiccmeHk=
 github.com/docker/distribution v2.8.1+incompatible h1:Q50tZOPR6T/hjNsyc9g8/syEs6bk8XXApsHjKukMl68=

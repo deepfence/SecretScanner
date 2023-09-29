@@ -1,14 +1,15 @@
 package jobs
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
+	"github.com/deepfence/golang_deepfence_sdk/utils/tasks"
 
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 )
@@ -16,16 +17,29 @@ import (
 var ScanMap sync.Map
 
 func DispatchScan(r *pb.FindRequest) {
-
 	go func() {
-		scanCtx := scan.NewScanContext(r.ScanId)
-		var err error
-		res := StartStatusReporter(context.Background(), scanCtx)
+		startScanJob()
+		defer stopScanJob()
 
-		ScanMap.Store(scanCtx.ScanID, scanCtx)
+		var err error
+		res, scanCtx := tasks.StartStatusReporter(
+			r.ScanId,
+			func(ss tasks.ScanStatus) error {
+				return writeSecretScanStatus(ss.ScanId, ss.ScanStatus, ss.ScanMessage)
+			},
+			tasks.StatusValues{
+				IN_PROGRESS: "IN_PROGRESS",
+				CANCELLED:   "CANCELLED",
+				FAILED:      "ERROR",
+				SUCCESS:     "COMPLETE",
+			},
+			time.Minute*20,
+		)
+
+		ScanMap.Store(r.ScanId, scanCtx)
 
 		defer func() {
-			ScanMap.Delete(scanCtx.ScanID)
+			ScanMap.Delete(r.ScanId)
 			res <- err
 			close(res)
 		}()

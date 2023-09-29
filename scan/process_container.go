@@ -8,6 +8,7 @@ import (
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
+	tasks "github.com/deepfence/golang_deepfence_sdk/utils/tasks"
 	"github.com/deepfence/vessel"
 	containerdRuntime "github.com/deepfence/vessel/containerd"
 	crioRuntime "github.com/deepfence/vessel/crio"
@@ -72,7 +73,7 @@ func (containerScan *ContainerScan) extractFileSystem() error {
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors, if any. Otherwise, returns nil
-func (containerScan *ContainerScan) scan(scanCtx *ScanContext) ([]output.SecretFound, error) {
+func (containerScan *ContainerScan) scan(scanCtx *tasks.ScanContext) ([]output.SecretFound, error) {
 	var isFirstSecret bool = true
 
 	secrets, err := ScanSecretsInDir("", containerScan.tempDir, containerScan.tempDir,
@@ -95,7 +96,7 @@ func (containerScan *ContainerScan) scan(scanCtx *ScanContext) ([]output.SecretF
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors, if any. Otherwise, returns nil
-func (containerScan *ContainerScan) scanStream(scanCtx *ScanContext) (chan output.SecretFound, error) {
+func (containerScan *ContainerScan) scanStream(scanCtx *tasks.ScanContext) (chan output.SecretFound, error) {
 	var isFirstSecret bool = true
 
 	stream, err := ScanSecretsInDirStream("", containerScan.tempDir,
@@ -115,7 +116,7 @@ type ContainerExtractionResult struct {
 }
 
 func ExtractAndScanContainer(containerId string, namespace string,
-	scanCtx *ScanContext) (*ContainerExtractionResult, error) {
+	scanCtx *tasks.ScanContext) (*ContainerExtractionResult, error) {
 
 	tempDir, err := core.GetTmpDir(containerId)
 	if err != nil {
@@ -139,7 +140,7 @@ func ExtractAndScanContainer(containerId string, namespace string,
 }
 
 func ExtractAndScanContainerStream(containerId string, namespace string,
-	scanCtx *ScanContext) (chan output.SecretFound, error) {
+	scanCtx *tasks.ScanContext) (chan output.SecretFound, error) {
 	tempDir, err := core.GetTmpDir(containerId)
 	if err != nil {
 		return nil, err

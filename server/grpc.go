@@ -11,8 +11,8 @@ import (
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/jobs"
-	"github.com/deepfence/SecretScanner/scan"
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
+	"github.com/deepfence/golang_deepfence_sdk/utils/tasks"
 	"google.golang.org/grpc"
 )
 
@@ -49,9 +49,9 @@ func (s *gRPCServer) StopScan(c context.Context, req *pb.StopScanRequest) (*pb.S
 		result.Description = "SecretScanner::Stop request submitted"
 	}
 
-	scanCtx := obj.(*scan.ScanContext)
-	scanCtx.Stopped.Store(true)
-
+	scanCtx := obj.(*tasks.ScanContext)
+	scanCtx.StopTriggered.Store(true)
+	scanCtx.Cancel()
 	return result, nil
 }
 
