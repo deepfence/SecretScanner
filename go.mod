@@ -5,10 +5,9 @@ go 1.20
 replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 
 require (
-	github.com/Jeffail/tunny v0.1.4
 	github.com/deepfence/agent-plugins-grpc v0.0.0-00010101000000-000000000000
 	github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20230817093436-faaacc23dfd8
-	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20230817093436-faaacc23dfd8
+	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20230929125743-1713a043efe5
 	github.com/deepfence/vessel v0.11.1
 	github.com/fatih/color v1.15.0
 	github.com/flier/gohs v1.2.2
