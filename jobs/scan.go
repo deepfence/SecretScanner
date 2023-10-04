@@ -25,7 +25,7 @@ func DispatchScan(r *pb.FindRequest) {
 		res, scanCtx := tasks.StartStatusReporter(
 			r.ScanId,
 			func(ss tasks.ScanStatus) error {
-				return writeSecretScanStatus(ss.ScanId, ss.ScanStatus, ss.ScanMessage)
+				return writeSecretScanStatus(ss.ScanStatus, ss.ScanId, ss.ScanMessage)
 			},
 			tasks.StatusValues{
 				IN_PROGRESS: "IN_PROGRESS",
