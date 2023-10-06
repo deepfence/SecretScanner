@@ -227,6 +227,10 @@ func main() {
 
 	flag.Parse()
 
+	if *core.GetSession().Options.Debug {
+		log.SetLevel(log.DebugLevel)
+	}
+
 	if *socketPath != "" {
 		err := server.RunServer(*socketPath, PLUGIN_NAME)
 		if err != nil {

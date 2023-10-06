@@ -56,7 +56,7 @@ docker pull node:8.11
 
 * Scan the container image:
     ```shell
-    docker run -it --rm --name=deepfence-secretscanner -v $(pwd):/home/deepfence/output -v /var/run/docker.sock:/var/run/docker.sock deepfenceio/deepfence_secret_scanner:latest -image-name node:8.11
+    docker run -i --rm --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock deepfenceio/deepfence_secret_scanner:latest -image-name node:8.11 --output json > node.json
     ```
 
 # Credits

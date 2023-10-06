@@ -22,7 +22,7 @@ $ ./SecretScanner --help
 
 ### General Configuration
 
- * `--debug-level string`: one of FATAL, ERROR, IMPORTANT, WARN, INFO, DEBUG (default "ERROR"); print messages of this severity or higher.
+ * `--debug bool`: print debug level logs.
  * `--threads int`: Number of concurrent threads to use during scan (default number of logical CPUs).
  * `--temp-directory string`: temporary storage for working data (default "/tmp")
 
@@ -44,10 +44,9 @@ $ ./SecretScanner --help
 
 ### Configure Output
 
-In addition to writing output to **stdout** / **stderr**, SecretScanner can write JSON output to a local file. You may wish to mount a directory on the host into `output-path` in the container so that you can easily obtain the JSON output file.
+SecretScanner can write output as Table and JSON format
 
- * `--json-filename string`: output json file name; required
- * `--output-path string`: location in container where json file will be stored (default `/home/deepfence/output`)
+ * `-output`: Output format: json or table (default "table")
 
 ### Configure GRPC Listener
 
