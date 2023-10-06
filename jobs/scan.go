@@ -12,6 +12,7 @@ import (
 	"github.com/deepfence/golang_deepfence_sdk/utils/tasks"
 
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
+	log "github.com/sirupsen/logrus"
 )
 
 var ScanMap sync.Map
@@ -91,12 +92,12 @@ func writeMultiScanData(secrets []*pb.SecretInfo, scan_id string) {
 		}
 		byteJson, err := json.Marshal(secretScanDoc)
 		if err != nil {
-			fmt.Println("Error marshalling json: ", err)
+			log.Errorf("Error marshalling json: ", err)
 			continue
 		}
 		err = writeScanDataToFile(string(byteJson), scanFilename)
 		if err != nil {
-			fmt.Println("Error in sending data to secretScanIndex:" + err.Error())
+			log.Errorf("Error in sending data to secretScanIndex:" + err.Error())
 			continue
 		}
 	}
@@ -112,12 +113,12 @@ func writeSingleScanData(secret *pb.SecretInfo, scan_id string) {
 	}
 	byteJson, err := json.Marshal(secretScanDoc)
 	if err != nil {
-		fmt.Println("Error marshalling json: ", err)
+		log.Errorf("Error marshalling json: ", err)
 		return
 	}
 	err = writeScanDataToFile(string(byteJson), scanFilename)
 	if err != nil {
-		fmt.Println("Error in sending data to secretScanIndex:" + err.Error())
+		log.Errorf("Error in sending data to secretScanIndex:" + err.Error())
 		return
 	}
 }

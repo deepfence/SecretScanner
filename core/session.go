@@ -2,13 +2,14 @@ package core
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"os"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Session struct {
@@ -17,7 +18,6 @@ type Session struct {
 	Options *Options
 	Config  *Config
 	Context context.Context
-	Log     *Logger
 }
 
 var (
@@ -28,14 +28,7 @@ var (
 
 func (s *Session) Start() {
 	rand.Seed(time.Now().Unix())
-
-	s.InitLogger()
 	s.InitThreads()
-}
-
-func (s *Session) InitLogger() {
-	s.Log = &Logger{}
-	s.Log.SetDebugLevel(*s.Options.DebugLevel)
 }
 
 func (s *Session) InitThreads() {
@@ -49,18 +42,17 @@ func (s *Session) InitThreads() {
 
 func GetSession() *Session {
 	sessionSync.Do(func() {
-		fmt.Println("Initializing....")
 		session = &Session{
 			Context: context.Background(),
 		}
 
 		if session.Options, err = ParseOptions(); err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			os.Exit(1)
 		}
 
 		if session.Config, err = ParseConfig(session.Options); err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			os.Exit(1)
 		}
 

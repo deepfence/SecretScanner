@@ -2,7 +2,6 @@ package scan
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 
@@ -14,6 +13,7 @@ import (
 	crioRuntime "github.com/deepfence/vessel/crio"
 	dockerRuntime "github.com/deepfence/vessel/docker"
 	vesselConstants "github.com/deepfence/vessel/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -48,7 +48,7 @@ func (containerScan *ContainerScan) extractFileSystem() error {
 		containerRuntimeInterface = crioRuntime.New(endpoint)
 	}
 	if containerRuntimeInterface == nil {
-		fmt.Println("Error: Could not detect container runtime")
+		log.Error("Error: Could not detect container runtime")
 		os.Exit(1)
 	}
 	err = containerRuntimeInterface.ExtractFileSystemContainer(
@@ -79,7 +79,7 @@ func (containerScan *ContainerScan) scan(scanCtx *tasks.ScanContext) ([]output.S
 	secrets, err := ScanSecretsInDir("", containerScan.tempDir, containerScan.tempDir,
 		&isFirstSecret, scanCtx)
 	if err != nil {
-		core.GetSession().Log.Error("findSecretsInContainer: %s", err)
+		log.Errorf("findSecretsInContainer: %s", err)
 		return nil, err
 	}
 
@@ -103,7 +103,7 @@ func (containerScan *ContainerScan) scanStream(scanCtx *tasks.ScanContext) (chan
 		containerScan.tempDir, &isFirstSecret, scanCtx)
 
 	if err != nil {
-		core.GetSession().Log.Error("findSecretsInContainer: %s", err)
+		log.Errorf("findSecretsInContainer: %s", err)
 		return nil, err
 	}
 

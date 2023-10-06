@@ -9,10 +9,10 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/jobs"
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 	"github.com/deepfence/golang_deepfence_sdk/utils/tasks"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -31,7 +31,7 @@ func (s *gRPCServer) ReportJobsStatus(context.Context, *pb.Empty) (*pb.JobReport
 }
 
 func (s *gRPCServer) StopScan(c context.Context, req *pb.StopScanRequest) (*pb.StopScanResult, error) {
-	core.GetSession().Log.Error("Received StopScanRequest: %v", *req)
+	log.Errorf("Received StopScanRequest: %v", *req)
 	scanID := req.ScanId
 	result := &pb.StopScanResult{
 		Success:     true,
@@ -40,12 +40,12 @@ func (s *gRPCServer) StopScan(c context.Context, req *pb.StopScanRequest) (*pb.S
 
 	obj, found := jobs.ScanMap.Load(scanID)
 	if !found {
-		core.GetSession().Log.Error("SecretScanner::Failed to Stop scan, may have already completed successfully or errored out, scan_id: %s", scanID)
+		log.Errorf("SecretScanner::Failed to Stop scan, may have already completed successfully or errored out, scan_id: %s", scanID)
 		result.Success = false
 		result.Description = "SecretScanner::Failed to Stop scan"
 		return result, nil
 	} else {
-		core.GetSession().Log.Error("SecretScanner::Stop request submitted")
+		log.Errorf("SecretScanner::Stop request submitted")
 		result.Description = "SecretScanner::Stop request submitted"
 	}
 
@@ -93,12 +93,12 @@ func RunServer(socket_path string, plugin_name string) error {
 	pb.RegisterAgentPluginServer(s, impl)
 	pb.RegisterSecretScannerServer(s, impl)
 	pb.RegisterScannersServer(s, impl)
-	core.GetSession().Log.Info("main: server listening at %v", lis.Addr())
+	log.Infof("main: server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		return err
 	}
 
 	<-done
-	core.GetSession().Log.Info("main: exiting gracefully")
+	log.Infof("main: exiting gracefully")
 	return nil
 }

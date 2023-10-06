@@ -15,7 +15,7 @@ const (
 
 type Options struct {
 	Threads           *int
-	DebugLevel        *string
+	Debug             *bool
 	MaximumFileSize   *uint
 	TempDirectory     *string
 	Local             *string
@@ -60,7 +60,7 @@ func (v *repeatableStringValue) Values() []string {
 func ParseOptions() (*Options, error) {
 	options := &Options{
 		Threads:           flag.Int("threads", 0, "Number of concurrent threads (default number of logical CPUs)"),
-		DebugLevel:        flag.String("debug-level", "ERROR", "Debug levels are one of FATAL, ERROR, IMPORTANT, WARN, INFO, DEBUG. Only levels higher than the debug-level are displayed"),
+		Debug:             flag.Bool("debug", false, "enable debug logs"),
 		MaximumFileSize:   flag.Uint("maximum-file-size", 256, "Maximum file size to process in KB"),
 		TempDirectory:     flag.String("temp-directory", os.TempDir(), "Directory to process and store repositories/matches"),
 		Local:             flag.String("local", "", "Specify local directory (absolute path) which to scan. Scans only given directory recursively."),

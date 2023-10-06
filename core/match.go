@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type MatchFile struct {
@@ -84,7 +86,7 @@ func ContainsBlacklistedString(input []byte) bool {
 	for _, blacklistedString := range session.Config.BlacklistedStrings {
 		blacklistedByteStr := []byte(blacklistedString)
 		if bytes.Contains(input, blacklistedByteStr) {
-			GetSession().Log.Debug("Blacklisted string %s matched", blacklistedString)
+			log.Debugf("Blacklisted string %s matched", blacklistedString)
 			return true
 		}
 	}
@@ -107,7 +109,7 @@ func ContainsBlacklistedString(input []byte) bool {
 //	}
 //	maxFileSize := strconv.FormatUint(uint64(*session.Options.MaximumFileSize), 10)
 //	findCmd += " -type f -size " + maxFileSize + "M"
-//	GetSession().Log.Info("find command: %s", findCmd)
+//	log.Info("find command: %s", findCmd)
 //
 //	return ExecuteCommand(findCmd)
 //}
@@ -118,7 +120,7 @@ func UpdateDirsPermissionsRW(dir string) {
 		if f.IsDir() {
 			err := os.Chmod(path, 0700)
 			if err != nil {
-				GetSession().Log.Error("Failed to change dir %s permission: %s", path, err)
+				log.Errorf("Failed to change dir %s permission: %s", path, err)
 			}
 		}
 		return nil

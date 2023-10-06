@@ -2,16 +2,18 @@ package signature
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/flier/gohs/hyperscan"
-	"os"
+	log "github.com/sirupsen/logrus"
 )
 
 // Build hyperscan Databases for matching different parts in the beginning
 // This can be used for repeated scanning
 func BuildHsDb() {
 	for _, part := range []string{ContentsPart, FilenamePart, PathPart, ExtPart} {
-		core.GetSession().Log.Info("Creating hyperscan database for %s", part)
+		log.Debugf("Creating hyperscan database for %s", part)
 		hspatterns, err := CreateHsPatterns(part)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "ERROR: Unable to create patterns \"%s\": %s\n", part, err.Error())
@@ -30,9 +32,9 @@ func BuildHsDb() {
 func CreateHsPatterns(part string) ([]*hyperscan.Pattern, error) {
 	var hsPatterns []*hyperscan.Pattern
 
-	core.GetSession().Log.Debug("Number of Complex Patterns for matching %s: %d", part, len(patternSignatureMap[part]))
+	log.Debugf("Number of Complex Patterns for matching %s: %d", part, len(patternSignatureMap[part]))
 	for _, signature := range patternSignatureMap[part] {
-		core.GetSession().Log.Debug("Pattern Signature %s %s %s %s %s %s %d", signature.Name, signature.Part, signature.Match, signature.Regex, signature.RegexType, signature.Severity, signature.ID)
+		log.Debugf("Pattern Signature %s %s %s %s %s %s %d", signature.Name, signature.Part, signature.Match, signature.Regex, signature.RegexType, signature.Severity, signature.ID)
 
 		// Disable SomLeftMost option for large regex to avoid HS compilation failures.
 		// Postprocess later to find patterns
@@ -59,7 +61,7 @@ func CreateHsPatterns(part string) ([]*hyperscan.Pattern, error) {
 func CreateHsDb(hsPatterns []*hyperscan.Pattern) hyperscan.BlockDatabase {
 	hyperscanBlockDb, err := hyperscan.NewBlockDatabase(hsPatterns...)
 	if err != nil {
-		fmt.Println("ERROR: Unable to compile pattern", err.Error())
+		log.Error("ERROR: Unable to compile pattern ", err.Error())
 		os.Exit(1)
 	}
 	return hyperscanBlockDb
@@ -80,8 +82,8 @@ func RunHyperscan(hyperscanBlockDb hyperscan.BlockDatabase, hsIOData HsInputOutp
 
 	metadata := hsIOData
 	if err := hyperscanBlockDb.Scan([]byte(metadata.inputData), hyperscanScratch, hyperscanEventHandler, metadata); err != nil {
-		core.GetSession().Log.Info("First 100 bytes of inputData: %s", metadata.inputData[:Min(len(metadata.inputData), 100)])
-		core.GetSession().Log.Warn("RunHyperscan: %s", err)
+		log.Infof("First 100 bytes of inputData: %s", metadata.inputData[:Min(len(metadata.inputData), 100)])
+		log.Warnf("RunHyperscan: %s", err)
 		return err
 	}
 	return nil

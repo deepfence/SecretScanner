@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // CreateRecursiveDir Create directory structure recursively, if they do not exist
@@ -19,14 +21,14 @@ import (
 // Error - Errors if any. Otherwise, returns nil
 func CreateRecursiveDir(completePath string) error {
 	if _, err := os.Stat(completePath); os.IsNotExist(err) {
-		GetSession().Log.Debug("Folder does not exist. Creating folder... %s", completePath)
+		log.Debugf("Folder does not exist. Creating folder... %s", completePath)
 		err = os.MkdirAll(completePath, os.ModePerm)
 		if err != nil {
-			GetSession().Log.Error("createRecursiveDir %q: %s", completePath, err)
+			log.Errorf("createRecursiveDir %q: %s", completePath, err)
 		}
 		return err
 	} else if err != nil {
-		GetSession().Log.Error("createRecursiveDir %q: %s. Deleting temp dir", completePath, err)
+		log.Errorf("createRecursiveDir %q: %s. Deleting temp dir", completePath, err)
 		DeleteTmpDir(completePath)
 		return err
 	}
@@ -69,7 +71,7 @@ func GetTmpDir(imageName string) (string, error) {
 
 	err := CreateRecursiveDir(completeTempPath)
 	if err != nil {
-		GetSession().Log.Error("getTmpDir: Could not create temp dir%s", err)
+		log.Errorf("getTmpDir: Could not create temp dir %s", err)
 		return "", err
 	}
 
@@ -82,13 +84,13 @@ func GetTmpDir(imageName string) (string, error) {
 // @returns
 // Error - Errors if any. Otherwise, returns nil
 func DeleteTmpDir(outputDir string) error {
-	GetSession().Log.Info("Deleting temporary dir %s", outputDir)
+	log.Infof("Deleting temporary dir %s", outputDir)
 	// Output dir will be empty string in case of error, don't delete
 	if outputDir != "" {
 		// deleteFiles(outputDir+"/", "*")
 		err := os.RemoveAll(outputDir)
 		if err != nil {
-			GetSession().Log.Error("deleteTmpDir: Could not delete temp dir: %s", err)
+			log.Errorf("deleteTmpDir: Could not delete temp dir: %s", err)
 			return err
 		}
 	}
@@ -144,7 +146,7 @@ func PathExists(path string) bool {
 
 func LogIfError(text string, err error) {
 	if err != nil {
-		GetSession().Log.Error("%s (%s", text, err.Error())
+		log.Errorf("%s (%s", text, err.Error())
 	}
 }
 
