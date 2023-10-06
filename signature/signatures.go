@@ -6,7 +6,6 @@ import (
 	// "strings"
 	"bytes"
 	"errors"
-	"fmt"
 	"math"
 	"regexp"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/fatih/color"
 	"github.com/flier/gohs/hyperscan"
+	log "github.com/sirupsen/logrus"
 )
 
 // Constants representing different parts to be matched
@@ -49,7 +49,7 @@ var (
 
 // Initialize all the data structures
 func init() {
-	// core.GetSession().Log.Info("Initializing Patterns....")
+	// log.Infof("Initializing Patterns....")
 	simpleSignatureMap = make(map[string][]core.ConfigSignature)
 	patternSignatureMap = make(map[string][]core.ConfigSignature)
 	hyperscanBlockDbMap = make(map[string]hyperscan.BlockDatabase)
@@ -138,9 +138,9 @@ func MatchPatternSignatures(contents []byte, path string, filename string, exten
 		}
 		err := RunHyperscan(hyperscanBlockDbMap[matchingPart], hsIOData)
 		if err != nil {
-			core.GetSession().Log.Info("part: %s, path: %s, filename: %s, extenstion: %s, layerID: %s",
+			log.Infof("part: %s, path: %s, filename: %s, extenstion: %s, layerID: %s",
 				part, path, filename, extension, layerID)
-			core.GetSession().Log.Warn("MatchPatternSignatures: %s", err)
+			log.Warnf("MatchPatternSignatures: %s", err)
 			return tempSecretsFound, err
 		}
 	}
@@ -172,7 +172,7 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 				signature.SeverityScore = 2.5
 			}
 
-			core.GetSession().Log.Debug("Simple Signature %s %s %s %s %d", signature.Name,
+			log.Debugf("Simple Signature %s %s %s %s %d", signature.Name,
 				signature.Part, signature.Match, signature.Severity, signature.ID)
 
 			switch signature.Part {
@@ -196,7 +196,7 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 				}
 			}
 
-			core.GetSession().Log.Debug("Pattern Signature %s %s %s %s %s %s %d", signature.Name, signature.Part,
+			log.Debugf("Pattern Signature %s %s %s %s %s %s %d", signature.Name, signature.Part,
 				signature.Match, signature.Regex, signature.RegexType, signature.Severity, signature.ID)
 
 			signature.CompiledRegex = regexp.MustCompile(signature.Regex)
@@ -228,8 +228,8 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 	patternSignatureMap[PathPart] = patternPathSignatures
 
 	for _, part := range []string{ContentsPart, FilenamePart, PathPart, ExtPart} {
-		core.GetSession().Log.Debug("Number of Complex Patterns for matching %s: %d", part, len(patternSignatureMap[part]))
-		core.GetSession().Log.Debug("Number of Simple Patterns for matching %s: %d", part, len(simpleSignatureMap[part]))
+		log.Debugf("Number of Complex Patterns for matching %s: %d", part, len(patternSignatureMap[part]))
+		log.Debugf("Number of Simple Patterns for matching %s: %d", part, len(simpleSignatureMap[part]))
 	}
 }
 
@@ -256,18 +256,18 @@ func matchString(part string, input string, completeFilename string, layerID str
 	for _, signature := range simpleSignatureMap[part] {
 		// Don't report secrets if number of secrets exceeds MAX value
 		if *numSecrets >= *core.GetSession().Options.MaxSecrets {
-			core.GetSession().Log.Debug("MAX secrets exceeded: %d", *numSecrets)
+			log.Debugf("MAX secrets exceeded: %d", *numSecrets)
 			return tempSecretsFound
 		}
 
 		if signature.Match == input {
 			if core.ContainsBlacklistedString([]byte(input)) {
-				core.GetSession().Log.Debug("matchString: Skipping matches containing blacklisted strings")
+				log.Debugf("matchString: Skipping matches containing blacklisted strings")
 				continue
 			}
-			core.GetSession().Log.Info("Simple Signature %s %s %s %s %s %d\n", signature.Name, signature.Part,
+			log.Infof("Simple Signature %s %s %s %s %s %d\n", signature.Name, signature.Part,
 				signature.Match, signature.Regex, signature.Severity, signature.ID)
-			core.GetSession().Log.Info("Sensitive file %s found with matching %s of %s\n",
+			log.Infof("Sensitive file %s found with matching %s of %s\n",
 				completeFilename, part, color.RedString(input))
 
 			secret := output.SecretFound{
@@ -305,7 +305,7 @@ func processHsRegexMatch(id uint, from, to uint64, flags uint, context interface
 
 	// Don't report secrets if number of secrets exceeds MAX value
 	if *hsIOData.numSecrets >= *core.GetSession().Options.MaxSecrets {
-		core.GetSession().Log.Debug("MAX secrets exceeded: %d", *hsIOData.numSecrets)
+		log.Debugf("MAX secrets exceeded: %d", *hsIOData.numSecrets)
 		return nil
 	}
 
@@ -317,9 +317,9 @@ func processHsRegexMatch(id uint, from, to uint64, flags uint, context interface
 	}
 
 	ito := int(to)
-	core.GetSession().Log.Debug("processHsRegexMatch: %d %d %d\n", start, ito, len(hsIOData.inputData))
+	log.Debugf("processHsRegexMatch: %d %d %d\n", start, ito, len(hsIOData.inputData))
 	if core.ContainsBlacklistedString(hsIOData.inputDataLowerCase[start:ito]) {
-		core.GetSession().Log.Debug("processHsRegexMatch: Skipping matches containing blacklisted strings")
+		log.Debugf("processHsRegexMatch: Skipping matches containing blacklisted strings")
 		return nil
 	}
 
@@ -339,7 +339,7 @@ func processHsRegexMatch(id uint, from, to uint64, flags uint, context interface
 
 	secret, err := printMatchedSignatures(sid, start, int(to), hsIOData)
 	if err != nil {
-		core.GetSession().Log.Error("processHsRegexMatch: %s", err)
+		log.Errorf("processHsRegexMatch: %s", err)
 		return nil
 	}
 	*secrets = append(*secrets, secret)
@@ -368,7 +368,7 @@ func getStartOfLargeRegexMatch(sid int, from, to int, hsIOData HsInputOutputData
 	// Search between [to-MaxSecretLength, to] to find exact match of secret
 	end := to
 	allMatchedIndexes := pattern.FindAllIndex(inputData[start:end], -1)
-	core.GetSession().Log.Debug("Number of matches found for large regex pattern: %d", len(allMatchedIndexes))
+	log.Debugf("Number of matches found for large regex pattern: %d", len(allMatchedIndexes))
 	for i, loc := range allMatchedIndexes {
 		// Currently just print the last match as we know the end of the hyperscan match
 		if i == len(allMatchedIndexes)-1 {
@@ -398,12 +398,12 @@ func printMatchedSignatures(sid int, from, to int, hsIOData HsInputOutputData) (
 
 	updatedSeverity, updatedScore := calculateSeverity(inputData[from:to], signatureIDMap[sid].Severity, signatureIDMap[sid].SeverityScore)
 
-	core.GetSession().Log.Info("Pattern Signature %s %s %s %s %s %s %.2f %d", signatureIDMap[sid].Name, signatureIDMap[sid].Part,
+	log.Debugf("Pattern Signature %s %s %s %s %s %s %.2f %d", signatureIDMap[sid].Name, signatureIDMap[sid].Part,
 		signatureIDMap[sid].Match, signatureIDMap[sid].Regex, signatureIDMap[sid].RegexType,
 		updatedSeverity, updatedScore, signatureIDMap[sid].ID)
 	// fmt.Println(signatureIDMap[sid].Name, signatureIDMap[sid].Part, signatureIDMap[sid].Match, signatureIDMap[sid].Regex,
 	//	signatureIDMap[sid].RegexType, updatedSeverity, updatedScore, signatureIDMap[sid].ID)
-	core.GetSession().Log.Info("Secret found in %s of %s within bytes %d and %d", signatureIDMap[sid].Part, completeFilename, from, to)
+	log.Debugf("Secret found in %s of %s within bytes %d and %d", signatureIDMap[sid].Part, completeFilename, from, to)
 	// fmt.Println("Secret found in", signatureIDMap[sid].Part, "of", completeFilename, "withing bytes", from, "and", to)
 
 	start := Max(0, bytes.LastIndexByte(inputData[:from], '\n')) // Avoid -ve value from IndexByte
@@ -417,9 +417,9 @@ func printMatchedSignatures(sid int, from, to int, hsIOData HsInputOutputData) (
 		return output.SecretFound{}, errors.New("index out of bound while printing matched signatures")
 	}
 
-	coloredMatch := fmt.Sprintf("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
-	//core.GetSession().Log.Info("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
-	core.GetSession().Log.Info(coloredMatch)
+	// coloredMatch := fmt.Sprintf("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
+	// //log.Infof("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
+	// log.Infof(coloredMatch)
 
 	secret := output.SecretFound{
 		LayerID: layerID,

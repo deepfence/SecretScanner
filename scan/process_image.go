@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -22,6 +21,7 @@ import (
 	"github.com/deepfence/SecretScanner/signature"
 	"github.com/deepfence/golang_deepfence_sdk/utils/tasks"
 	"github.com/deepfence/vessel"
+	log "github.com/sirupsen/logrus"
 )
 
 // Data type to store details about the container image after parsing manifest
@@ -62,21 +62,21 @@ func (imageScan *ImageScan) extractImage(saveImage bool) error {
 	if saveImage {
 		err := imageScan.saveImageData()
 		if err != nil {
-			core.GetSession().Log.Error("scanImage: Could not save container image: %s. Check if the image name is correct.", err)
+			log.Errorf("scanImage: Could not save container image: %s. Check if the image name is correct.", err)
 			return err
 		}
 	}
 
 	_, err := extractTarFile(imageName, path.Join(tempDir, imageTarFileName), tempDir)
 	if err != nil {
-		core.GetSession().Log.Error("scanImage: Could not extract image tar file: %s", err)
+		log.Errorf("scanImage: Could not extract image tar file: %s", err)
 		return err
 	}
 
 	imageManifest, err := extractDetailsFromManifest(tempDir)
 	if err != nil {
-		core.GetSession().Log.Error("ProcessImageLayers: Could not get image's history: %s,"+
-			" please specify repo:tag and check disk space \n", err.Error())
+		log.Errorf("ProcessImageLayers: Could not get image's history: %s,"+
+			" please specify repo:tag and check disk space", err.Error())
 		return err
 	}
 
@@ -99,7 +99,7 @@ func (imageScan *ImageScan) scan(scanCtx *tasks.ScanContext) ([]output.SecretFou
 
 	tempSecretsFound, err := imageScan.processImageLayers(tempDir, scanCtx)
 	if err != nil {
-		core.GetSession().Log.Error("scanImage: %s", err)
+		log.Error("scanImage: %s", err)
 		return tempSecretsFound, err
 	}
 
@@ -206,7 +206,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string,
 
 		finfo, err := f.Info()
 		if err != nil {
-			session.Log.Warn("Skipping %v as info could not be retrieved: %v", path, err)
+			log.Warnf("Skipping %v as info could not be retrieved: %v", path, err)
 			return nil
 		}
 
@@ -218,7 +218,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string,
 
 		relPath, err := filepath.Rel(filepath.Join(baseDir, layer), file.Path)
 		if err != nil {
-			session.Log.Warn("scanSecretsInDir: Couldn't remove prefix of path: %s %s %s",
+			log.Warnf("scanSecretsInDir: Couldn't remove prefix of path: %s %s %s",
 				baseDir, layer, file.Path)
 			relPath = file.Path
 		}
@@ -227,14 +227,14 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string,
 		if layer != "" {
 			err = os.Chmod(file.Path, 0600)
 			if err != nil {
-				session.Log.Error("scanSecretsInDir changine file permission: %s", err)
+				log.Errorf("scanSecretsInDir changine file permission: %s", err)
 			}
 		}
 
 		secrets, err := scanFile(file.Path, relPath, file.Filename, file.Extension, layer, &numSecrets, matchedRuleSet)
 		if err != nil {
-			session.Log.Info("relPath: %s, Filename: %s, Extension: %s, layer: %s", relPath, file.Filename, file.Extension, layer)
-			session.Log.Error("scanSecretsInDir: %s", err)
+			log.Infof("relPath: %s, Filename: %s, Extension: %s, layer: %s", relPath, file.Filename, file.Extension, layer)
+			log.Errorf("scanSecretsInDir: %s", err)
 		} else {
 			if len(secrets) > 0 {
 				secretsFound = append(secretsFound, secrets...)
@@ -253,11 +253,9 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string,
 
 	if walkErr != nil {
 		if walkErr == maxSecretsExceeded {
-			session.Log.Warn("filepath.Walk: %s", walkErr)
-			fmt.Printf("filepath.Walk: %s\n", walkErr)
+			log.Warnf("filepath.Walk: %s", walkErr)
 		} else {
-			session.Log.Error("Error in filepath.Walk: %s", walkErr)
-			fmt.Printf("Error in filepath.Walk: %s\n", walkErr)
+			log.Errorf("Error in filepath.Walk: %s", walkErr)
 		}
 	}
 
@@ -326,7 +324,7 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string,
 
 			finfo, err := f.Info()
 			if err != nil {
-				session.Log.Warn("Skipping %v as info could not be retrieved: %v", path, err)
+				log.Warnf("Skipping %v as info could not be retrieved: %v", path, err)
 				return nil
 			}
 
@@ -338,7 +336,7 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string,
 
 			relPath, err := filepath.Rel(filepath.Join(baseDir, layer), file.Path)
 			if err != nil {
-				session.Log.Warn("scanSecretsInDir: Couldn't remove prefix of path: %s %s %s",
+				log.Warnf("scanSecretsInDir: Couldn't remove prefix of path: %s %s %s",
 					baseDir, layer, file.Path)
 				relPath = file.Path
 			}
@@ -347,14 +345,14 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string,
 			if layer != "" {
 				err = os.Chmod(file.Path, 0600)
 				if err != nil {
-					session.Log.Error("scanSecretsInDir changine file permission: %s", err)
+					log.Errorf("scanSecretsInDir changine file permission: %s", err)
 				}
 			}
 			secrets, err := scanFile(file.Path, relPath, file.Filename, file.Extension, layer, &numSecrets, matchedRuleSet)
 
 			if err != nil {
-				session.Log.Info("relPath: %s, Filename: %s, Extension: %s, layer: %s", relPath, file.Filename, file.Extension, layer)
-				session.Log.Error("scanSecretsInDir: %s", err)
+				log.Infof("relPath: %s, Filename: %s, Extension: %s, layer: %s", relPath, file.Filename, file.Extension, layer)
+				log.Errorf("scanSecretsInDir: %s", err)
 			} else {
 				if len(secrets) > 0 {
 					for i := range secrets {
@@ -375,11 +373,9 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string,
 		})
 		if walkErr != nil {
 			if walkErr == maxSecretsExceeded {
-				session.Log.Warn("filepath.Walk: %s", walkErr)
-				fmt.Printf("filepath.Walk: %s\n", walkErr)
+				log.Warnf("filepath.Walk: %s", walkErr)
 			} else {
-				session.Log.Error("Error in filepath.Walk: %s", walkErr)
-				fmt.Printf("Error in filepath.Walk: %s\n", walkErr)
+				log.Errorf("Error in filepath.Walk: %s", walkErr)
 			}
 		}
 	}()
@@ -408,34 +404,33 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string,
 	loopCntr := len(layerPaths)
 	var secrets []output.SecretFound
 	for i := 0; i < loopCntr; i++ {
-		core.GetSession().Log.Debug("Analyzing layer path: %s", layerPaths[i])
-		core.GetSession().Log.Debug("Analyzing layer: %s", layerIDs[i])
+		log.Debugf("Analyzing layer path: %s", layerPaths[i])
+		log.Debugf("Analyzing layer: %s", layerIDs[i])
 		// savelayerID = layerIDs[i]
 		completeLayerPath := path.Join(imageManifestPath, layerPaths[i])
 		targetDir := path.Join(extractPath, layerIDs[i])
-		core.GetSession().Log.Info("Complete layer path: %s", completeLayerPath)
-		core.GetSession().Log.Info("Extracted to directory: %s", targetDir)
+		log.Debugf("Complete layer path: %s", completeLayerPath)
+		log.Debugf("Extracted to directory: %s", targetDir)
 		err = core.CreateRecursiveDir(targetDir)
 		if err != nil {
-			core.GetSession().Log.Error("ProcessImageLayers: Unable to create target directory"+
-				" to extract image layers... %s", err)
+			log.Errorf("ProcessImageLayers: Unable to create target directory to extract image layers... %s", err)
 			return tempSecretsFound, err
 		}
 
 		_, error := extractTarFile("", completeLayerPath, targetDir)
 		if error != nil {
-			core.GetSession().Log.Error("ProcessImageLayers: Unable to extract image layer. Reason = %s", error.Error())
+			log.Errorf("ProcessImageLayers: Unable to extract image layer. Reason = %s", error.Error())
 			// Don't stop. Print error and continue with remaning extracted files and other layers
 			// return tempSecretsFound, error
 		}
-		core.GetSession().Log.Debug("Analyzing dir: %s", targetDir)
+		log.Debugf("Analyzing dir: %s", targetDir)
 		secrets, err = ScanSecretsInDir(layerIDs[i], extractPath, targetDir,
 			&isFirstSecret, scanCtx)
 
 		imageScan.numSecrets += uint(len(secrets))
 		tempSecretsFound = append(tempSecretsFound, secrets...)
 		if err != nil {
-			core.GetSession().Log.Error("ProcessImageLayers: %s", err)
+			log.Errorf("ProcessImageLayers: %s", err)
 			// return tempSecretsFound, err
 		}
 
@@ -473,27 +468,26 @@ func (imageScan *ImageScan) processImageLayersStream(imageManifestPath string,
 		loopCntr := len(layerPaths)
 		var secrets []output.SecretFound
 		for i := 0; i < loopCntr; i++ {
-			core.GetSession().Log.Debug("Analyzing layer path: %s", layerPaths[i])
-			core.GetSession().Log.Debug("Analyzing layer: %s", layerIDs[i])
+			log.Debugf("Analyzing layer path: %s", layerPaths[i])
+			log.Debugf("Analyzing layer: %s", layerIDs[i])
 			// savelayerID = layerIDs[i]
 			completeLayerPath := path.Join(imageManifestPath, layerPaths[i])
 			targetDir := path.Join(extractPath, layerIDs[i])
-			core.GetSession().Log.Info("Complete layer path: %s", completeLayerPath)
-			core.GetSession().Log.Info("Extracted to directory: %s", targetDir)
+			log.Infof("Complete layer path: %s", completeLayerPath)
+			log.Infof("Extracted to directory: %s", targetDir)
 			err = core.CreateRecursiveDir(targetDir)
 			if err != nil {
-				core.GetSession().Log.Error("ProcessImageLayers: Unable to create target directory"+
-					" to extract image layers... %v", err)
+				log.Error("ProcessImageLayers: Unable to create target directory extract image layers... %v", err)
 				continue
 			}
 
 			_, error := extractTarFile("", completeLayerPath, targetDir)
 			if error != nil {
-				core.GetSession().Log.Error("ProcessImageLayers: Unable to extract image layer. Reason = %s", error.Error())
+				log.Errorf("ProcessImageLayers: Unable to extract image layer. Reason = %s", error.Error())
 				// Don't stop. Print error and continue with remaning extracted files and other layers
 				continue
 			}
-			core.GetSession().Log.Debug("Analyzing dir: %s", targetDir)
+			log.Debugf("Analyzing dir: %s", targetDir)
 			secrets, err = ScanSecretsInDir(layerIDs[i], extractPath,
 				targetDir, &isFirstSecret, scanCtx)
 
@@ -502,7 +496,7 @@ func (imageScan *ImageScan) processImageLayersStream(imageManifestPath string,
 				res <- secrets[i]
 			}
 			if err != nil {
-				core.GetSession().Log.Error("ProcessImageLayers: %s", err)
+				log.Errorf("ProcessImageLayers: %s", err)
 				continue
 			}
 
@@ -528,13 +522,13 @@ func (imageScan *ImageScan) saveImageData() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Scanning image %s for secrets...\n", outputParam)
+	log.Infof("Scanning image %s for secrets...", outputParam)
 	_, err = drun.Save(imageName, outputParam)
 
 	if err != nil {
 		return err
 	}
-	core.GetSession().Log.Info("Image %s saved in %s", imageName, imageScan.tempDir)
+	log.Infof("Image %s saved in %s", imageName, imageScan.tempDir)
 	return nil
 }
 
@@ -547,17 +541,17 @@ func (imageScan *ImageScan) saveImageData() error {
 // string - directory where contents of image are extracted
 // Error - Errors, if any. Otherwise, returns nil
 func extractTarFile(imageName, imageTarPath string, extractPath string) (string, error) {
-	core.GetSession().Log.Debug("Started extracting tar file %s", imageTarPath)
+	log.Debugf("Started extracting tar file %s", imageTarPath)
 
 	path := extractPath
 
 	// Extract the contents of image from tar file
 	if err := untar(imageTarPath, path); err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return "", err
 	}
 
-	core.GetSession().Log.Debug("Finished extracting tar file %s", imageTarPath)
+	log.Debug("Finished extracting tar file %s", imageTarPath)
 	return path, nil
 }
 
@@ -620,7 +614,7 @@ func untar(tarName string, xpath string) (err error) {
 				absDirPath = filepath.Join(absPath, strings.Join(dirs, "/"))
 			}
 			if err := os.MkdirAll(absDirPath, 0755); err != nil {
-				fmt.Println(err.Error())
+				log.Error(err)
 			}
 		}
 
@@ -634,17 +628,17 @@ func untar(tarName string, xpath string) (err error) {
 		// create new file with original file mode
 		file, err := os.OpenFile(absFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, finfo.Mode().Perm())
 		if err != nil {
-			fmt.Println(err.Error())
+			log.Error(err)
 			return err
 		}
 		// fmt.Printf("x %s\n", absFileName)
 		n, cpErr := io.Copy(file, tr)
 		if closeErr := file.Close(); closeErr != nil { // close file immediately
-			fmt.Println("closeErr:" + closeErr.Error())
+			log.Error("closeErr:" + closeErr.Error())
 			return err
 		}
 		if cpErr != nil {
-			fmt.Println("copyErr:" + cpErr.Error())
+			log.Error("copyErr:" + cpErr.Error())
 			return cpErr
 		}
 		if n != finfo.Size() {

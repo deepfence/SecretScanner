@@ -27,6 +27,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"path"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -35,7 +38,7 @@ import (
 	"github.com/deepfence/SecretScanner/scan"
 	"github.com/deepfence/SecretScanner/server"
 	"github.com/deepfence/SecretScanner/signature"
-	"github.com/fatih/color"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -79,7 +82,7 @@ func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
 
 	secrets, err := scan.ScanSecretsInDir("", "", dir, &isFirstSecret, nil)
 	if err != nil {
-		core.GetSession().Log.Error("findSecretsInDir: %s", err)
+		log.Error("findSecretsInDir: %s", err)
 		return nil, err
 	}
 
@@ -125,20 +128,20 @@ func runOnce(format string) {
 	if len(*session.Options.ImageName) > 0 {
 		node_type = "image"
 		node_id = *session.Options.ImageName
-		fmt.Printf("Scanning image %s for secrets...\n", *session.Options.ImageName)
+		log.Infof("Scanning image %s for secrets...", *session.Options.ImageName)
 		result, err = findSecretsInImage(*session.Options.ImageName)
 		if err != nil {
-			core.GetSession().Log.Fatal("main: error while scanning image: %s", err)
+			log.Fatal("main: error while scanning image: %s", err)
 		}
 	}
 
 	// Scan local directory for secrets
 	if len(*session.Options.Local) > 0 {
 		node_id = output.GetHostname()
-		fmt.Printf("[*] Scanning local directory: %s\n", color.BlueString(*session.Options.Local))
+		log.Debugf("Scanning local directory: %s", *session.Options.Local)
 		result, err = findSecretsInDir(*session.Options.Local)
 		if err != nil {
-			core.GetSession().Log.Fatal("main: error while scanning dir: %s", err)
+			log.Fatal("main: error while scanning dir: %s", err)
 		}
 	}
 
@@ -146,15 +149,15 @@ func runOnce(format string) {
 	if len(*session.Options.ContainerId) > 0 {
 		node_type = "container_image"
 		node_id = *session.Options.ContainerId
-		fmt.Printf("Scanning container %s for secrets...\n", *session.Options.ContainerId)
+		log.Debugf("Scanning container %s for secrets...", *session.Options.ContainerId)
 		result, err = findSecretsInContainer(*session.Options.ContainerId, *session.Options.ContainerNS)
 		if err != nil {
-			core.GetSession().Log.Fatal("main: error while scanning container: %s", err)
+			log.Fatal("main: error while scanning container: %s", err)
 		}
 	}
 
 	if result == nil {
-		core.GetSession().Log.Error("set either -local or -image-name flag")
+		log.Error("set either -local or -image-name flag")
 		return
 	}
 
@@ -165,7 +168,7 @@ func runOnce(format string) {
 			*core.GetSession().Options.DeepfenceKey,
 		)
 		if err != nil {
-			core.GetSession().Log.Error(err.Error())
+			log.Error(err.Error())
 		}
 
 		pub.SendReport(output.GetHostname(), *session.Options.ImageName, *session.Options.ContainerId, node_type)
@@ -174,25 +177,23 @@ func runOnce(format string) {
 			scanId = fmt.Sprintf("%s-%d", node_id, time.Now().UnixMilli())
 		}
 		pub.IngestSecretScanResults(scanId, result.GetSecrets())
-		core.GetSession().Log.Info("scan id %s", scanId)
+		log.Info("scan id %s", scanId)
 	}
 
 	counts := output.CountBySeverity(result.GetSecrets())
-	core.GetSession().Log.Info("result severity counts: %+v", counts)
-
-	fmt.Println("summary:")
-	fmt.Printf("  total=%d high=%d medium=%d low=%d\n",
-		counts.Total, counts.High, counts.Medium, counts.Low)
+	log.Infof("result severity counts: %+v", counts)
 
 	if format == core.JsonOutput {
 		err = result.WriteJson()
 		if err != nil {
-			core.GetSession().Log.Fatal("main: error while writing secrets: %s", err)
+			log.Fatal("main: error while writing secrets: %s", err)
 		}
 	} else {
+		fmt.Println("summary:")
+		fmt.Printf("  total=%d high=%d medium=%d low=%d\n", counts.Total, counts.High, counts.Medium, counts.Low)
 		err = result.WriteTable()
 		if err != nil {
-			core.GetSession().Log.Fatal("main: error while writing secrets: %s", err)
+			log.Fatal("main: error while writing secrets: %s", err)
 		}
 	}
 
@@ -206,6 +207,18 @@ func runOnce(format string) {
 }
 
 func main() {
+
+	log.SetOutput(os.Stderr)
+	log.SetLevel(log.InfoLevel)
+	log.SetReportCaller(true)
+	log.SetFormatter(&log.TextFormatter{
+		DisableColors: false,
+		ForceColors:   true,
+		FullTimestamp: true,
+		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+			return "", " " + path.Base(f.File) + ":" + strconv.Itoa(f.Line)
+		},
+	})
 	// Process and store the read signatures
 	signature.ProcessSignatures(session.Config.Signatures)
 
@@ -217,7 +230,7 @@ func main() {
 	if *socketPath != "" {
 		err := server.RunServer(*socketPath, PLUGIN_NAME)
 		if err != nil {
-			core.GetSession().Log.Fatal("main: failed to serve: %v", err)
+			log.Fatal("main: failed to serve: %v", err)
 		}
 	} else {
 		runOnce(*core.GetSession().Options.OutFormat)

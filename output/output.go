@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/deepfence/SecretScanner/core"
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 	"github.com/fatih/color"
 	tw "github.com/olekukonko/tablewriter"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -108,11 +108,10 @@ func (dirOutput JsonDirSecretsOutput) WriteTable() error {
 func printSecretsToJson(secretsJson interface{}) error {
 	file, err := json.MarshalIndent(secretsJson, "", Indent)
 	if err != nil {
-		core.GetSession().Log.Error("printSecretsToJsonFile: Couldn't format json output: %s", err)
+		log.Errorf("printSecretsToJsonFile: Couldn't format json output: %s", err)
 		return err
 	}
 
-	fmt.Println()
 	fmt.Println(string(file))
 
 	return nil
@@ -251,7 +250,7 @@ func CountBySeverity(report []SecretFound) SevCount {
 }
 
 func ExitOnSeverity(severity string, count int, failOnCount int) {
-	core.GetSession().Log.Debug("ExitOnSeverity severity=%s count=%d failOnCount=%d",
+	log.Debugf("ExitOnSeverity severity=%s count=%d failOnCount=%d",
 		severity, count, failOnCount)
 	if count >= failOnCount {
 		if len(severity) > 0 {
