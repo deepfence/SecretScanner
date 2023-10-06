@@ -27,7 +27,7 @@ docker run -it --rm --name=deepfence-secretscanner \
 	-v $(pwd):/home/deepfence/output \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /tmp/sock:/tmp/sock \
-	deepfenceio/deepfence_secret_scanner:latest \
+	deepfenceio/deepfence_secret_scanner:2.0.0 \
 	-socket-path /tmp/sock/s.sock
 ```
 
