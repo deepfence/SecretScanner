@@ -2,18 +2,16 @@ package output
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
-
-	"context"
-
-	"os"
 
 	dsc "github.com/deepfence/golang_deepfence_sdk/client"
 	oahttp "github.com/deepfence/golang_deepfence_sdk/utils/http"
@@ -258,7 +256,6 @@ func (p *Publisher) IngestSecretScanResults(scan_id string, secrets []SecretFoun
 		s.SetRule(*rule)
 		s.SetMatch(*match)
 		s.SetSeverity(*severity)
-		s.SetMasked(false)
 		s.SetScanId(scan_id)
 
 		data = append(data, *s)
