@@ -6,8 +6,8 @@ replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 
 require (
 	github.com/deepfence/agent-plugins-grpc v0.0.0-00010101000000-000000000000
-	github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20231004120553-da6d7332a0e5
-	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20231004120553-da6d7332a0e5
+	github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20231030062708-5506162b00b7
+	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20231030062708-5506162b00b7
 	github.com/deepfence/vessel v0.12.0
 	github.com/fatih/color v1.15.0
 	github.com/flier/gohs v1.2.2
