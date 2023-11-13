@@ -1,15 +1,8 @@
-ARG VECTORSCAN_IMG_TAG=latest
-ARG VECTORSCAN_IMAGE_REPOSITORY=deepfenceio
-FROM $VECTORSCAN_IMAGE_REPOSITORY/deepfence_vectorscan_build:$VECTORSCAN_IMG_TAG AS vectorscan
-
 FROM golang:1.20-alpine3.18 AS builder
 MAINTAINER DeepFence
 
 RUN apk update  \
-    && apk add --upgrade gcc musl-dev pkgconfig g++ make git
-
-COPY --from=vectorscan /vectorscan.tar.bz2 /
-RUN tar -xjf /vectorscan.tar.bz2 -C / && rm /vectorscan.tar.bz2
+    && apk add --upgrade gcc musl-dev pkgconfig g++ make git vectorscan-dev
 
 WORKDIR /home/deepfence/src/SecretScanner
 COPY . .
