@@ -29,7 +29,7 @@ func CreateRecursiveDir(completePath string) error {
 		return err
 	} else if err != nil {
 		log.Errorf("createRecursiveDir %q: %s. Deleting temp dir", completePath, err)
-		DeleteTmpDir(completePath)
+		_ = DeleteTmpDir(completePath)
 		return err
 	}
 
@@ -42,6 +42,7 @@ func CreateRecursiveDir(completePath string) error {
 // @returns
 // string - Sanitized string which can used as part of filename
 func getSanitizedString(imageName string) string {
+	//nolint:gocritic
 	reg, err := regexp.Compile("[^A-Za-z0-9]+")
 	if err != nil {
 		return "error"
@@ -58,12 +59,12 @@ func getSanitizedString(imageName string) string {
 // Error - Errors if any. Otherwise, returns nil
 func GetTmpDir(imageName string) (string, error) {
 
-	var scanId string = "df_" + getSanitizedString(imageName)
+	scanID := "df_" + getSanitizedString(imageName)
 
 	dir := *session.Options.TempDirectory
-	tempPath := filepath.Join(dir, "Deepfence", TempDirSuffix, scanId)
+	tempPath := filepath.Join(dir, "Deepfence", TempDirSuffix, scanID)
 
-	//if runtime.GOOS == "windows" {
+	// if runtime.GOOS == "windows" {
 	//	tempPath = dir + "\temp\Deepfence\SecretScanning\df_" + scanId
 	//}
 

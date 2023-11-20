@@ -39,74 +39,74 @@ type SecretFound struct {
 	MatchedContents       string  `json:"Matched Contents,omitempty"`
 }
 
-type JsonDirSecretsOutput struct {
+type JSONDirSecretsOutput struct {
 	Timestamp time.Time
 	DirName   string `json:"Directory Name"`
 	Secrets   []SecretFound
 }
 
-type JsonImageSecretsOutput struct {
+type JSONImageSecretsOutput struct {
 	Timestamp   time.Time
 	ImageName   string `json:"Image Name"`
-	ImageId     string `json:"Image ID"`
-	ContainerId string `json:"Container ID"`
+	ImageID     string `json:"Image ID"`
+	ContainerID string `json:"Container ID"`
 	Secrets     []SecretFound
 }
 
-func (imageOutput *JsonImageSecretsOutput) SetImageName(imageName string) {
+func (imageOutput *JSONImageSecretsOutput) SetImageName(imageName string) {
 	imageOutput.ImageName = imageName
 }
 
-func (imageOutput *JsonImageSecretsOutput) SetImageId(imageId string) {
-	imageOutput.ImageId = imageId
+func (imageOutput *JSONImageSecretsOutput) SetImageID(imageID string) {
+	imageOutput.ImageID = imageID
 }
 
-func (imageOutput *JsonImageSecretsOutput) SetTime() {
+func (imageOutput *JSONImageSecretsOutput) SetTime() {
 	imageOutput.Timestamp = time.Now()
 }
 
-func (imageOutput *JsonImageSecretsOutput) SetSecrets(Secrets []SecretFound) {
-	imageOutput.Secrets = Secrets
+func (imageOutput *JSONImageSecretsOutput) SetSecrets(secrets []SecretFound) {
+	imageOutput.Secrets = secrets
 }
 
-func (imageOutput *JsonImageSecretsOutput) GetSecrets() []SecretFound {
+func (imageOutput *JSONImageSecretsOutput) GetSecrets() []SecretFound {
 	return imageOutput.Secrets
 }
 
-func (imageOutput JsonImageSecretsOutput) WriteJson() error {
-	return printSecretsToJson(imageOutput)
+func (imageOutput JSONImageSecretsOutput) WriteJSON() error {
+	return printSecretsToJSON(imageOutput)
 
 }
 
-func (imageOutput JsonImageSecretsOutput) WriteTable() error {
+func (imageOutput JSONImageSecretsOutput) WriteTable() error {
 	return WriteTableOutput(&imageOutput.Secrets)
 }
 
-func (dirOutput *JsonDirSecretsOutput) SetDirName(dirName string) {
+func (dirOutput *JSONDirSecretsOutput) SetDirName(dirName string) {
 	dirOutput.DirName = dirName
 }
 
-func (dirOutput *JsonDirSecretsOutput) SetTime() {
+func (dirOutput *JSONDirSecretsOutput) SetTime() {
 	dirOutput.Timestamp = time.Now()
 }
 
-func (dirOutput *JsonDirSecretsOutput) SetSecrets(Secrets []SecretFound) {
-	dirOutput.Secrets = Secrets
+func (dirOutput *JSONDirSecretsOutput) SetSecrets(secrets []SecretFound) {
+	dirOutput.Secrets = secrets
 }
-func (dirOutput *JsonDirSecretsOutput) GetSecrets() []SecretFound {
+func (dirOutput *JSONDirSecretsOutput) GetSecrets() []SecretFound {
 	return dirOutput.Secrets
 }
 
-func (dirOutput JsonDirSecretsOutput) WriteJson() error {
-	return printSecretsToJson(dirOutput)
+func (dirOutput JSONDirSecretsOutput) WriteJSON() error {
+	return printSecretsToJSON(dirOutput)
 }
 
-func (dirOutput JsonDirSecretsOutput) WriteTable() error {
+func (dirOutput JSONDirSecretsOutput) WriteTable() error {
 	return WriteTableOutput(&dirOutput.Secrets)
 }
 
-func printSecretsToJson(secretsJson interface{}) error {
-	file, err := json.MarshalIndent(secretsJson, "", Indent)
+func printSecretsToJSON(secretsJSON interface{}) error {
+	file, err := json.MarshalIndent(secretsJSON, "", Indent)
 	if err != nil {
 		log.Errorf("printSecretsToJsonFile: Couldn't format json output: %s", err)
 		return err
@@ -119,7 +119,7 @@ func printSecretsToJson(secretsJson interface{}) error {
 
 func PrintColoredSecrets(secrets []SecretFound, isFirstSecret *bool) {
 	for _, secret := range secrets {
-		printColoredSecretJsonObject(secret, isFirstSecret)
+		printColoredSecretJSONObject(secret, isFirstSecret)
 		*isFirstSecret = false
 	}
 }
@@ -128,7 +128,7 @@ func PrintColoredSecrets(secrets []SecretFound, isFirstSecret *bool) {
 // @parameters
 // secret - Structure with details of the secret found
 // isFirstSecret - indicates if some secrets are already printed, used to properly format json
-func printColoredSecretJsonObject(secret SecretFound, isFirstSecret *bool) {
+func printColoredSecretJSONObject(secret SecretFound, isFirstSecret *bool) {
 	Indent3 := Indent + Indent + Indent
 
 	if *isFirstSecret {

@@ -2,12 +2,10 @@ package core
 
 import (
 	"context"
-	"math/rand"
 	"os"
 	"runtime"
 	"strings"
 	"sync"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -27,7 +25,6 @@ var (
 )
 
 func (s *Session) Start() {
-	rand.Seed(time.Now().Unix())
 	s.InitThreads()
 }
 
@@ -60,13 +57,13 @@ func GetSession() *Session {
 		nameSeperator := "-"
 		var blacklistedPaths []string
 		for _, blacklistedPath := range session.Config.BlacklistedPaths {
-			blacklistedPaths = append(blacklistedPaths, strings.Replace(blacklistedPath, "{sep}", pathSeparator, -1))
+			blacklistedPaths = append(blacklistedPaths, strings.ReplaceAll(blacklistedPath, "{sep}", pathSeparator))
 		}
 		session.Config.BlacklistedPaths = blacklistedPaths
 		var excludePaths []string
 		for _, excludePath := range session.Config.ExcludePaths {
-			excludePaths = append(excludePaths, strings.Replace(excludePath, "{sep}", pathSeparator, -1))
-			excludePaths = append(excludePaths, strings.Replace(excludePath, "{name_sep}", nameSeperator, -1))
+			excludePaths = append(excludePaths, strings.ReplaceAll(excludePath, "{sep}", pathSeparator))
+			excludePaths = append(excludePaths, strings.ReplaceAll(excludePath, "{name_sep}", nameSeperator))
 
 		}
 		session.Config.ExcludePaths = excludePaths
