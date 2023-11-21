@@ -95,7 +95,7 @@ func ContainsBlacklistedString(input []byte) bool {
 }
 
 //// GetMatchingFiles Return the list of all applicable files inside the given directory for scanning
-//func GetMatchingFiles(dir string, baseDir string) (*bytes.Buffer, *bytes.Buffer, error) {
+// func GetMatchingFiles(dir string, baseDir string) (*bytes.Buffer, *bytes.Buffer, error) {
 //	findCmd := "find " + dir
 //	for _, skippableExt := range session.Config.BlacklistedExtensions {
 //		findCmd += " -not -name \"*" + skippableExt + "\""
@@ -116,7 +116,7 @@ func ContainsBlacklistedString(input []byte) bool {
 
 // UpdateDirsPermissionsRW Update permissions for dirs in container images, so that they can be properly deleted
 func UpdateDirsPermissionsRW(dir string) {
-	filepath.WalkDir(dir, func(path string, f os.DirEntry, err error) error {
+	_ = filepath.WalkDir(dir, func(path string, f os.DirEntry, err error) error {
 		if f.IsDir() {
 			err := os.Chmod(path, 0700)
 			if err != nil {

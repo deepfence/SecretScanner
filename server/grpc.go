@@ -11,6 +11,8 @@ import (
 
 	"github.com/deepfence/SecretScanner/jobs"
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
+
+	//nolint:typecheck
 	"github.com/deepfence/golang_deepfence_sdk/utils/tasks"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"

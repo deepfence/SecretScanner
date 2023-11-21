@@ -109,6 +109,9 @@ func ParseConfig(options *Options) (*Config, error) {
 // Helps e.g. with Drone where workdir is different than shhgit dir
 func getDefaultConfig() (*Config, error) {
 	ex, err := os.Executable()
+	if err != nil {
+		return nil, fmt.Errorf("os.Executable: %w", err)
+	}
 	dir := filepath.Dir(ex)
 	config, err := loadConfigFile(dir)
 	if err != nil {
@@ -119,17 +122,12 @@ func getDefaultConfig() (*Config, error) {
 }
 
 func loadConfigFile(configPath string) (*Config, error) {
-	var (
-		config *Config = &Config{}
-		data   []byte
-		err    error
-	)
-
 	fstat, err := os.Stat(configPath)
 	if err != nil {
 		return nil, err
 	}
 
+	var data []byte
 	if fstat.IsDir() {
 		data, err = os.ReadFile(path.Join(configPath, "config.yaml"))
 	} else {
@@ -139,6 +137,7 @@ func loadConfigFile(configPath string) (*Config, error) {
 		return nil, err
 	}
 
+	config := &Config{}
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
 		return nil, err

@@ -58,15 +58,15 @@ var session = core.GetSession()
 // image - Name of the container image to scan (e.g. "alpine:3.5")
 // @returns
 // Error, if any. Otherwise, returns nil
-func findSecretsInImage(image string) (*output.JsonImageSecretsOutput, error) {
+func findSecretsInImage(image string) (*output.JSONImageSecretsOutput, error) {
 
 	res, err := scan.ExtractAndScanImage(image)
 	if err != nil {
 		return nil, err
 	}
-	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ImageName: image}
+	jsonImageSecretsOutput := output.JSONImageSecretsOutput{ImageName: image}
 	jsonImageSecretsOutput.SetTime()
-	jsonImageSecretsOutput.SetImageId(res.ImageId)
+	jsonImageSecretsOutput.SetImageID(res.ImageId)
 	jsonImageSecretsOutput.SetSecrets(res.Secrets)
 
 	return &jsonImageSecretsOutput, nil
@@ -77,7 +77,7 @@ func findSecretsInImage(image string) (*output.JsonImageSecretsOutput, error) {
 // dir - Complete path of the directory to be scanned
 // @returns
 // Error, if any. Otherwise, returns nil
-func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
+func findSecretsInDir(dir string) (*output.JSONDirSecretsOutput, error) {
 	var isFirstSecret bool = true
 
 	secrets, err := scan.ScanSecretsInDir("", "", dir, &isFirstSecret, nil)
@@ -86,7 +86,7 @@ func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
 		return nil, err
 	}
 
-	jsonDirSecretsOutput := output.JsonDirSecretsOutput{DirName: *session.Options.Local}
+	jsonDirSecretsOutput := output.JSONDirSecretsOutput{DirName: *session.Options.Local}
 	jsonDirSecretsOutput.SetTime()
 	jsonDirSecretsOutput.SetSecrets(secrets)
 
@@ -98,22 +98,22 @@ func findSecretsInDir(dir string) (*output.JsonDirSecretsOutput, error) {
 // containerId - Id of the container to scan (e.g. "0fdasf989i0")
 // @returns
 // Error, if any. Otherwise, returns nil
-func findSecretsInContainer(containerId string, containerNS string) (*output.JsonImageSecretsOutput, error) {
+func findSecretsInContainer(containerId string, containerNS string) (*output.JSONImageSecretsOutput, error) {
 
 	res, err := scan.ExtractAndScanContainer(containerId, containerNS, nil)
 	if err != nil {
 		return nil, err
 	}
-	jsonImageSecretsOutput := output.JsonImageSecretsOutput{ContainerId: containerId}
+	jsonImageSecretsOutput := output.JSONImageSecretsOutput{ContainerID: containerId}
 	jsonImageSecretsOutput.SetTime()
-	jsonImageSecretsOutput.SetImageId(res.ContainerId)
+	jsonImageSecretsOutput.SetImageID(res.ContainerId)
 	jsonImageSecretsOutput.SetSecrets(res.Secrets)
 
 	return &jsonImageSecretsOutput, nil
 }
 
 type SecretsWriter interface {
-	WriteJson() error
+	WriteJSON() error
 	WriteTable() error
 	GetSecrets() []output.SecretFound
 }
@@ -146,11 +146,11 @@ func runOnce(format string) {
 	}
 
 	// Scan existing container for secrets
-	if len(*session.Options.ContainerId) > 0 {
+	if len(*session.Options.ContainerID) > 0 {
 		node_type = "container_image"
-		node_id = *session.Options.ContainerId
-		log.Debugf("Scanning container %s for secrets...", *session.Options.ContainerId)
-		result, err = findSecretsInContainer(*session.Options.ContainerId, *session.Options.ContainerNS)
+		node_id = *session.Options.ContainerID
+		log.Debugf("Scanning container %s for secrets...", *session.Options.ContainerID)
+		result, err = findSecretsInContainer(*session.Options.ContainerID, *session.Options.ContainerNS)
 		if err != nil {
 			log.Fatal("main: error while scanning container: %s", err)
 		}
@@ -161,9 +161,9 @@ func runOnce(format string) {
 		return
 	}
 
-	if len(*core.GetSession().Options.ConsoleUrl) != 0 && len(*core.GetSession().Options.DeepfenceKey) != 0 {
+	if len(*core.GetSession().Options.ConsoleURL) != 0 && len(*core.GetSession().Options.DeepfenceKey) != 0 {
 		pub, err := output.NewPublisher(
-			*core.GetSession().Options.ConsoleUrl,
+			*core.GetSession().Options.ConsoleURL,
 			strconv.Itoa(*core.GetSession().Options.ConsolePort),
 			*core.GetSession().Options.DeepfenceKey,
 		)
@@ -171,7 +171,7 @@ func runOnce(format string) {
 			log.Error(err.Error())
 		}
 
-		pub.SendReport(output.GetHostname(), *session.Options.ImageName, *session.Options.ContainerId, node_type)
+		pub.SendReport(output.GetHostname(), *session.Options.ImageName, *session.Options.ContainerID, node_type)
 		scanId := pub.StartScan(node_id, node_type)
 		if len(scanId) == 0 {
 			scanId = fmt.Sprintf("%s-%d", node_id, time.Now().UnixMilli())
@@ -183,8 +183,8 @@ func runOnce(format string) {
 	counts := output.CountBySeverity(result.GetSecrets())
 	log.Infof("result severity counts: %+v", counts)
 
-	if format == core.JsonOutput {
-		err = result.WriteJson()
+	if format == core.JSONOutput {
+		err = result.WriteJSON()
 		if err != nil {
 			log.Fatal("main: error while writing secrets: %s", err)
 		}

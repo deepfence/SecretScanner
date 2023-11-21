@@ -9,7 +9,7 @@ import (
 const (
 	TempDirSuffix          = "SecretScanning"
 	ExtractedImageFilesDir = "ExtractedFiles"
-	JsonOutput             = "json"
+	JSONOutput             = "json"
 	TableOutput            = "table"
 )
 
@@ -26,12 +26,12 @@ type Options struct {
 	MultipleMatch     *bool
 	MaxMultiMatch     *uint
 	MaxSecrets        *uint
-	ContainerId       *string
+	ContainerID       *string
 	ContainerNS       *string
 	WorkersPerScan    *int
 	InactiveThreshold *int
 	OutFormat         *string
-	ConsoleUrl        *string
+	ConsoleURL        *string
 	ConsolePort       *int
 	DeepfenceKey      *string
 	FailOnCount       *int
@@ -71,12 +71,12 @@ func ParseOptions() (*Options, error) {
 		MultipleMatch:     flag.Bool("multi-match", false, "Output multiple matches of same pattern in one file. By default, only one match of a pattern is output for a file for better performance"),
 		MaxMultiMatch:     flag.Uint("max-multi-match", 3, "Maximum number of matches of same pattern in one file. This is used only when multi-match option is enabled."),
 		MaxSecrets:        flag.Uint("max-secrets", 1000, "Maximum number of secrets to find in one container image or file system."),
-		ContainerId:       flag.String("container-id", "", "Id of existing container ID"),
+		ContainerID:       flag.String("container-id", "", "Id of existing container ID"),
 		ContainerNS:       flag.String("container-ns", "", "Namespace of existing container to scan, empty for docker runtime"),
 		WorkersPerScan:    flag.Int("workers-per-scan", 1, "Number of concurrent workers per scan"),
 		InactiveThreshold: flag.Int("inactive-threshold", 600, "Threshold for Inactive scan in seconds"),
 		OutFormat:         flag.String("output", TableOutput, "Output format: json or table"),
-		ConsoleUrl:        flag.String("console-url", "", "Deepfence Management Console URL"),
+		ConsoleURL:        flag.String("console-url", "", "Deepfence Management Console URL"),
 		ConsolePort:       flag.Int("console-port", 443, "Deepfence Management Console Port"),
 		DeepfenceKey:      flag.String("deepfence-key", "", "Deepfence key for auth"),
 		FailOnCount:       flag.Int("fail-on-count", -1, "Exit with status 1 if number of secrets found is >= this value (Default: -1)"),
