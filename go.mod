@@ -13,7 +13,7 @@ require (
 	github.com/flier/gohs v1.2.2
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/sirupsen/logrus v1.9.3
-	google.golang.org/grpc v1.58.2
+	google.golang.org/grpc v1.58.3
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -61,7 +61,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.15.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
