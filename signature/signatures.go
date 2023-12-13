@@ -265,9 +265,9 @@ func matchString(part string, input string, completeFilename string, layerID str
 				log.Debugf("matchString: Skipping matches containing blacklisted strings")
 				continue
 			}
-			log.Infof("Simple Signature %s %s %s %s %s %d\n", signature.Name, signature.Part,
+			log.Debugf("Simple Signature %s %s %s %s %s %d\n", signature.Name, signature.Part,
 				signature.Match, signature.Regex, signature.Severity, signature.ID)
-			log.Infof("Sensitive file %s found with matching %s of %s\n",
+			log.Debugf("Sensitive file %s found with matching %s of %s\n",
 				completeFilename, part, color.RedString(input))
 
 			secret := output.SecretFound{
