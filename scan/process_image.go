@@ -112,7 +112,7 @@ func (imageScan *ImageScan) scan(scanCtx *tasks.ScanContext) ([]output.SecretFou
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors, if any. Otherwise, returns nil
-func (imageScan *ImageScan) scanStream(scanCtx *tasks.ScanContext) (chan output.SecretFound, error) {
+func (imageScan *ImageScan) scanStream(scanCtx *tasks.ScanContext) ([]output.SecretFound, error) {
 	return imageScan.processImageLayersStream(imageScan.tempDir, scanCtx)
 }
 
@@ -272,9 +272,10 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string,
 // chan output.SecretFound - Channel of all secrets found
 // Error - Errors if any. Otherwise, returns nil
 func ScanSecretsInDirStream(layer string, baseDir string, fullDir string,
-	isFirstSecret *bool, scanCtx *tasks.ScanContext) (chan output.SecretFound, error) {
+	isFirstSecret *bool, scanCtx *tasks.ScanContext) ([]output.SecretFound, error) {
 
-	res := make(chan output.SecretFound, secret_pipeline_size)
+	var res []output.SecretFound
+	var errVal error
 
 	matchedRuleSet := map[uint]uint{}
 	numSecrets := uint(0)
@@ -285,7 +286,6 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string,
 
 	go func() {
 
-		defer close(res)
 		session := core.GetSession()
 		maxFileSize := *session.Options.MaximumFileSize * 1024
 
@@ -348,23 +348,18 @@ func ScanSecretsInDirStream(layer string, baseDir string, fullDir string,
 					log.Errorf("scanSecretsInDir changine file permission: %s", err)
 				}
 			}
-			secrets, err := scanFile(file.Path, relPath, file.Filename, file.Extension, layer, &numSecrets, matchedRuleSet)
+			res, errVal = scanFile(file.Path, relPath, file.Filename, file.Extension, layer, &numSecrets, matchedRuleSet)
 
-			if err != nil {
+			if errVal != nil {
 				log.Infof("relPath: %s, Filename: %s, Extension: %s, layer: %s", relPath, file.Filename, file.Extension, layer)
-				log.Errorf("scanSecretsInDir: %s", err)
-			} else {
-				if len(secrets) > 0 {
-					for i := range secrets {
-						res <- secrets[i]
-					}
-				}
+				log.Errorf("scanSecretsInDir: %s", errVal)
+				return errVal
 			}
-
-			secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, &numSecrets)
-			for i := range secrets {
-				res <- secrets[i]
+			if numSecrets >= *session.Options.MaxSecrets {
+				res = []output.SecretFound{}
+				return maxSecretsExceeded
 			}
+			res = append(res, signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, &numSecrets)...)
 			// Don't report secrets if number of secrets exceeds MAX value
 			if numSecrets >= *session.Options.MaxSecrets {
 				return maxSecretsExceeded
@@ -451,14 +446,12 @@ func (imageScan *ImageScan) processImageLayers(imageManifestPath string,
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
 func (imageScan *ImageScan) processImageLayersStream(imageManifestPath string,
-	scanCtx *tasks.ScanContext) (chan output.SecretFound, error) {
-	res := make(chan output.SecretFound, secret_pipeline_size)
+	scanCtx *tasks.ScanContext) ([]output.SecretFound, error) {
 
+	var res []output.SecretFound
 	go func() {
 		var err error
 		var isFirstSecret bool = true
-
-		defer close(res)
 
 		// extractPath - Base directory where all the layers should be extracted to
 		extractPath := path.Join(imageManifestPath, core.ExtractedImageFilesDir)
@@ -490,16 +483,12 @@ func (imageScan *ImageScan) processImageLayersStream(imageManifestPath string,
 			log.Debugf("Analyzing dir: %s", targetDir)
 			secrets, err = ScanSecretsInDir(layerIDs[i], extractPath,
 				targetDir, &isFirstSecret, scanCtx)
-
-			imageScan.numSecrets += uint(len(secrets))
-			for i := range secrets {
-				res <- secrets[i]
-			}
 			if err != nil {
 				log.Errorf("ProcessImageLayers: %s", err)
 				continue
 			}
-
+			imageScan.numSecrets += uint(len(secrets))
+			res = append(res, secrets...)
 			// Don't report secrets if number of secrets exceeds MAX value
 			if imageScan.numSecrets >= *core.GetSession().Options.MaxSecrets {
 				break
@@ -749,10 +738,15 @@ func ExtractAndScanImage(image string) (*ImageExtractionResult, error) {
 	return &ImageExtractionResult{ImageId: imageScan.imageId, Secrets: secrets}, nil
 }
 
-func ExtractAndScanImageStream(image string, scanCtx *tasks.ScanContext) (chan output.SecretFound, error) {
+func ExtractAndScanImageStream(image string, scanCtx *tasks.ScanContext) ([]output.SecretFound, error) {
+
+	var nullResult []output.SecretFound
+	var resultVar []output.SecretFound
+	var errVal error
+
 	tempDir, err := core.GetTmpDir(image)
 	if err != nil {
-		return nil, err
+		return nullResult, err
 	}
 
 	imageScan := ImageScan{imageName: image, imageId: "", tempDir: tempDir}
@@ -760,28 +754,18 @@ func ExtractAndScanImageStream(image string, scanCtx *tasks.ScanContext) (chan o
 
 	if err != nil {
 		core.DeleteTmpDir(tempDir)
-		return nil, err
+		return nullResult, err
 	}
 
-	stream, err := imageScan.scanStream(scanCtx)
+	resultVar, errVal = imageScan.scanStream(scanCtx)
 
-	if err != nil {
+	if errVal != nil {
 		core.DeleteTmpDir(tempDir)
-		return nil, err
+		return nullResult, errVal
 	}
 
-	res := make(chan output.SecretFound, secret_pipeline_size)
-
-	go func() {
-		defer core.DeleteTmpDir(tempDir)
-		defer close(res)
-		for i := range stream {
-			res <- i
-		}
-	}()
-
-	return res, nil
-
+	core.DeleteTmpDir(tempDir)
+	return resultVar, nil
 }
 
 func ExtractAndScanFromTar(tarFolder string, imageName string,

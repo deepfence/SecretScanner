@@ -45,7 +45,7 @@ func DispatchScan(r *pb.FindRequest) {
 			close(res)
 		}()
 
-		var secrets chan output.SecretFound
+		var secrets []output.SecretFound
 
 		if r.GetPath() != "" {
 			var isFirstSecret bool = true
@@ -69,9 +69,9 @@ func DispatchScan(r *pb.FindRequest) {
 			err = fmt.Errorf("Invalid request")
 			return
 		}
-
-		for secret := range secrets {
-			writeSingleScanData(output.SecretToSecretInfo(secret), r.ScanId)
+		lenVar := len(secrets)
+		for i := 0; i < lenVar; i++ {
+			writeSingleScanData(output.SecretToSecretInfo(secrets[i]), r.ScanId)
 		}
 	}()
 }
