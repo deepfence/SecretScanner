@@ -1,5 +1,5 @@
 ARG VECTORSCAN_IMG_TAG=latest
-ARG VECTORSCAN_IMAGE_REPOSITORY=quay.io/deepfenceio
+ARG VECTORSCAN_IMAGE_REPOSITORY=deepfenceio
 FROM $VECTORSCAN_IMAGE_REPOSITORY/deepfence_vectorscan_build:$VECTORSCAN_IMG_TAG AS vectorscan
 
 FROM golang:1.20-alpine3.18 AS builder
