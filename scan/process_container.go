@@ -72,21 +72,17 @@ func (containerScan *ContainerScan) extractFileSystem() error {
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors, if any. Otherwise, returns nil
-func (containerScan *ContainerScan) scan(scanCtx *tasks.ScanContext) ([]output.SecretFound, error) {
+func (containerScan *ContainerScan) scan(scanCtx *tasks.ScanContext, outputChan chan []output.SecretFound) error {
 	var isFirstSecret bool = true
 
-	secrets, err := ScanSecretsInDir("", containerScan.tempDir, containerScan.tempDir,
-		&isFirstSecret, scanCtx)
+	err := ScanSecretsInDir("", containerScan.tempDir, containerScan.tempDir,
+		&isFirstSecret, scanCtx, outputChan)
 	if err != nil {
 		log.Errorf("findSecretsInContainer: %s", err)
-		return nil, err
+		return err
 	}
 
-	for _, secret := range secrets {
-		secret.CompleteFilename = strings.Replace(secret.CompleteFilename, containerScan.tempDir, "", 1)
-	}
-
-	return secrets, nil
+	return nil
 }
 
 // Function to scan extracted layers of container file system for secrets file by file
@@ -95,18 +91,18 @@ func (containerScan *ContainerScan) scan(scanCtx *tasks.ScanContext) ([]output.S
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors, if any. Otherwise, returns nil
-func (containerScan *ContainerScan) scanStream(scanCtx *tasks.ScanContext) (chan output.SecretFound, error) {
+func (containerScan *ContainerScan) scanStream(scanCtx *tasks.ScanContext, outputChan chan []output.SecretFound) error {
 	var isFirstSecret bool = true
 
-	stream, err := ScanSecretsInDirStream("", containerScan.tempDir,
-		containerScan.tempDir, &isFirstSecret, scanCtx)
+	err := ScanSecretsInDirStream("", containerScan.tempDir,
+		containerScan.tempDir, &isFirstSecret, scanCtx, outputChan)
 
 	if err != nil {
 		log.Errorf("findSecretsInContainer: %s", err)
-		return nil, err
+		return err
 	}
 
-	return stream, nil
+	return nil
 }
 
 type ContainerExtractionResult struct {
@@ -130,19 +126,26 @@ func ExtractAndScanContainer(containerId string, namespace string,
 		return nil, err
 	}
 
-	secrets, err := containerScan.scan(scanCtx)
+	var localChan = make(chan []output.SecretFound, 1)
+	err = containerScan.scan(scanCtx, localChan)
 
 	if err != nil {
+		close(localChan)
 		return nil, err
+	}
+	secrets := <-localChan
+	close(localChan)
+	for _, secret := range secrets {
+		secret.CompleteFilename = strings.Replace(secret.CompleteFilename, containerScan.tempDir, "", 1)
 	}
 	return &ContainerExtractionResult{ContainerId: containerScan.containerId, Secrets: secrets}, nil
 }
 
 func ExtractAndScanContainerStream(containerId string, namespace string,
-	scanCtx *tasks.ScanContext) (chan output.SecretFound, error) {
+	scanCtx *tasks.ScanContext, outputChan chan []output.SecretFound) error {
 	tempDir, err := core.GetTmpDir(containerId)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	containerScan := ContainerScan{containerId: containerId, tempDir: tempDir, namespace: namespace}
@@ -150,25 +153,15 @@ func ExtractAndScanContainerStream(containerId string, namespace string,
 
 	if err != nil {
 		core.DeleteTmpDir(tempDir)
-		return nil, err
+		return err
 	}
 
-	stream, err := containerScan.scanStream(scanCtx)
+	err = containerScan.scanStream(scanCtx, outputChan)
 
 	if err != nil {
 		core.DeleteTmpDir(tempDir)
-		return nil, err
+		return err
 	}
-
-	res := make(chan output.SecretFound, secret_pipeline_size)
-
-	go func() {
-		defer core.DeleteTmpDir(tempDir)
-		defer close(res)
-		for i := range stream {
-			res <- i
-		}
-	}()
-
-	return res, nil
+	core.DeleteTmpDir(tempDir)
+	return nil
 }

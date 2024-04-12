@@ -80,12 +80,15 @@ func findSecretsInImage(image string) (*output.JSONImageSecretsOutput, error) {
 func findSecretsInDir(dir string) (*output.JSONDirSecretsOutput, error) {
 	var isFirstSecret bool = true
 
-	secrets, err := scan.ScanSecretsInDir("", "", dir, &isFirstSecret, nil)
+	const maxValuesInChan = 10
+	var outputChan = make(chan []output.SecretFound, maxValuesInChan)
+	defer close(outputChan)
+	err := scan.ScanSecretsInDir("", "", dir, &isFirstSecret, nil, outputChan)
 	if err != nil {
 		log.Error("findSecretsInDir: %s", err)
 		return nil, err
 	}
-
+	secrets := <-outputChan
 	jsonDirSecretsOutput := output.JSONDirSecretsOutput{DirName: *session.Options.Local}
 	jsonDirSecretsOutput.SetTime()
 	jsonDirSecretsOutput.SetSecrets(secrets)

@@ -57,6 +57,8 @@ func (c *Config) Merge(in *Config) {
 }
 
 func mergeStringSlices(old, new []string) []string {
+	/* This whole function is horribly wrong on many levels. We should be using slices -> append, sort, compat
+	However, this code seems to have a limited runtime scope. So, will handle this one later */
 	m := make(map[string]bool, len(old))
 	for _, s := range old {
 		m[s] = true
