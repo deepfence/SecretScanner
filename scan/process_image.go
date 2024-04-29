@@ -173,6 +173,7 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string,
 
 	walkErr := filepath.WalkDir(fullDir, func(path string, f os.DirEntry, err error) error {
 		if err != nil {
+			log.Debugf("Error in filepath.Walk: %s", err)
 			return err
 		}
 
@@ -231,6 +232,8 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string,
 			}
 		}
 
+		log.Debugf("attempting scanFile on: %+v, relPath: %s", file, relPath)
+
 		secrets, err := scanFile(file.Path, relPath, file.Filename, file.Extension, layer, &numSecrets, matchedRuleSet)
 		if err != nil {
 			log.Infof("relPath: %s, Filename: %s, Extension: %s, layer: %s", relPath, file.Filename, file.Extension, layer)
@@ -245,6 +248,10 @@ func ScanSecretsInDir(layer string, baseDir string, fullDir string,
 		}
 
 		secrets = signature.MatchSimpleSignatures(relPath, file.Filename, file.Extension, layer, &numSecrets)
+		secretsFound = append(secretsFound, secrets...)
+
+		log.Debugf("scan completed for file: %+v, numSecrets: %d", file, numSecrets)
+
 		// Don't report secrets if number of secrets exceeds MAX value
 		if numSecrets >= *session.Options.MaxSecrets {
 			return maxSecretsExceeded

@@ -41,12 +41,12 @@ Install docker and run SecretScanner on a container image using the following in
 * Build SecretScanner:
 ```shell
 ./bootstrap.sh
-docker build --rm=true --tag=deepfenceio/deepfence_secret_scanner:2.0.0 -f Dockerfile .
+docker build --rm=true --tag=quay.io/deepfenceio/deepfence_secret_scanner_ce:2.2.0 -f Dockerfile .
 ```
 
 * Or, pull the latest build from docker hub by doing:
 ```shell
-docker pull deepfenceio/deepfence_secret_scanner:2.0.0
+docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.2.0
 ```
 
 * Pull a container image for scanning:
@@ -56,7 +56,7 @@ docker pull node:8.11
 
 * Scan the container image:
     ```shell
-    docker run -i --rm --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock deepfenceio/deepfence_secret_scanner:2.0.0 -image-name node:8.11 --output json > node.json
+    docker run -i --rm --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock quay.io/deepfenceio/deepfence_secret_scanner_ce:2.2.0 -image-name node:8.11 --output json > node.json
     ```
 
 # Credits
