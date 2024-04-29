@@ -17,6 +17,8 @@ import (
 
 var ScanMap sync.Map
 
+const max_secrets_array = 10
+
 func DispatchScan(r *pb.FindRequest) {
 	go func() {
 		startScanJob()
@@ -45,23 +47,22 @@ func DispatchScan(r *pb.FindRequest) {
 			close(res)
 		}()
 
-		var secrets chan output.SecretFound
-
+		var secretsChannel = make(chan []output.SecretFound, max_secrets_array)
 		if r.GetPath() != "" {
 			var isFirstSecret bool = true
-			secrets, err = scan.ScanSecretsInDirStream("", r.GetPath(), r.GetPath(),
-				&isFirstSecret, scanCtx)
+			err = scan.ScanSecretsInDirStream("", r.GetPath(), r.GetPath(),
+				&isFirstSecret, scanCtx, secretsChannel)
 			if err != nil {
 				return
 			}
 		} else if r.GetImage() != nil && r.GetImage().Name != "" {
-			secrets, err = scan.ExtractAndScanImageStream(r.GetImage().Name, scanCtx)
+			err = scan.ExtractAndScanImageStream(r.GetImage().Name, scanCtx, secretsChannel)
 			if err != nil {
 				return
 			}
 		} else if r.GetContainer() != nil && r.GetContainer().Id != "" {
-			secrets, err = scan.ExtractAndScanContainerStream(r.GetContainer().Id,
-				r.GetContainer().Namespace, scanCtx)
+			err = scan.ExtractAndScanContainerStream(r.GetContainer().Id,
+				r.GetContainer().Namespace, scanCtx, secretsChannel)
 			if err != nil {
 				return
 			}
@@ -69,9 +70,15 @@ func DispatchScan(r *pb.FindRequest) {
 			err = fmt.Errorf("Invalid request")
 			return
 		}
-
-		for secret := range secrets {
-			writeSingleScanData(output.SecretToSecretInfo(secret), r.ScanId)
+		for secrets := range secretsChannel {
+			//go func() { //We can introduce a subroutine later if needed. If this send function is slow
+			//and we have too many entries in the channel, we run a risk of exiting this when
+			//the send function is still in execution.......
+			loopCntr := len(secrets)
+			for i := 0; i < loopCntr; i++ {
+				writeSingleScanData(output.SecretToSecretInfo(secrets[i]), r.ScanId)
+			}
+			//}()
 		}
 	}()
 }

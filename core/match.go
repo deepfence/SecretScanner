@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -18,9 +19,9 @@ type MatchFile struct {
 
 // NewMatchFile Creates a new Matchfile data structure
 func NewMatchFile(path string) MatchFile {
-	path = filepath.ToSlash(path)
-	_, filename := filepath.Split(path)
-	extension := filepath.Ext(path)
+
+	extension := filepath.Base(path)
+	filename := strings.TrimSuffix(filepath.Base(path), extension)
 	// contents, _ := ioutil.ReadFile(path)
 
 	return MatchFile{
@@ -31,39 +32,37 @@ func NewMatchFile(path string) MatchFile {
 	}
 }
 
+func checkPrefix(baseDir, input string) func(string) bool {
+	return func(compareParam string) bool {
+		return strings.HasPrefix(input, compareParam) || strings.HasPrefix(input, filepath.Join(baseDir, compareParam))
+	}
+}
+
+func checkContains(baseDir, input string) func(string) bool {
+	return func(compareParam string) bool {
+		return strings.Contains(input, compareParam) || strings.Contains(input, filepath.Join(baseDir, compareParam))
+	}
+}
+
 // IsSkippableFile Checks if the path is blacklisted
 func IsSkippableDir(path string, baseDir string) bool {
 	hostMountPath := *session.Options.HostMountPath
 	if hostMountPath != "" {
 		baseDir = hostMountPath
 	}
-
-	for _, skippablePathIndicator := range session.Config.BlacklistedPaths {
-		if strings.HasPrefix(path, skippablePathIndicator) || strings.HasPrefix(path, filepath.Join(baseDir, skippablePathIndicator)) {
-			return true
-		}
-
+	var retVal = false
+	retVal = slices.ContainsFunc(session.Config.BlacklistedPaths, checkPrefix(baseDir, path))
+	if retVal {
+		return retVal
 	}
-
-	for _, excludePathIndicator := range session.Config.ExcludePaths {
-		if strings.Contains(path, excludePathIndicator) || strings.Contains(path, filepath.Join(baseDir, excludePathIndicator)) {
-			return true
-		}
-
-	}
-
-	return false
+	retVal = slices.ContainsFunc(session.Config.ExcludePaths, checkContains(baseDir, path))
+	return retVal
 }
 
 // IsSkippableFileExtension Checks if the file extension is blacklisted
 func IsSkippableFileExtension(path string) bool {
 	extension := strings.ToLower(filepath.Ext(path))
-	for _, skippableExt := range session.Config.BlacklistedExtensions {
-		if extension == skippableExt {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(session.Config.BlacklistedExtensions, extension)
 }
 
 // CanCheckEntropy Checks if entropy based scanning is appropriate for this file
@@ -71,27 +70,19 @@ func (match MatchFile) CanCheckEntropy() bool {
 	if match.Filename == "id_rsa" {
 		return false
 	}
+	return slices.Contains(session.Config.BlacklistedEntropyExtensions, match.Extension)
+}
 
-	for _, skippableExt := range session.Config.BlacklistedEntropyExtensions {
-		if match.Extension == skippableExt {
-			return false
-		}
+func byteCompare(input []byte) func(string) bool {
+	return func(compareParam string) bool {
+		return bytes.Contains(input, []byte(compareParam))
 	}
-
-	return true
 }
 
 // ContainsBlacklistedString Checks if the input contains a blacklisted string
 func ContainsBlacklistedString(input []byte) bool {
-	for _, blacklistedString := range session.Config.BlacklistedStrings {
-		blacklistedByteStr := []byte(blacklistedString)
-		if bytes.Contains(input, blacklistedByteStr) {
-			log.Debugf("Blacklisted string %s matched", blacklistedString)
-			return true
-		}
-	}
 
-	return false
+	return slices.ContainsFunc(session.Config.BlacklistedStrings, byteCompare(input))
 }
 
 //// GetMatchingFiles Return the list of all applicable files inside the given directory for scanning
