@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"runtime"
-	"strings"
 	"sync"
 
 	"github.com/deepfence/match-scanner/pkg/config"
@@ -59,21 +58,6 @@ func GetSession() *Session {
 			log.Error(err)
 			os.Exit(1)
 		}
-
-		pathSeparator := string(os.PathSeparator)
-		nameSeperator := "-"
-		var blacklistedPaths []string
-		for _, blacklistedPath := range session.Config.BlacklistedPaths {
-			blacklistedPaths = append(blacklistedPaths, strings.ReplaceAll(blacklistedPath, "{sep}", pathSeparator))
-		}
-		session.Config.BlacklistedPaths = blacklistedPaths
-		var excludePaths []string
-		for _, excludePath := range session.Config.ExcludePaths {
-			excludePaths = append(excludePaths, strings.ReplaceAll(excludePath, "{sep}", pathSeparator))
-			excludePaths = append(excludePaths, strings.ReplaceAll(excludePath, "{name_sep}", nameSeperator))
-
-		}
-		session.Config.ExcludePaths = excludePaths
 
 		session.Start()
 	})
