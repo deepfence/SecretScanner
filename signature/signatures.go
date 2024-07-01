@@ -4,10 +4,13 @@ import (
 	// "regexp"
 	// "regexp/syntax"
 	// "strings"
+	"bufio"
 	"bytes"
 	"errors"
+	"io"
 	"math"
 	"regexp"
+	"strings"
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
@@ -44,6 +47,7 @@ var (
 	simpleSignatureMap  map[string][]core.ConfigSignature
 	patternSignatureMap map[string][]core.ConfigSignature
 	hyperscanBlockDbMap map[string]hyperscan.BlockDatabase
+	regexpMap           map[string]*regexp.Regexp
 	signatureIDMap      map[int]core.ConfigSignature
 )
 
@@ -53,6 +57,7 @@ func init() {
 	simpleSignatureMap = make(map[string][]core.ConfigSignature)
 	patternSignatureMap = make(map[string][]core.ConfigSignature)
 	hyperscanBlockDbMap = make(map[string]hyperscan.BlockDatabase)
+	regexpMap = make(map[string]*regexp.Regexp)
 	signatureIDMap = make(map[int]core.ConfigSignature)
 }
 
@@ -99,50 +104,63 @@ func MatchSimpleSignatures(path string, filename string, extension string, layer
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func MatchPatternSignatures(contents []byte, path string, filename string, extension string, layerID string,
+func MatchPatternSignatures(contents io.ReadSeeker, path string, filename string, extension string, layerID string,
 	numSecrets *uint, matchedRuleSet map[uint]uint) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
-	var hsIOData HsInputOutputData
+	//var hsIOData HsInputOutputData
 	var matchingPart string
-	var matchingStr []byte
+	var matchingStr io.RuneReader
 
 	for _, part := range []string{ContentsPart, FilenamePart, PathPart, ExtPart} {
 		switch part {
 		case FilenamePart:
 			matchingPart = part
-			matchingStr = []byte(filename)
+			matchingStr = bufio.NewReader(strings.NewReader(filename))
 		case PathPart:
 			matchingPart = part
-			matchingStr = []byte(path)
+			matchingStr = bufio.NewReader(strings.NewReader(path))
 		case ExtPart:
 			matchingPart = part
-			matchingStr = []byte(extension)
+			matchingStr = bufio.NewReader(strings.NewReader(extension))
 		case ContentsPart:
 			matchingPart = part
-			matchingStr = contents
+			matchingStr = bufio.NewReader(contents)
 		}
 
-		// Ignore if string to match is empty, otherwise hyperscan can return errors
-		if len(matchingStr) == 0 {
-			continue
+		//hsIOData = HsInputOutputData{
+		//	inputData:          matchingStr,
+		//	inputDataLowerCase: bytes.ToLower(matchingStr),
+		//	completeFilename:   path,
+		//	layerID:            layerID,
+		//	secretsFound:       &tempSecretsFound,
+		//	numSecrets:         numSecrets,
+		//	matchedRuleSet:     matchedRuleSet,
+		//}
+		indexes := regexpMap[matchingPart].FindReaderSubmatchIndex(matchingStr)
+		if indexes != nil {
+			tempSecretsFound = append(tempSecretsFound, output.SecretFound{
+				LayerID:               layerID,
+				RuleID:                0,
+				RuleName:              "",
+				PartToMatch:           part,
+				Match:                 matchingPart[indexes[0]:indexes[1]],
+				Regex:                 regexpMap[matchingPart].String(),
+				Severity:              "",
+				SeverityScore:         0,
+				PrintBufferStartIndex: 0,
+				MatchFromByte:         0,
+				MatchToByte:           0,
+				CompleteFilename:      filename,
+				MatchedContents:       "",
+			})
 		}
-
-		hsIOData = HsInputOutputData{
-			inputData:          matchingStr,
-			inputDataLowerCase: bytes.ToLower(matchingStr),
-			completeFilename:   path,
-			layerID:            layerID,
-			secretsFound:       &tempSecretsFound,
-			numSecrets:         numSecrets,
-			matchedRuleSet:     matchedRuleSet,
-		}
-		err := RunHyperscan(hyperscanBlockDbMap[matchingPart], hsIOData)
-		if err != nil {
-			log.Infof("part: %s, path: %s, filename: %s, extenstion: %s, layerID: %s",
-				part, path, filename, extension, layerID)
-			log.Warnf("MatchPatternSignatures: %s", err)
-			return tempSecretsFound, err
-		}
+		//err := RunHyperscan(hyperscanBlockDbMap[matchingPart], hsIOData)
+		//if err != nil {
+		//	log.Infof("part: %s, path: %s, filename: %s, extenstion: %s, layerID: %s",
+		//		part, path, filename, extension, layerID)
+		//	log.Warnf("MatchPatternSignatures: %s", err)
+		//	return tempSecretsFound, err
+		//}
 	}
 
 	return tempSecretsFound, nil

@@ -1,12 +1,14 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 
+	"github.com/deepfence/match-scanner/pkg/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -144,6 +146,23 @@ func loadConfigFile(configPath string) (*Config, error) {
 	}
 
 	return config, nil
+}
+
+func loadExtractorConfigFile(options *Options) (config.Config, error) {
+	configs := options.ConfigPath.Values()
+	if len(configs) != 1 {
+		return config.Config{}, errors.New("too many config files")
+	}
+	configPath := configs[0]
+	fstat, err := os.Stat(configPath)
+	if err != nil {
+		return config.Config{}, err
+	}
+
+	if fstat.IsDir() {
+		return config.ParseConfig(filepath.Join(configPath, "config,yaml"))
+	}
+	return config.ParseConfig(configPath)
 }
 
 func (c *Config) UnmarshalYAML(unmarshal func(interface{}) error) error {

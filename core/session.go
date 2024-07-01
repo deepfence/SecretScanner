@@ -7,15 +7,17 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/deepfence/match-scanner/pkg/config"
 	log "github.com/sirupsen/logrus"
 )
 
 type Session struct {
 	sync.Mutex
-	Version string
-	Options *Options
-	Config  *Config
-	Context context.Context
+	Version         string
+	Options         *Options
+	Config          *Config
+	Context         context.Context
+	ExtractorConfig config.Config
 }
 
 var (
@@ -49,6 +51,11 @@ func GetSession() *Session {
 		}
 
 		if session.Config, err = ParseConfig(session.Options); err != nil {
+			log.Error(err)
+			os.Exit(1)
+		}
+
+		if session.ExtractorConfig, err = loadExtractorConfigFile(session.Options); err != nil {
 			log.Error(err)
 			os.Exit(1)
 		}
