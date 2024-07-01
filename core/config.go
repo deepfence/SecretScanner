@@ -1,7 +1,6 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -13,12 +12,7 @@ import (
 )
 
 type Config struct {
-	BlacklistedStrings           []string          `yaml:"blacklisted_strings"`
-	BlacklistedExtensions        []string          `yaml:"blacklisted_extensions"`
-	BlacklistedPaths             []string          `yaml:"blacklisted_paths"`
-	ExcludePaths                 []string          `yaml:"exclude_paths"`
-	BlacklistedEntropyExtensions []string          `yaml:"blacklisted_entropy_extensions"`
-	Signatures                   []ConfigSignature `yaml:"signatures"`
+	Signatures []ConfigSignature `yaml:"signatures"`
 }
 
 type ConfigSignature struct {
@@ -35,11 +29,6 @@ type ConfigSignature struct {
 }
 
 func (c *Config) Merge(in *Config) {
-	c.BlacklistedStrings = mergeStringSlices(c.BlacklistedStrings, in.BlacklistedStrings)
-	c.BlacklistedExtensions = mergeStringSlices(c.BlacklistedExtensions, in.BlacklistedExtensions)
-	c.BlacklistedPaths = mergeStringSlices(c.BlacklistedPaths, in.BlacklistedPaths)
-	c.BlacklistedEntropyExtensions = mergeStringSlices(c.BlacklistedEntropyExtensions, in.BlacklistedEntropyExtensions)
-
 	signatureNames := make(map[string]bool, len(c.Signatures))
 	for _, sig := range c.Signatures {
 		signatureNames[sig.Name] = true
@@ -74,7 +63,7 @@ func mergeStringSlices(old, new []string) []string {
 }
 
 func ParseConfig(options *Options) (*Config, error) {
-	configFileDirs := options.ConfigPath.Values()
+	configFileDirs := options.RulesPath.Values()
 
 	if len(configFileDirs) > 0 {
 		if *options.MergeConfigs {
@@ -149,18 +138,14 @@ func loadConfigFile(configPath string) (*Config, error) {
 }
 
 func loadExtractorConfigFile(options *Options) (config.Config, error) {
-	configs := options.ConfigPath.Values()
-	if len(configs) != 1 {
-		return config.Config{}, errors.New("too many config files")
-	}
-	configPath := configs[0]
+	configPath := *options.ConfigPath
 	fstat, err := os.Stat(configPath)
 	if err != nil {
 		return config.Config{}, err
 	}
 
 	if fstat.IsDir() {
-		return config.ParseConfig(filepath.Join(configPath, "config,yaml"))
+		return config.ParseConfig(filepath.Join(configPath, "config.yaml"))
 	}
 	return config.ParseConfig(configPath)
 }
