@@ -12,7 +12,6 @@ require (
 	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20231201173641-092afefd00a2
 	github.com/deepfence/match-scanner v0.0.0-20240627065846-d2405fb72cfb
 	github.com/fatih/color v1.16.0
-	github.com/flier/gohs v1.2.2
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/sirupsen/logrus v1.9.3
 	google.golang.org/grpc v1.63.2

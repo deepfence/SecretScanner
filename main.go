@@ -166,7 +166,7 @@ func main() {
 	signature.ProcessSignatures(session.Config.Signatures)
 
 	// Build Hyperscan database for fast scanning
-	signature.BuildHsDb()
+	signature.BuildRegexes()
 
 	flag.Parse()
 
