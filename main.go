@@ -25,9 +25,11 @@ package main
 // ------------------------------------------------------------------------------
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"path"
 	"runtime"
 	"strconv"
@@ -38,6 +40,7 @@ import (
 	"github.com/deepfence/SecretScanner/scan"
 	"github.com/deepfence/SecretScanner/server"
 	"github.com/deepfence/SecretScanner/signature"
+	"github.com/deepfence/golang_deepfence_sdk/utils/tasks"
 	"github.com/deepfence/match-scanner/pkg/config"
 	log "github.com/sirupsen/logrus"
 )
@@ -61,7 +64,7 @@ type SecretsWriter interface {
 	AddSecret(output.SecretFound)
 }
 
-func runOnce(filters config.Filters, format string) {
+func runOnce(ctx context.Context, filters config.Filters, format string) {
 	var result SecretsWriter
 	var err error
 	node_type := ""
@@ -95,7 +98,11 @@ func runOnce(filters config.Filters, format string) {
 		}
 	}
 
-	scan.Scan(nil, nodeType, filters, "", node_id, "", func(sf output.SecretFound, s string) {
+	scanCtx := tasks.ScanContext{
+		Context: ctx,
+	}
+
+	scan.Scan(&scanCtx, nodeType, filters, "", node_id, "", func(sf output.SecretFound, s string) {
 		result.AddSecret(sf)
 	})
 
@@ -165,22 +172,21 @@ func main() {
 	// Process and store the read signatures
 	signature.ProcessSignatures(session.Config.Signatures)
 
-	// Build Hyperscan database for fast scanning
-	signature.BuildRegexes()
-
 	flag.Parse()
 
 	if *core.GetSession().Options.Debug {
 		log.SetLevel(log.DebugLevel)
 	}
 
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+
 	if *socketPath != "" {
-		err := server.RunServer(*socketPath, PLUGIN_NAME)
+		err := server.RunServer(ctx, *socketPath, PLUGIN_NAME)
 		if err != nil {
 			log.Fatal("main: failed to serve: %v", err)
 		}
 	} else {
 		extCfg := config.Config2Filter(core.GetSession().ExtractorConfig)
-		runOnce(extCfg, *core.GetSession().Options.OutFormat)
+		runOnce(ctx, extCfg, *core.GetSession().Options.OutFormat)
 	}
 }

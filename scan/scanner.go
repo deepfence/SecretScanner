@@ -1,10 +1,10 @@
 package scan
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"path/filepath"
+	"sync"
 
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/signature"
@@ -38,11 +38,17 @@ func ScanTypeString(st ScanType) string {
 
 func scanFile(contents io.ReadSeeker, relPath, fileName, fileExtension, layer string, numSecrets *uint, matchedRuleSet map[uint]uint) ([]output.SecretFound, error) {
 
+	simpleSecrets, err := signature.MatchSimpleSignatures(contents, relPath, fileName, fileExtension, layer, numSecrets, matchedRuleSet)
+	if err != nil {
+		return nil, err
+	}
+
 	secrets, err := signature.MatchPatternSignatures(contents, relPath, fileName, fileExtension, layer, numSecrets, matchedRuleSet)
 	if err != nil {
 		return nil, err
 	}
-	return secrets, nil
+
+	return append(simpleSecrets, secrets...), nil
 }
 
 func Scan(ctx *tasks.ScanContext,
@@ -72,17 +78,18 @@ func Scan(ctx *tasks.ScanContext,
 	// results has to be 1 element max
 	// to avoid overwriting the buffer entries
 	results := make(chan []output.SecretFound)
-	defer close(results)
 
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		for malwares := range results {
 			for _, malware := range malwares {
 				outputFn(malware, scanID)
 			}
 		}
 	}()
-
-	genscan.ApplyScan(context.Background(), extract, func(f extractor.ExtractedFile) {
+	genscan.ApplyScan(ctx.Context, extract, func(f extractor.ExtractedFile) {
 		if ctx != nil {
 			err := ctx.Checkpoint("scan_phase")
 			if err != nil {
@@ -98,5 +105,9 @@ func Scan(ctx *tasks.ScanContext,
 
 		results <- m
 	})
+
+	close(results)
+	wg.Wait()
+
 	return nil
 }
