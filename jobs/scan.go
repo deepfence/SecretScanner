@@ -7,11 +7,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
 	"github.com/deepfence/golang_deepfence_sdk/utils/tasks"
 
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
+	cfg "github.com/deepfence/match-scanner/pkg/config"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -45,34 +47,29 @@ func DispatchScan(r *pb.FindRequest) {
 			close(res)
 		}()
 
-		var secrets chan output.SecretFound
+		var (
+			scanType scan.ScanType
+			nodeID   string
+		)
 
 		if r.GetPath() != "" {
-			var isFirstSecret bool = true
-			secrets, err = scan.ScanSecretsInDirStream("", r.GetPath(), r.GetPath(),
-				&isFirstSecret, scanCtx)
-			if err != nil {
-				return
-			}
+			scanType = scan.DirScan
+			nodeID = r.GetPath()
 		} else if r.GetImage() != nil && r.GetImage().Name != "" {
-			secrets, err = scan.ExtractAndScanImageStream(r.GetImage().Name, scanCtx)
-			if err != nil {
-				return
-			}
+			scanType = scan.ImageScan
+			nodeID = r.GetImage().Name
 		} else if r.GetContainer() != nil && r.GetContainer().Id != "" {
-			secrets, err = scan.ExtractAndScanContainerStream(r.GetContainer().Id,
-				r.GetContainer().Namespace, scanCtx)
-			if err != nil {
-				return
-			}
+			scanType = scan.ContainerScan
+			nodeID = r.GetContainer().Id
 		} else {
 			err = fmt.Errorf("Invalid request")
 			return
 		}
 
-		for secret := range secrets {
-			writeSingleScanData(output.SecretToSecretInfo(secret), r.ScanId)
-		}
+		filters := cfg.Config2Filter(core.GetSession().ExtractorConfig)
+		err = scan.Scan(scanCtx, scanType, filters, "", nodeID, r.GetScanId(), func(sf output.SecretFound, s string) {
+			writeSingleScanData(output.SecretToSecretInfo(sf), r.ScanId)
+		})
 	}()
 }
 

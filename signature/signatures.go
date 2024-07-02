@@ -4,15 +4,15 @@ import (
 	// "regexp"
 	// "regexp/syntax"
 	// "strings"
-	"bytes"
-	"errors"
+	"bufio"
+	"io"
 	"math"
 	"regexp"
+	"strings"
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
-	"github.com/fatih/color"
-	"github.com/flier/gohs/hyperscan"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -27,66 +27,24 @@ const (
 	MaxSecretLength = 1000 // Maximum length of secret to search to find exact position of secrets in large regex patterns
 )
 
-// Data structure for passing inputs and getting outputs for hyperscan
-type HsInputOutputData struct {
-	inputData []byte
-	// Avoids extra memory during blacklist comparison, reduces memory pressure
-	inputDataLowerCase []byte
-	completeFilename   string
-	layerID            string
-	secretsFound       *[]output.SecretFound
-	numSecrets         *uint
-	matchedRuleSet     map[uint]uint // Indicates if any rules macthed in the last iteration
-}
-
 // Different map data structures to map to appropriate signatures, DBs etc.
 var (
-	simpleSignatureMap  map[string][]core.ConfigSignature
+	matchRegexpMap      map[string]*regexp.Regexp
 	patternSignatureMap map[string][]core.ConfigSignature
-	hyperscanBlockDbMap map[string]hyperscan.BlockDatabase
 	signatureIDMap      map[int]core.ConfigSignature
+	matchSignatureMap   map[string]map[string]core.ConfigSignature
 )
 
 // Initialize all the data structures
 func init() {
 	// log.Infof("Initializing Patterns....")
-	simpleSignatureMap = make(map[string][]core.ConfigSignature)
 	patternSignatureMap = make(map[string][]core.ConfigSignature)
-	hyperscanBlockDbMap = make(map[string]hyperscan.BlockDatabase)
 	signatureIDMap = make(map[int]core.ConfigSignature)
-}
-
-// Scan to find simple pattern matches for the path, filename and extension of this file
-// @parameters
-// path - Complete path of the file
-// filename - Name of the file
-// extension - Extension of the file
-// layerID - layer ID of this file in the container image
-// @returns
-// []output.SecretFound - List of all secrets found
-func MatchSimpleSignatures(path string, filename string, extension string, layerID string, numSecrets *uint) []output.SecretFound {
-	var tempSecretsFound []output.SecretFound
-	var matchingPart string
-	var matchingStr string
-
+	matchRegexpMap = make(map[string]*regexp.Regexp)
+	matchSignatureMap = make(map[string]map[string]core.ConfigSignature)
 	for _, part := range []string{ContentsPart, FilenamePart, PathPart, ExtPart} {
-		switch part {
-		case FilenamePart:
-			matchingPart = FilenamePart
-			matchingStr = filename
-		case PathPart:
-			matchingPart = PathPart
-			matchingStr = path
-		case ExtPart:
-			matchingPart = ExtPart
-			matchingStr = extension
-		}
-
-		secrets := matchString(matchingPart, matchingStr, path, layerID, numSecrets)
-		tempSecretsFound = append(tempSecretsFound, secrets...)
+		matchSignatureMap[part] = make(map[string]core.ConfigSignature)
 	}
-
-	return tempSecretsFound
 }
 
 // Scan to find complex pattern matches for the contents, path, filename and extension of this file
@@ -99,49 +57,105 @@ func MatchSimpleSignatures(path string, filename string, extension string, layer
 // @returns
 // []output.SecretFound - List of all secrets found
 // Error - Errors if any. Otherwise, returns nil
-func MatchPatternSignatures(contents []byte, path string, filename string, extension string, layerID string,
+func MatchPatternSignatures(contents io.ReadSeeker, path string, filename string, extension string, layerID string,
 	numSecrets *uint, matchedRuleSet map[uint]uint) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
-	var hsIOData HsInputOutputData
-	var matchingPart string
-	var matchingStr []byte
+	var matchingStr io.ReadSeeker
 
 	for _, part := range []string{ContentsPart, FilenamePart, PathPart, ExtPart} {
 		switch part {
 		case FilenamePart:
-			matchingPart = part
-			matchingStr = []byte(filename)
+			matchingStr = strings.NewReader(filename)
 		case PathPart:
-			matchingPart = part
-			matchingStr = []byte(path)
+			matchingStr = strings.NewReader(path)
 		case ExtPart:
-			matchingPart = part
-			matchingStr = []byte(extension)
+			matchingStr = strings.NewReader(extension)
 		case ContentsPart:
-			matchingPart = part
+			contents.Seek(0, io.SeekStart)
 			matchingStr = contents
 		}
 
-		// Ignore if string to match is empty, otherwise hyperscan can return errors
-		if len(matchingStr) == 0 {
+		for _, regex := range patternSignatureMap[part] {
+			indexes := regex.CompiledRegex.FindReaderSubmatchIndex(bufio.NewReader(matchingStr))
+			if indexes != nil {
+				match := make([]byte, indexes[1]-indexes[0])
+				matchingStr.Seek(int64(indexes[0]), io.SeekStart)
+				_, err := matchingStr.Read(match)
+				if err != nil {
+					logrus.Infof("content read: %v", err)
+				}
+				matchStr := string(match)
+
+				tempSecretsFound = append(tempSecretsFound, output.SecretFound{
+					LayerID:          layerID,
+					RuleID:           regex.ID,
+					RuleName:         regex.Name,
+					PartToMatch:      part,
+					Match:            matchStr,
+					MatchedContents:  matchStr,
+					Regex:            regex.Regex,
+					Severity:         regex.Severity,
+					SeverityScore:    regex.SeverityScore,
+					MatchFromByte:    indexes[0],
+					MatchToByte:      indexes[1],
+					CompleteFilename: filename,
+				})
+				break
+			}
+		}
+	}
+
+	return tempSecretsFound, nil
+}
+
+func MatchSimpleSignatures(contents io.ReadSeeker, path string, filename string, extension string, layerID string,
+	numSecrets *uint, matchedRuleSet map[uint]uint) ([]output.SecretFound, error) {
+	var tempSecretsFound []output.SecretFound
+	var matchingStr io.ReadSeeker
+
+	for _, part := range []string{ContentsPart, FilenamePart, PathPart, ExtPart} {
+		if _, has := matchRegexpMap[part]; !has {
 			continue
 		}
 
-		hsIOData = HsInputOutputData{
-			inputData:          matchingStr,
-			inputDataLowerCase: bytes.ToLower(matchingStr),
-			completeFilename:   path,
-			layerID:            layerID,
-			secretsFound:       &tempSecretsFound,
-			numSecrets:         numSecrets,
-			matchedRuleSet:     matchedRuleSet,
+		switch part {
+		case FilenamePart:
+			matchingStr = strings.NewReader(filename)
+		case PathPart:
+			matchingStr = strings.NewReader(path)
+		case ExtPart:
+			matchingStr = strings.NewReader(extension)
+		case ContentsPart:
+			contents.Seek(0, io.SeekStart)
+			matchingStr = contents
 		}
-		err := RunHyperscan(hyperscanBlockDbMap[matchingPart], hsIOData)
-		if err != nil {
-			log.Infof("part: %s, path: %s, filename: %s, extenstion: %s, layerID: %s",
-				part, path, filename, extension, layerID)
-			log.Warnf("MatchPatternSignatures: %s", err)
-			return tempSecretsFound, err
+
+		indexes := matchRegexpMap[part].FindReaderSubmatchIndex(bufio.NewReader(matchingStr))
+		if indexes != nil {
+			match := make([]byte, indexes[1]-indexes[0])
+			matchingStr.Seek(int64(indexes[0]), io.SeekStart)
+			_, err := matchingStr.Read(match)
+			if err != nil {
+				logrus.Infof("content read: %v", err)
+			}
+			matchStr := string(match)
+			signature := matchSignatureMap[part][matchStr]
+
+			tempSecretsFound = append(tempSecretsFound, output.SecretFound{
+				LayerID:          layerID,
+				RuleID:           signature.ID,
+				RuleName:         signature.Name,
+				PartToMatch:      part,
+				Match:            matchStr,
+				MatchedContents:  matchStr,
+				Regex:            signature.Regex,
+				Severity:         signature.Severity,
+				SeverityScore:    signature.SeverityScore,
+				MatchFromByte:    indexes[0],
+				MatchToByte:      indexes[1],
+				CompleteFilename: filename,
+			})
+			break
 		}
 	}
 
@@ -153,10 +167,10 @@ func MatchPatternSignatures(contents []byte, path string, filename string, exten
 // @parameters
 // configSignatures - Extracted patterns from signature config file
 func ProcessSignatures(configSignatures []core.ConfigSignature) {
-	var simpleContentSignatures []core.ConfigSignature
-	var simpleExtSignatures []core.ConfigSignature
-	var simpleFilenameSignatures []core.ConfigSignature
-	var simplePathSignatures []core.ConfigSignature
+	var simpleContentSignatures []string
+	var simpleExtSignatures []string
+	var simpleFilenameSignatures []string
+	var simplePathSignatures []string
 
 	var patternContentSignatures []core.ConfigSignature
 	var patternExtSignatures []core.ConfigSignature
@@ -175,15 +189,21 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 			log.Debugf("Simple Signature %s %s %s %s %d", signature.Name,
 				signature.Part, signature.Match, signature.Severity, signature.ID)
 
+			matchSignatureMap[signature.Part][signature.Match] = signature
+
 			switch signature.Part {
 			case ContentsPart:
-				addToSignatures(signature, &simpleContentSignatures)
+				simpleContentSignatures = append(simpleContentSignatures,
+					strings.ReplaceAll(signature.Match, ".", `\.`))
 			case ExtPart:
-				addToSignatures(signature, &simpleExtSignatures)
+				simpleExtSignatures = append(simpleExtSignatures,
+					strings.ReplaceAll(signature.Match, ".", `\.`))
 			case FilenamePart:
-				addToSignatures(signature, &simpleFilenameSignatures)
+				simpleFilenameSignatures = append(simpleFilenameSignatures,
+					strings.ReplaceAll(signature.Match, ".", `\.`))
 			case PathPart:
-				addToSignatures(signature, &simplePathSignatures)
+				simplePathSignatures = append(simplePathSignatures,
+					strings.ReplaceAll(signature.Match, ".", `\.`))
 			}
 		} else {
 			if signature.Severity == "" {
@@ -217,10 +237,18 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 
 	}
 
-	simpleSignatureMap[ContentsPart] = simpleContentSignatures
-	simpleSignatureMap[ExtPart] = simpleExtSignatures
-	simpleSignatureMap[FilenamePart] = simpleFilenameSignatures
-	simpleSignatureMap[PathPart] = simplePathSignatures
+	if len(simpleContentSignatures) != 0 {
+		matchRegexpMap[ContentsPart] = regexp.MustCompile(strings.Join(simpleContentSignatures, "|"))
+	}
+	if len(simpleExtSignatures) != 0 {
+		matchRegexpMap[ExtPart] = regexp.MustCompile(strings.Join(simpleExtSignatures, "|"))
+	}
+	if len(simpleFilenameSignatures) != 0 {
+		matchRegexpMap[FilenamePart] = regexp.MustCompile(strings.Join(simpleFilenameSignatures, "|"))
+	}
+	if len(simplePathSignatures) != 0 {
+		matchRegexpMap[PathPart] = regexp.MustCompile(strings.Join(simplePathSignatures, "|"))
+	}
 
 	patternSignatureMap[ContentsPart] = patternContentSignatures
 	patternSignatureMap[ExtPart] = patternExtSignatures
@@ -229,7 +257,7 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 
 	for _, part := range []string{ContentsPart, FilenamePart, PathPart, ExtPart} {
 		log.Debugf("Number of Complex Patterns for matching %s: %d", part, len(patternSignatureMap[part]))
-		log.Debugf("Number of Simple Patterns for matching %s: %d", part, len(simpleSignatureMap[part]))
+		log.Debugf("Number of Simple Patterns for matching %s: %d", part, len(matchSignatureMap[part]))
 	}
 }
 
@@ -239,199 +267,6 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 // configSignatures - List of signatures
 func addToSignatures(signature core.ConfigSignature, Signatures *[]core.ConfigSignature) {
 	*Signatures = append(*Signatures, signature)
-}
-
-// Match simple pattern signatures with path, filename or extension
-// @parameters
-// part - which part to be matched: path, filename or extension
-// input - input to be matched
-// completeFilename - Complete path of the file
-// layerID - layer ID of this file in the container image
-// @returns
-// []output.SecretFound - List of all secrets found
-func matchString(part string, input string, completeFilename string, layerID string,
-	numSecrets *uint) []output.SecretFound {
-	var tempSecretsFound []output.SecretFound
-
-	for _, signature := range simpleSignatureMap[part] {
-		// Don't report secrets if number of secrets exceeds MAX value
-		if *numSecrets >= *core.GetSession().Options.MaxSecrets {
-			log.Debugf("MAX secrets exceeded: %d", *numSecrets)
-			return tempSecretsFound
-		}
-
-		if signature.Match == input {
-			if core.ContainsBlacklistedString([]byte(input)) {
-				log.Debugf("matchString: Skipping matches containing blacklisted strings")
-				continue
-			}
-			log.Debugf("Simple Signature %s %s %s %s %s %d\n", signature.Name, signature.Part,
-				signature.Match, signature.Regex, signature.Severity, signature.ID)
-			log.Debugf("Sensitive file %s found with matching %s of %s\n",
-				completeFilename, part, color.RedString(input))
-
-			secret := output.SecretFound{
-				LayerID: layerID,
-				RuleID:  signature.ID, RuleName: signature.Name,
-				PartToMatch: signature.Part, Match: signature.Match, Regex: signature.Regex,
-				Severity: signature.Severity, SeverityScore: signature.SeverityScore,
-				CompleteFilename: completeFilename,
-				MatchFromByte:    0,
-				MatchToByte:      len(input),
-				MatchedContents:  input,
-			}
-			tempSecretsFound = append(tempSecretsFound, secret)
-			*numSecrets = *numSecrets + 1
-		}
-	}
-
-	return tempSecretsFound
-}
-
-// Post process after hyperscan finds signature match
-// For large pattern matches, find the start of the match (SOM) before printing
-// @parameters
-// id - ID of matched rule
-// from - Start index of the match
-// to - End endex of the match
-// flags - This is provided by hyperscan for future use and is unused at present.
-// context - Metadata containing contents being matched, filename, layerID etc.
-// @returns
-// error - Errors if any. Otherwise, returns nil
-func processHsRegexMatch(id uint, from, to uint64, flags uint, context interface{}) error {
-	var start int
-	hsIOData := context.(HsInputOutputData)
-	secrets := hsIOData.secretsFound
-
-	// Don't report secrets if number of secrets exceeds MAX value
-	if *hsIOData.numSecrets >= *core.GetSession().Options.MaxSecrets {
-		log.Debugf("MAX secrets exceeded: %d", *hsIOData.numSecrets)
-		return nil
-	}
-
-	sid := int(id)
-	start = int(from)
-	if signatureIDMap[sid].RegexType == LargeRegexType {
-		// Post process to find start of matching for large patterns
-		start = getStartOfLargeRegexMatch(sid, int(from), int(to), hsIOData)
-	}
-
-	ito := int(to)
-	log.Debugf("processHsRegexMatch: %d %d %d\n", start, ito, len(hsIOData.inputData))
-	if core.ContainsBlacklistedString(hsIOData.inputDataLowerCase[start:ito]) {
-		log.Debugf("processHsRegexMatch: Skipping matches containing blacklisted strings")
-		return nil
-	}
-
-	// Match only once for now, later report only supersets
-	// Report multiple matches, only if MultipleMatch is set to true
-	_, exists := hsIOData.matchedRuleSet[id] // Check, if this pattern matched for this file earlier
-	if !exists {
-		hsIOData.matchedRuleSet[id] = 1 // Add to matched rules for first match
-	} else if *core.GetSession().Options.MultipleMatch == false {
-		return nil // Don't output later matches of this pattern, if multi-match is false
-	} else if *core.GetSession().Options.MultipleMatch == true {
-		hsIOData.matchedRuleSet[id] = hsIOData.matchedRuleSet[id] + 1
-		if hsIOData.matchedRuleSet[id] > *core.GetSession().Options.MaxMultiMatch {
-			return nil // Don't output later matches of this pattern, if #Mateches > MaxThreshold
-		}
-	}
-
-	secret, err := printMatchedSignatures(sid, start, int(to), hsIOData)
-	if err != nil {
-		log.Errorf("processHsRegexMatch: %s", err)
-		return nil
-	}
-	*secrets = append(*secrets, secret)
-	*hsIOData.numSecrets = *hsIOData.numSecrets + 1
-
-	return nil
-}
-
-// For large regex patterns, if Hyperscan finds a match, then
-// find the matching indexes directly as start of match (SOM) hyperscan flag doesn't work
-// for large patterns.
-// @parameters
-// sid - ID of matched rule
-// from - Start index of the match
-// to - End endex of the match
-// hsIOData - Metadata containing contents being matched, filename, layerID etc.
-// @returns
-// int - Exact start index of the large complex regex matches
-func getStartOfLargeRegexMatch(sid int, from, to int, hsIOData HsInputOutputData) int {
-	inputData := hsIOData.inputData
-	// secrets := hsIOData.secretsFound
-
-	pattern := signatureIDMap[sid].CompiledRegex
-	// Hyperscan doesn't give the start of the match, but it give the end of the match for complex patterns
-	start := Max(0, to-MaxSecretLength)
-	// Search between [to-MaxSecretLength, to] to find exact match of secret
-	end := to
-	allMatchedIndexes := pattern.FindAllIndex(inputData[start:end], -1)
-	log.Debugf("Number of matches found for large regex pattern: %d", len(allMatchedIndexes))
-	for i, loc := range allMatchedIndexes {
-		// Currently just print the last match as we know the end of the hyperscan match
-		if i == len(allMatchedIndexes)-1 {
-			// secret := printMatchedSignatures(sid, start+loc[0], start+loc[1], hsIOData)
-			// *secrets = append(*secrets, secret)
-			return start + loc[0]
-		}
-	}
-
-	// It shouldn't reach here. Return "from" as start index, by default
-	return from
-}
-
-// Print matched secrets on standard output as well as in output files in json format etc.
-// @parameters
-// sid - ID of matched rule
-// from - Start index of the match
-// to - End endex of the match
-// hsIOData - Metadata containing contents being matched, filename, layerID etc.
-// @returns
-// output.SecretFound - secret found
-// Error - Errors if any. Otherwise, returns nil
-func printMatchedSignatures(sid int, from, to int, hsIOData HsInputOutputData) (output.SecretFound, error) {
-	inputData := hsIOData.inputData
-	completeFilename := hsIOData.completeFilename
-	layerID := hsIOData.layerID
-
-	updatedSeverity, updatedScore := calculateSeverity(inputData[from:to], signatureIDMap[sid].Severity, signatureIDMap[sid].SeverityScore)
-
-	log.Debugf("Pattern Signature %s %s %s %s %s %s %.2f %d", signatureIDMap[sid].Name, signatureIDMap[sid].Part,
-		signatureIDMap[sid].Match, signatureIDMap[sid].Regex, signatureIDMap[sid].RegexType,
-		updatedSeverity, updatedScore, signatureIDMap[sid].ID)
-	// fmt.Println(signatureIDMap[sid].Name, signatureIDMap[sid].Part, signatureIDMap[sid].Match, signatureIDMap[sid].Regex,
-	//	signatureIDMap[sid].RegexType, updatedSeverity, updatedScore, signatureIDMap[sid].ID)
-	log.Debugf("Secret found in %s of %s within bytes %d and %d", signatureIDMap[sid].Part, completeFilename, from, to)
-	// fmt.Println("Secret found in", signatureIDMap[sid].Part, "of", completeFilename, "withing bytes", from, "and", to)
-
-	start := Max(0, bytes.LastIndexByte(inputData[:from], '\n')) // Avoid -ve value from IndexByte
-	end := to + Max(0, bytes.IndexByte(inputData[to:], '\n'))    // Avoid -ve value from IndexByte
-
-	// Display max 50 bytes before and after the maching string
-	start = Max(start, from-50)
-	end = Min(end, to+50)
-
-	if !(0 <= start && start <= from && from <= to && to <= end && end <= len(inputData)) {
-		return output.SecretFound{}, errors.New("index out of bound while printing matched signatures")
-	}
-
-	// coloredMatch := fmt.Sprintf("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
-	// //log.Infof("%s%s%s\n", inputData[start:from], color.RedString(string(inputData[from:to])), inputData[to:end])
-	// log.Infof(coloredMatch)
-
-	secret := output.SecretFound{
-		LayerID: layerID,
-		RuleID:  sid, RuleName: signatureIDMap[sid].Name,
-		PartToMatch: signatureIDMap[sid].Part, Match: signatureIDMap[sid].Match, Regex: signatureIDMap[sid].Regex,
-		Severity: updatedSeverity, SeverityScore: updatedScore,
-		CompleteFilename:      completeFilename,
-		PrintBufferStartIndex: start, MatchFromByte: from - start, MatchToByte: to - start,
-		MatchedContents: string(inputData[start:end]),
-	}
-
-	return secret, nil
 }
 
 // Update severity and score based on length of match

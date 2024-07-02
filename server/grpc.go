@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 
 	"github.com/deepfence/SecretScanner/jobs"
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
@@ -70,24 +67,13 @@ func (s *gRPCServer) FindSecretInfo(c context.Context, r *pb.FindRequest) (*pb.F
 	return &pb.FindResult{}, nil
 }
 
-func RunServer(socket_path string, plugin_name string) error {
-
-	sigs := make(chan os.Signal, 1)
-	done := make(chan bool, 1)
-
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+func RunServer(ctx context.Context, socket_path string, plugin_name string) error {
 
 	lis, err := net.Listen("unix", fmt.Sprintf("%s", socket_path))
 	if err != nil {
 		return err
 	}
 	s := grpc.NewServer()
-
-	go func() {
-		<-sigs
-		s.GracefulStop()
-		done <- true
-	}()
 
 	jobs.ScanMap = sync.Map{}
 
@@ -96,11 +82,15 @@ func RunServer(socket_path string, plugin_name string) error {
 	pb.RegisterSecretScannerServer(s, impl)
 	pb.RegisterScannersServer(s, impl)
 	log.Infof("main: server listening at %v", lis.Addr())
-	if err := s.Serve(lis); err != nil {
-		return err
-	}
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Errorf("server: %v", err)
+		}
+	}()
 
-	<-done
+	<-ctx.Done()
+	s.GracefulStop()
+
 	log.Infof("main: exiting gracefully")
 	return nil
 }

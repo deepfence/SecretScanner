@@ -73,6 +73,10 @@ func (imageOutput *JSONImageSecretsOutput) GetSecrets() []SecretFound {
 	return imageOutput.Secrets
 }
 
+func (imageOutput *JSONImageSecretsOutput) AddSecret(secret SecretFound) {
+	imageOutput.Secrets = append(imageOutput.Secrets, secret)
+}
+
 func (imageOutput JSONImageSecretsOutput) WriteJSON() error {
 	return printSecretsToJSON(imageOutput)
 
@@ -103,6 +107,10 @@ func (dirOutput JSONDirSecretsOutput) WriteJSON() error {
 
 func (dirOutput JSONDirSecretsOutput) WriteTable() error {
 	return WriteTableOutput(&dirOutput.Secrets)
+}
+
+func (imageOutput *JSONDirSecretsOutput) AddSecret(secret SecretFound) {
+	imageOutput.Secrets = append(imageOutput.Secrets, secret)
 }
 
 func printSecretsToJSON(secretsJSON interface{}) error {

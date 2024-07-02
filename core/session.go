@@ -4,18 +4,19 @@ import (
 	"context"
 	"os"
 	"runtime"
-	"strings"
 	"sync"
 
+	"github.com/deepfence/match-scanner/pkg/config"
 	log "github.com/sirupsen/logrus"
 )
 
 type Session struct {
 	sync.Mutex
-	Version string
-	Options *Options
-	Config  *Config
-	Context context.Context
+	Version         string
+	Options         *Options
+	Config          *Config
+	Context         context.Context
+	ExtractorConfig config.Config
 }
 
 var (
@@ -53,20 +54,10 @@ func GetSession() *Session {
 			os.Exit(1)
 		}
 
-		pathSeparator := string(os.PathSeparator)
-		nameSeperator := "-"
-		var blacklistedPaths []string
-		for _, blacklistedPath := range session.Config.BlacklistedPaths {
-			blacklistedPaths = append(blacklistedPaths, strings.ReplaceAll(blacklistedPath, "{sep}", pathSeparator))
+		if session.ExtractorConfig, err = loadExtractorConfigFile(session.Options); err != nil {
+			log.Error(err)
+			os.Exit(1)
 		}
-		session.Config.BlacklistedPaths = blacklistedPaths
-		var excludePaths []string
-		for _, excludePath := range session.Config.ExcludePaths {
-			excludePaths = append(excludePaths, strings.ReplaceAll(excludePath, "{sep}", pathSeparator))
-			excludePaths = append(excludePaths, strings.ReplaceAll(excludePath, "{name_sep}", nameSeperator))
-
-		}
-		session.Config.ExcludePaths = excludePaths
 
 		session.Start()
 	})

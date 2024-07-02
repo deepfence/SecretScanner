@@ -1,10 +1,8 @@
 package core
 
 import (
-	"bytes"
 	"os"
 	"path/filepath"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -29,69 +27,6 @@ func NewMatchFile(path string) MatchFile {
 		Extension: extension,
 		Contents:  []byte(""), // contents,
 	}
-}
-
-// IsSkippableFile Checks if the path is blacklisted
-func IsSkippableDir(path string, baseDir string) bool {
-	hostMountPath := *session.Options.HostMountPath
-	if hostMountPath != "" {
-		baseDir = hostMountPath
-	}
-
-	for _, skippablePathIndicator := range session.Config.BlacklistedPaths {
-		if strings.HasPrefix(path, skippablePathIndicator) || strings.HasPrefix(path, filepath.Join(baseDir, skippablePathIndicator)) {
-			return true
-		}
-
-	}
-
-	for _, excludePathIndicator := range session.Config.ExcludePaths {
-		if strings.Contains(path, excludePathIndicator) || strings.Contains(path, filepath.Join(baseDir, excludePathIndicator)) {
-			return true
-		}
-
-	}
-
-	return false
-}
-
-// IsSkippableFileExtension Checks if the file extension is blacklisted
-func IsSkippableFileExtension(path string) bool {
-	extension := strings.ToLower(filepath.Ext(path))
-	for _, skippableExt := range session.Config.BlacklistedExtensions {
-		if extension == skippableExt {
-			return true
-		}
-	}
-	return false
-}
-
-// CanCheckEntropy Checks if entropy based scanning is appropriate for this file
-func (match MatchFile) CanCheckEntropy() bool {
-	if match.Filename == "id_rsa" {
-		return false
-	}
-
-	for _, skippableExt := range session.Config.BlacklistedEntropyExtensions {
-		if match.Extension == skippableExt {
-			return false
-		}
-	}
-
-	return true
-}
-
-// ContainsBlacklistedString Checks if the input contains a blacklisted string
-func ContainsBlacklistedString(input []byte) bool {
-	for _, blacklistedString := range session.Config.BlacklistedStrings {
-		blacklistedByteStr := []byte(blacklistedString)
-		if bytes.Contains(input, blacklistedByteStr) {
-			log.Debugf("Blacklisted string %s matched", blacklistedString)
-			return true
-		}
-	}
-
-	return false
 }
 
 //// GetMatchingFiles Return the list of all applicable files inside the given directory for scanning
