@@ -1,10 +1,10 @@
 package scan
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"path/filepath"
+	"sync"
 
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/signature"
@@ -36,13 +36,19 @@ func ScanTypeString(st ScanType) string {
 	return ""
 }
 
-func scanFile(contents io.ReadSeeker, relPath, fileName, fileExtension, layer string, numSecrets *uint, matchedRuleSet map[uint]uint) ([]output.SecretFound, error) {
+func scanFile(contents io.ReadSeeker, relPath, fileName, fileExtension, layer string) ([]output.SecretFound, error) {
 
-	secrets, err := signature.MatchPatternSignatures(contents, relPath, fileName, fileExtension, layer, numSecrets, matchedRuleSet)
+	simpleSecrets, err := signature.MatchSimpleSignatures(contents, relPath, fileName, fileExtension, layer)
 	if err != nil {
 		return nil, err
 	}
-	return secrets, nil
+
+	secrets, err := signature.MatchPatternSignatures(contents, relPath, fileName, fileExtension, layer)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(simpleSecrets, secrets...), nil
 }
 
 func Scan(ctx *tasks.ScanContext,
@@ -72,31 +78,34 @@ func Scan(ctx *tasks.ScanContext,
 	// results has to be 1 element max
 	// to avoid overwriting the buffer entries
 	results := make(chan []output.SecretFound)
-	defer close(results)
 
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		for malwares := range results {
 			for _, malware := range malwares {
 				outputFn(malware, scanID)
 			}
 		}
 	}()
-
-	genscan.ApplyScan(context.Background(), extract, func(f extractor.ExtractedFile) {
+	genscan.ApplyScan(ctx.Context, extract, func(f extractor.ExtractedFile) {
 		if ctx != nil {
 			err := ctx.Checkpoint("scan_phase")
 			if err != nil {
 				return
 			}
 		}
-		matchedRuleSet := map[uint]uint{}
-		var count uint
-		m, err := scanFile(f.Content, f.Filename, filepath.Base(f.Filename), filepath.Ext(f.Filename), "", &count, matchedRuleSet)
+		m, err := scanFile(f.Content, f.Filename, filepath.Base(f.Filename), filepath.Ext(f.Filename), "")
 		if err != nil {
 			logrus.Infof("file: %v, err: %v", f.Filename, err)
 		}
 
 		results <- m
 	})
+
+	close(results)
+	wg.Wait()
+
 	return nil
 }
