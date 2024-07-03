@@ -83,9 +83,9 @@ func Scan(ctx *tasks.ScanContext,
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		for malwares := range results {
-			for _, malware := range malwares {
-				outputFn(malware, scanID)
+		for secrets := range results {
+			for _, secret := range secrets {
+				outputFn(secret, scanID)
 			}
 		}
 	}()
@@ -96,12 +96,13 @@ func Scan(ctx *tasks.ScanContext,
 				return
 			}
 		}
-		m, err := scanFile(f.Content, f.Filename, filepath.Base(f.Filename), filepath.Ext(f.Filename), "")
+		logrus.Infof("Scanning file: %v", f.Filename)
+		s, err := scanFile(f.Content, f.Filename, filepath.Base(f.Filename), filepath.Ext(f.Filename), "")
 		if err != nil {
 			logrus.Infof("file: %v, err: %v", f.Filename, err)
 		}
 
-		results <- m
+		results <- s
 	})
 
 	close(results)
