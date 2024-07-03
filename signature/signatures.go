@@ -64,6 +64,10 @@ func MatchPatternSignatures(contents io.ReadSeeker, path string, filename string
 	var matchingStr io.ReadSeeker
 
 	for _, part := range []string{ContentsPart, FilenamePart, PathPart, ExtPart} {
+		if _, has := patternRegexpMap[part]; !has {
+			continue
+		}
+
 		switch part {
 		case FilenamePart:
 			matchingStr = strings.NewReader(filename)
@@ -75,7 +79,7 @@ func MatchPatternSignatures(contents io.ReadSeeker, path string, filename string
 			matchingStr = contents
 		}
 
-		indexes := matchRegexpMap[part].FindReaderSubmatchIndex(bufio.NewReaderSize(matchingStr, 2048))
+		indexes := patternRegexpMap[part].FindReaderSubmatchIndex(bufio.NewReaderSize(matchingStr, 2048))
 		if indexes != nil {
 			match := make([]byte, indexes[1]-indexes[0])
 			matchingStr.Seek(int64(indexes[0]), io.SeekStart)
