@@ -30,6 +30,7 @@ const (
 // Different map data structures to map to appropriate signatures, DBs etc.
 var (
 	matchRegexpMap      map[string]*regexp.Regexp
+	patternRegexpMap    map[string]*regexp.Regexp
 	patternSignatureMap map[string][]core.ConfigSignature
 	signatureIDMap      map[int]core.ConfigSignature
 	matchSignatureMap   map[string]map[string]core.ConfigSignature
@@ -41,6 +42,7 @@ func init() {
 	patternSignatureMap = make(map[string][]core.ConfigSignature)
 	signatureIDMap = make(map[int]core.ConfigSignature)
 	matchRegexpMap = make(map[string]*regexp.Regexp)
+	patternRegexpMap = make(map[string]*regexp.Regexp)
 	matchSignatureMap = make(map[string]map[string]core.ConfigSignature)
 	for _, part := range []string{ContentsPart, FilenamePart, PathPart, ExtPart} {
 		matchSignatureMap[part] = make(map[string]core.ConfigSignature)
@@ -73,33 +75,34 @@ func MatchPatternSignatures(contents io.ReadSeeker, path string, filename string
 			matchingStr = contents
 		}
 
-		for _, signature := range patternSignatureMap[part] {
-			matchingStr.Seek(0, io.SeekStart)
-			indexes := signature.CompiledRegex.FindReaderSubmatchIndex(bufio.NewReaderSize(matchingStr, 2048))
-			if indexes != nil {
-				match := make([]byte, indexes[1]-indexes[0])
-				matchingStr.Seek(int64(indexes[0]), io.SeekStart)
-				_, err := matchingStr.Read(match)
-				if err != nil {
-					logrus.Infof("content read: %v", err)
-				}
-				matchStr := string(match)
+		indexes := matchRegexpMap[part].FindReaderSubmatchIndex(bufio.NewReaderSize(matchingStr, 2048))
+		if indexes != nil {
+			match := make([]byte, indexes[1]-indexes[0])
+			matchingStr.Seek(int64(indexes[0]), io.SeekStart)
+			_, err := matchingStr.Read(match)
+			if err != nil {
+				logrus.Infof("content read: %v", err)
+			}
+			matchStr := string(match)
 
-				tempSecretsFound = append(tempSecretsFound, output.SecretFound{
-					LayerID:          layerID,
-					RuleID:           signature.ID,
-					RuleName:         signature.Name,
-					PartToMatch:      part,
-					Match:            matchStr,
-					MatchedContents:  matchStr,
-					Regex:            signature.Regex,
-					Severity:         signature.Severity,
-					SeverityScore:    signature.SeverityScore,
-					MatchFromByte:    indexes[0],
-					MatchToByte:      indexes[1],
-					CompleteFilename: path,
-				})
-				break
+			for _, signature := range patternSignatureMap[part] {
+				if signature.CompiledRegex.Match(match) {
+					tempSecretsFound = append(tempSecretsFound, output.SecretFound{
+						LayerID:          layerID,
+						RuleID:           signature.ID,
+						RuleName:         signature.Name,
+						PartToMatch:      part,
+						Match:            matchStr,
+						MatchedContents:  matchStr,
+						Regex:            signature.Regex,
+						Severity:         signature.Severity,
+						SeverityScore:    signature.SeverityScore,
+						MatchFromByte:    indexes[0],
+						MatchToByte:      indexes[1],
+						CompleteFilename: path,
+					})
+					break
+				}
 			}
 		}
 	}
@@ -168,6 +171,11 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 	var simpleFilenameSignatures []string
 	var simplePathSignatures []string
 
+	var patternContentReg []string
+	var patternExtReg []string
+	var patternFilenameReg []string
+	var patternPathReg []string
+
 	var patternContentSignatures []core.ConfigSignature
 	var patternExtSignatures []core.ConfigSignature
 	var patternFilenameSignatures []core.ConfigSignature
@@ -220,12 +228,16 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 			switch signature.Part {
 			case ContentsPart:
 				patternContentSignatures = append(patternContentSignatures, signature)
+				patternContentReg = append(patternContentReg, signature.Regex)
 			case ExtPart:
 				patternExtSignatures = append(patternExtSignatures, signature)
+				patternExtReg = append(patternExtReg, signature.Regex)
 			case FilenamePart:
 				patternFilenameSignatures = append(patternFilenameSignatures, signature)
+				patternFilenameReg = append(patternFilenameReg, signature.Regex)
 			case PathPart:
 				patternPathSignatures = append(patternPathSignatures, signature)
+				patternPathReg = append(patternPathReg, signature.Regex)
 			}
 		}
 
@@ -244,6 +256,19 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 	}
 	if len(simplePathSignatures) != 0 {
 		matchRegexpMap[PathPart] = regexp.MustCompile(strings.Join(simplePathSignatures, "|"))
+	}
+
+	if len(patternContentReg) != 0 {
+		patternRegexpMap[ContentsPart] = regexp.MustCompile(strings.Join(patternContentReg, "|"))
+	}
+	if len(patternExtReg) != 0 {
+		patternRegexpMap[ExtPart] = regexp.MustCompile(strings.Join(patternExtReg, "|"))
+	}
+	if len(patternFilenameReg) != 0 {
+		patternRegexpMap[FilenamePart] = regexp.MustCompile(strings.Join(patternFilenameReg, "|"))
+	}
+	if len(patternPathReg) != 0 {
+		patternRegexpMap[PathPart] = regexp.MustCompile(strings.Join(patternPathReg, "|"))
 	}
 
 	patternSignatureMap[ContentsPart] = patternContentSignatures
