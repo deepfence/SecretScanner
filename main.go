@@ -33,6 +33,7 @@ import (
 	"path"
 	"runtime"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/deepfence/SecretScanner/core"
@@ -100,6 +101,7 @@ func runOnce(ctx context.Context, filters config.Filters, format string) {
 
 	scanCtx := tasks.ScanContext{
 		Context: ctx,
+		IsAlive: atomic.Bool{},
 	}
 
 	scan.Scan(&scanCtx, nodeType, filters, "", node_id, "", func(sf output.SecretFound, s string) {
@@ -157,7 +159,6 @@ func runOnce(ctx context.Context, filters config.Filters, format string) {
 }
 
 func main() {
-
 	log.SetOutput(os.Stderr)
 	log.SetLevel(log.InfoLevel)
 	log.SetReportCaller(true)
@@ -183,7 +184,7 @@ func main() {
 	if *socketPath != "" {
 		err := server.RunServer(ctx, *socketPath, PLUGIN_NAME)
 		if err != nil {
-			log.Fatal("main: failed to serve: %v", err)
+			log.Fatalf("main: failed to serve: %v", err)
 		}
 	} else {
 		extCfg := config.Config2Filter(core.GetSession().ExtractorConfig)
