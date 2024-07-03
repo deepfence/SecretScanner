@@ -1,6 +1,6 @@
 module github.com/deepfence/SecretScanner
 
-go 1.22.0
+go 1.21.0
 
 replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 
