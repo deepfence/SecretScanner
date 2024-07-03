@@ -97,7 +97,7 @@ func MatchPatternSignatures(contents io.ReadSeeker, path string, filename string
 					SeverityScore:    signature.SeverityScore,
 					MatchFromByte:    indexes[0],
 					MatchToByte:      indexes[1],
-					CompleteFilename: filename,
+					CompleteFilename: path,
 				})
 				break
 			}
@@ -150,7 +150,7 @@ func MatchSimpleSignatures(contents io.ReadSeeker, path string, filename string,
 				SeverityScore:    signature.SeverityScore,
 				MatchFromByte:    indexes[0],
 				MatchToByte:      indexes[1],
-				CompleteFilename: filename,
+				CompleteFilename: path,
 			})
 		}
 	}
