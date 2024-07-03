@@ -96,7 +96,7 @@ func Scan(ctx *tasks.ScanContext,
 				return
 			}
 		}
-		logrus.Infof("Scanning file: %v", f.Filename)
+		logrus.Debugf("Scanning file: %v", f.Filename)
 		s, err := scanFile(f.Content, f.Filename, filepath.Base(f.Filename), filepath.Ext(f.Filename), "")
 		if err != nil {
 			logrus.Infof("file: %v, err: %v", f.Filename, err)
