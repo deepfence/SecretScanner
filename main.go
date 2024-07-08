@@ -39,11 +39,12 @@ import (
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/scan"
-	"github.com/deepfence/SecretScanner/server"
 	"github.com/deepfence/SecretScanner/signature"
 	"github.com/deepfence/golang_deepfence_sdk/utils/tasks"
 	"github.com/deepfence/match-scanner/pkg/config"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/deepfence/YaraHunter/pkg/runner"
 )
 
 const (
@@ -181,13 +182,29 @@ func main() {
 
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 
-	if *socketPath != "" {
-		err := server.RunServer(ctx, *socketPath, PLUGIN_NAME)
-		if err != nil {
-			log.Fatalf("main: failed to serve: %v", err)
-		}
-	} else {
-		extCfg := config.Config2Filter(core.GetSession().ExtractorConfig)
-		runOnce(ctx, extCfg, *core.GetSession().Options.OutFormat)
+	runnerOpts := runner.RunnerOptions{
+		SocketPath:           *socketPath,
+		RulesPath:            *core.GetSession().Options.RulesPath,
+		RulesListingURL:      *core.GetSession().Options.RulesListingURL,
+		HostMountPath:        *core.GetSession().Options.HostMountPath,
+		FailOnCompileWarning: *core.GetSession().Options.FailOnCompileWarning,
+		Local:                *core.GetSession().Options.Local,
+		ImageName:            *core.GetSession().Options.ImageName,
+		ContainerID:          *core.GetSession().Options.ContainerID,
+		ConsoleURL:           *core.GetSession().Options.ConsoleURL,
+		ConsolePort:          *core.GetSession().Options.ConsolePort,
+		DeepfenceKey:         *core.GetSession().Options.DeepfenceKey,
+		OutFormat:            *core.GetSession().Options.OutFormat,
+		FailOnHighCount:      *core.GetSession().Options.FailOnHighCount,
+		FailOnMediumCount:    *core.GetSession().Options.FailOnMediumCount,
+		FailOnLowCount:       *core.GetSession().Options.FailOnLowCount,
+		FailOnCount:          *core.GetSession().Options.FailOnCount,
+		InactiveThreshold:    *core.GetSession().Options.InactiveThreshold,
 	}
+
+	if *core.GetSession().Options.EnableUpdater {
+		go runner.ScheduleYaraHunterUpdater(ctx, runnerOpts)
+	}
+
+	runner.StartYaraHunter(ctx, runnerOpts, core.GetSession().ExtractorConfig)
 }

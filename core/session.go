@@ -49,11 +49,6 @@ func GetSession() *Session {
 			os.Exit(1)
 		}
 
-		if session.Config, err = ParseConfig(session.Options); err != nil {
-			log.Error(err)
-			os.Exit(1)
-		}
-
 		if session.ExtractorConfig, err = loadExtractorConfigFile(session.Options); err != nil {
 			log.Error(err)
 			os.Exit(1)
