@@ -41,7 +41,7 @@ func writeScanDataToFile(secretScanMsg string, filename string) error {
 	return nil
 }
 
-func getDfInstallDir() string {
+func GetDfInstallDir() string {
 	installDir, exists := os.LookupEnv("DF_INSTALL_DIR")
 	if exists {
 		return installDir
