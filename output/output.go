@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/deepfence/YaraHunter/pkg/output"
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 	"github.com/fatih/color"
 	tw "github.com/olekukonko/tablewriter"
@@ -180,33 +181,31 @@ func removeFirstLastChar(input string) string {
 	return input[1 : len(input)-1]
 }
 
-func SecretsToSecretInfos(out []SecretFound) []*pb.SecretInfo {
-	res := make([]*pb.SecretInfo, 0)
-	for _, v := range out {
-		res = append(res, SecretToSecretInfo(v))
+func SecretToSecretInfo(out output.IOCFound) *pb.SecretInfo {
+	matchedContent := ""
+	if len(out.Meta) != 0 {
+		matchedContent = out.Meta[0]
 	}
-	return res
-}
-
-func SecretToSecretInfo(out SecretFound) *pb.SecretInfo {
+	signature := ""
+	if len(out.StringsToMatch) != 0 {
+		signature = out.StringsToMatch[0]
+	}
+	severity := "low"
+	if out.Severity != "" {
+		severity = out.Severity
+	}
 	return &pb.SecretInfo{
 		ImageLayerId: out.LayerID,
 		Rule: &pb.MatchRule{
-			Id:               int32(out.RuleID),
 			Name:             out.RuleName,
-			Part:             out.PartToMatch,
-			StringToMatch:    out.Match,
-			SignatureToMatch: out.Regex,
+			SignatureToMatch: signature,
 		},
 		Match: &pb.Match{
-			StartingIndex:         int64(out.PrintBufferStartIndex),
-			RelativeStartingIndex: int64(out.MatchFromByte),
-			RelativeEndingIndex:   int64(out.MatchToByte),
-			FullFilename:          out.CompleteFilename,
-			MatchedContent:        jsonMarshal(out.MatchedContents),
+			FullFilename:   out.CompleteFilename,
+			MatchedContent: matchedContent,
 		},
 		Severity: &pb.Severity{
-			Level: out.Severity,
+			Level: severity,
 			Score: float32(out.SeverityScore),
 		},
 	}

@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	scanStatusFilename = getDfInstallDir() + "/var/log/fenced/secret-scan-log/secret_scan_log.log"
-	scanFilename       = getDfInstallDir() + "/var/log/fenced/secret-scan/secret_scan.log"
+	scanStatusFilename = GetDfInstallDir() + "/var/log/fenced/secret-scan-log/secret_scan_log.log"
+	scanFilename       = GetDfInstallDir() + "/var/log/fenced/secret-scan/secret_scan.log"
 	SecretScanDir      = "/"
 )
 

@@ -34,6 +34,8 @@ github.com/containerd/typeurl/v2 v2.1.1/go.mod h1:IDp2JFvbwZ31H8dQbEIY7sDl2L3o3H
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/deepfence/YaraHunter v0.0.0-20240708090804-4196e3bbd2c1 h1:VuKkE8OKmM+hII/fViwYuLL1DTq5ncczMKWuOKg+EZc=
+github.com/deepfence/YaraHunter v0.0.0-20240708090804-4196e3bbd2c1/go.mod h1:SSZ34MXU0qR30p6/rJ/PpY7OgwljWF3go6K/ZfYqHZ0=
 github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20240626143546-e4ec9311fdf9 h1:hI/Fv6XabkERGza4E8g7XLhlkuzWjoXQwTmtq0WIC+Y=
 github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20240626143546-e4ec9311fdf9/go.mod h1:+rchMc4YNjCoHo0YAwKsT+DRBNr1hdDG0WrvAOOCc5k=
 github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20240626143546-e4ec9311fdf9 h1:/1olNPTiYUFxuYsP79DKLEEieNWIdPDFxs+B58jysRA=

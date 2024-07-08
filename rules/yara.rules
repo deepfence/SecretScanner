@@ -1,0 +1,11 @@
+rule github_personal_access_token {
+    meta:
+        description = "Rule to match GitHub Personal Access Tokens (classic), Fine-grained & Github Actions Token"
+        author = "deepfence.io"
+
+    strings:
+        $github_pat = /^gh[ps]_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}/
+
+    condition:
+        $github_pat
+}
