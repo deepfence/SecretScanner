@@ -52,7 +52,9 @@ func (s *SecretGRPCServer) FindSecretInfo(c context.Context, r *pb.FindRequest) 
 			container,
 			yaraScanner,
 			func(res out.IOCFound, scanID string) {
-				jobs.WriteSingleScanData(output.SecretToSecretInfo(res), scanID)
+				for i := range res.StringsToMatch {
+					jobs.WriteSingleScanData(output.SecretToSecretInfo(res, i), scanID)
+				}
 			},
 		)
 	}()

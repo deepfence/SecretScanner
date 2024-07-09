@@ -181,18 +181,14 @@ func removeFirstLastChar(input string) string {
 	return input[1 : len(input)-1]
 }
 
-func SecretToSecretInfo(out output.IOCFound) *pb.SecretInfo {
-	matchedContent := ""
-	if len(out.Meta) != 0 {
-		matchedContent = out.Meta[0]
-	}
+func SecretToSecretInfo(out output.IOCFound, matchIndex int) *pb.SecretInfo {
 	signature := ""
 	if len(out.StringsToMatch) != 0 {
-		signature = out.StringsToMatch[0]
+		signature = out.Meta[0]
 	}
 	severity := "low"
-	if out.Severity != "" {
-		severity = out.Severity
+	if out.FileSeverity != "" {
+		severity = out.FileSeverity
 	}
 	return &pb.SecretInfo{
 		ImageLayerId: out.LayerID,
@@ -202,7 +198,8 @@ func SecretToSecretInfo(out output.IOCFound) *pb.SecretInfo {
 		},
 		Match: &pb.Match{
 			FullFilename:   out.CompleteFilename,
-			MatchedContent: matchedContent,
+			MatchedContent: out.Matches[matchIndex].Data,
+			StartingIndex:  int64(out.Matches[matchIndex].Offset),
 		},
 		Severity: &pb.Severity{
 			Level: severity,
