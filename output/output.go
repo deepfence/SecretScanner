@@ -183,7 +183,7 @@ func removeFirstLastChar(input string) string {
 
 func SecretToSecretInfo(out output.IOCFound, matchIndex int) *pb.SecretInfo {
 	signature := ""
-	if len(out.StringsToMatch) != 0 {
+	if len(out.Meta) != 0 {
 		signature = out.Meta[0]
 	}
 	severity := "low"
