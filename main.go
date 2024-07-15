@@ -27,22 +27,16 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"os/signal"
 	"path"
 	"runtime"
 	"strconv"
-	"sync/atomic"
-	"time"
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/jobs"
 	"github.com/deepfence/SecretScanner/output"
-	"github.com/deepfence/SecretScanner/scan"
 	"github.com/deepfence/SecretScanner/server"
-	"github.com/deepfence/golang_deepfence_sdk/utils/tasks"
-	"github.com/deepfence/match-scanner/pkg/config"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
