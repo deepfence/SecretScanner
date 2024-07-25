@@ -8,9 +8,6 @@
 [![Slack](https://img.shields.io/badge/slack-@deepfence-blue.svg?logo=slack)](https://join.slack.com/t/deepfence-community/shared_invite/zt-podmzle9-5X~qYx8wMaLt9bGWwkSdgQ)
 [![Twitter](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Fgithub.com%2Fdeepfence%2FSecretScanner)](https://twitter.com/intent/tweet?text=Check%20this%20out%3A&url=https%3A%2F%2Fgithub.com%2Fdeepfence%2FSecretScanner)
 
-
-> SecretScanner has been integrated into [ThreatMapper 1.3.0](https://github.com/deepfence/ThreatMapper), and also remains as this standalone project.
-
 # SecretScanner
 
 Deepfence SecretScanner can find unprotected secrets in container images or file systems.
@@ -41,12 +38,12 @@ Install docker and run SecretScanner on a container image using the following in
 * Build SecretScanner:
 ```shell
 ./bootstrap.sh
-docker build --rm=true --tag=quay.io/deepfenceio/deepfence_secret_scanner_ce:2.2.0 -f Dockerfile .
+docker build --rm=true --tag=quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0 -f Dockerfile .
 ```
 
 * Or, pull the latest build from docker hub by doing:
 ```shell
-docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.2.0
+docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0
 ```
 
 * Pull a container image for scanning:
@@ -56,7 +53,7 @@ docker pull node:8.11
 
 * Scan the container image:
     ```shell
-    docker run -i --rm --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock quay.io/deepfenceio/deepfence_secret_scanner_ce:2.2.0 -image-name node:8.11 --output json > node.json
+    docker run -i --rm --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0 -image-name node:8.11 --output json > node.json
     ```
 
 # Credits

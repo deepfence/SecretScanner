@@ -17,4 +17,4 @@ SecretScanner: vendor $(PWD)/**/*.go $(PWD)/agent-plugins-grpc/**/*.go
 
 .PHONY: docker
 docker:
-	docker build -t quay.io/deepfenceio/deepfence_secret_scanner_ce:2.2.0 .
+	docker build -t quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0 .

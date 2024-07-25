@@ -15,7 +15,7 @@ docker pull node:latest
 
 docker run -it --rm --name=deepfence-secretscanner \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.2.0 \
+    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0 \
 # highlight-next-line
     --image-name node:latest
 
@@ -30,7 +30,7 @@ Mount the filesystem within the SecretScanner container and scan it.  Here, we s
 docker run -it --rm --name=deepfence-secretscanner \
 # highlight-next-line
     -v /tmp:/deepfence/mnt \
-    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.2.0 \
+    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0 \
 # highlight-next-line
     --host-mount-path /deepfence/mnt --local /deepfence/mnt 
 ```
