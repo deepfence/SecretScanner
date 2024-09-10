@@ -5,15 +5,15 @@ go 1.21.0
 replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 
 require (
-	github.com/deepfence/YaraHunter v0.0.0-20240709125720-8dbb98828c59
+	github.com/deepfence/YaraHunter v0.0.0-20240910165656-160ddf431c1f
 	github.com/deepfence/agent-plugins-grpc v0.0.0-00010101000000-000000000000
-	github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20240626143546-e4ec9311fdf9
-	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20240626143546-e4ec9311fdf9
-	github.com/deepfence/match-scanner v0.0.0-20240701181002-ece6f13f296f
-	github.com/fatih/color v1.16.0
+	github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20240807105002-4943c14781c5
+	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20240807105002-4943c14781c5
+	github.com/deepfence/match-scanner v0.0.0-20240910141915-bc37e8a490c2
+	github.com/fatih/color v1.17.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/sirupsen/logrus v1.9.3
-	google.golang.org/grpc v1.65.0
+	google.golang.org/grpc v1.66.1
 )
 
 require (
@@ -38,7 +38,7 @@ require (
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.4 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.5 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -47,7 +47,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
-	github.com/hillu/go-yara/v4 v4.3.2 // indirect
+	github.com/hillu/go-yara/v4 v4.3.3 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
