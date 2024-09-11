@@ -11,7 +11,7 @@ SecretScanner can writes output to `stdout` it can redirected to a file for furt
 
 docker run -it --rm --name=deepfence_secret_scanner \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0 \
+    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.1 \
     --image-name node:latest \
 # highlight-next-line
     --output json > ./tmp/node-secret-scan.json

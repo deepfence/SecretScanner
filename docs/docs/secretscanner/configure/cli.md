@@ -7,7 +7,7 @@ title: Command-Line Options
 Display the command line options:
 
 ```bash
-docker run -it --rm quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0 --help
+docker run -it --rm quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.1 --help
 ```
 
 or, with a standalone build:
