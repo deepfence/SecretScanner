@@ -1,3 +1,6 @@
+export IMAGE_REPOSITORY?=quay.io/deepfenceio
+export DF_IMG_TAG?=2.4.0
+
 all: SecretScanner
 
 bootstrap:
@@ -17,4 +20,4 @@ SecretScanner: vendor $(PWD)/**/*.go $(PWD)/agent-plugins-grpc/**/*.go
 
 .PHONY: docker
 docker:
-	docker build -t quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0 .
+	docker build -t $(IMAGE_REPOSITORY)/deepfence_secret_scanner_ce:$(DF_IMG_TAG) .
