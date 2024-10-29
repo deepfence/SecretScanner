@@ -14,7 +14,7 @@ vendor: go.mod
 	go mod vendor
 
 SecretScanner: vendor $(PWD)/**/*.go $(PWD)/agent-plugins-grpc/**/*.go
-	CGO_LDFLAGS="-ljansson -lcrypto -lmagic" PKG_CONFIG_PATH=/usr/local/yara/lib/pkgconfig:$(PKG_CONFIG_PATH) go build -buildmode=pie -ldflags="-s -w -extldflags=-static" -buildvcs=false -v .
+	CGO_LDFLAGS="-ljansson -lcrypto -lmagic" PKG_CONFIG_PATH=/usr/local/yara/lib/pkgconfig:$(PKG_CONFIG_PATH) go build -buildmode=pie -ldflags="-s -w -extldflags=-static -X 'main.version=$(DF_IMG_TAG)'" -buildvcs=false -v .
 
 .PHONY: clean bootstrap
 
