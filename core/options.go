@@ -4,6 +4,8 @@ import (
 	"flag"
 	"os"
 	"strings"
+
+	"github.com/deepfence/YaraHunter/utils"
 )
 
 const (
@@ -11,6 +13,11 @@ const (
 	ExtractedImageFilesDir = "ExtractedFiles"
 	JSONOutput             = "json"
 	TableOutput            = "table"
+)
+
+var (
+	product string = utils.GetEnvOrDefault("DEEPFENCE_PRODUCT", "ThreatMapper")
+	license string = utils.GetEnvOrDefault("DEEPFENCE_LICENSE", "")
 )
 
 type Options struct {
@@ -42,6 +49,8 @@ type Options struct {
 	FailOnHighCount      *int
 	FailOnMediumCount    *int
 	FailOnLowCount       *int
+	Product              *string
+	License              *string
 }
 
 type repeatableStringValue struct {
@@ -70,7 +79,7 @@ func ParseOptions() (*Options, error) {
 		Local:                flag.String("local", "", "Specify local directory (absolute path) which to scan. Scans only given directory recursively."),
 		HostMountPath:        flag.String("host-mount-path", "", "If scanning the host, specify the host mount path for path exclusions to work correctly."),
 		ConfigPath:           flag.String("config-path", "", "yaml config path"),
-		RulesPath:            flag.String("rules-path", "", "yara rules path"),
+		RulesPath:            flag.String("rules-path", "/home/deepfence/usr", "yara rules path"),
 		RulesListingURL:      flag.String("rules-listing-url", "", "yara rules listing url"),
 		FailOnCompileWarning: flag.Bool("fail-warning", false, "fail if compilation warning"),
 		EnableUpdater:        flag.Bool("enable-updated", false, "Enable rule updater"),
@@ -91,6 +100,8 @@ func ParseOptions() (*Options, error) {
 		FailOnHighCount:      flag.Int("fail-on-high-count", -1, "Exit with status 1 if number of high secrets found is >= this value (Default: -1)"),
 		FailOnMediumCount:    flag.Int("fail-on-medium-count", -1, "Exit with status 1 if number of medium secrets found is >= this value (Default: -1)"),
 		FailOnLowCount:       flag.Int("fail-on-low-count", -1, "Exit with status 1 if number of low secrets found is >= this value (Default: -1)"),
+		Product:              flag.String("product", product, "Deepfence Product type can be ThreatMapper or ThreatStryker, also supports env var DEEPFENCE_PRODUCT"),
+		License:              flag.String("license", license, "TheratMapper or ThreatStryker license, also supports env var DEEPFENCE_LICENSE"),
 	}
 	flag.Parse()
 	return options, nil

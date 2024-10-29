@@ -51,10 +51,29 @@ docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0
 docker pull node:8.11
 ```
 
-* Scan the container image:
-    ```shell
-    docker run -i --rm --name=deepfence-secretscanner -v /var/run/docker.sock:/var/run/docker.sock quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0 -image-name node:8.11 --output json > node.json
-    ```
+* Set Product and Licence and scan it::
+```shell
+docker run -i --rm --name=deepfence-secretscanner \
+    -e DEEPFENCE_PRODUCT=<ThreatMapper or ThreatStryker> \
+    -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    quay.io/deepfenceio/deepfence_secret_scanner_ce:3.0.0 \
+    --image-name node:8.11 \
+    --output json > node.json
+```
+
+Rules can also be cached to use next run by mounting a seperate path and passing `rules-path` argument
+```shell
+docker run -i --rm --name=deepfence-yarahunter \
+     -e DEEPFENCE_PRODUCT=<ThreatMapper or ThreatStryker> \
+     -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
+     -v /var/run/docker.sock:/var/run/docker.sock \
+     -v /tmp/rules:/tmp/rules \
+     quay.io/deepfenceio/deepfence_secret_scanner_ce:3.0.0 \
+     --image-name node:8.11 \
+     --rules-path=/tmp/rules \
+     --output json > node.json
+```
 
 # Credits
 

@@ -25,11 +25,16 @@ package main
 // ------------------------------------------------------------------------------
 
 import (
+	"archive/tar"
 	"context"
+	"encoding/json"
 	"flag"
+	"io"
+	"io/fs"
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strconv"
 
@@ -38,11 +43,13 @@ import (
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/server"
 	log "github.com/sirupsen/logrus"
+
 	"google.golang.org/grpc"
 
 	out "github.com/deepfence/YaraHunter/pkg/output"
 	"github.com/deepfence/YaraHunter/pkg/runner"
 	yaraserver "github.com/deepfence/YaraHunter/pkg/server"
+	"github.com/deepfence/YaraHunter/pkg/threatintel"
 
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 )
@@ -52,7 +59,11 @@ const (
 )
 
 var (
-	socketPath = flag.String("socket-path", "", "The gRPC server unix socket path")
+	socketPath     = flag.String("socket-path", "", "The gRPC server unix socket path")
+	version        string
+	checksumFile   = "checksum.txt"
+	sourceRuleFile = "df-secret.json"
+	secretRuleFile = "secret.yar"
 )
 
 // Read the regex signatures from config file, options etc.
@@ -78,6 +89,8 @@ func main() {
 			return "", " " + path.Base(f.File) + ":" + strconv.Itoa(f.Line)
 		},
 	})
+
+	log.Infof("version: %s", version)
 
 	flag.Parse()
 
@@ -114,6 +127,11 @@ func main() {
 		go runner.ScheduleYaraHunterUpdater(ctx, runnerOpts)
 	}
 
+	// update rules required for cli mode
+	if *socketPath == "" {
+		updateRules(ctx, core.GetSession().Options)
+	}
+
 	runner.StartYaraHunter(ctx, runnerOpts, core.GetSession().ExtractorConfig,
 
 		func(base *yaraserver.GRPCScannerServer) server.SecretGRPCServer {
@@ -125,4 +143,62 @@ func main() {
 		func(s grpc.ServiceRegistrar, impl any) {
 			pb.RegisterSecretScannerServer(s, impl.(pb.SecretScannerServer))
 		})
+}
+
+func updateRules(ctx context.Context, opts *core.Options) {
+	log.Infof("check and update secret rules")
+
+	listing, err := threatintel.FetchThreatIntelListing(ctx, version, *opts.Product, *opts.License)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rulesInfo, err := listing.GetLatest(version, threatintel.SecretDBType)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Debugf("rulesInfo: %+v", rulesInfo)
+
+	// make sure output rules directory exists
+	os.MkdirAll(*opts.RulesPath, fs.ModePerm)
+
+	// check if update required
+	if threatintel.SkipRulesUpdate(filepath.Join(*opts.RulesPath, checksumFile), rulesInfo.Checksum) {
+		log.Info("skip rules update")
+		return
+	}
+
+	log.Info("download new rules")
+	content, err := threatintel.DownloadFile(ctx, rulesInfo.URL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Infof("rules file size: %d bytes", content.Len())
+
+	// write new checksum
+	if err := os.WriteFile(
+		filepath.Join(*opts.RulesPath, checksumFile), []byte(rulesInfo.Checksum), fs.ModePerm); err != nil {
+		log.Fatal(err)
+	}
+
+	// write rules file
+	outRuleFile := filepath.Join(*opts.RulesPath, secretRuleFile)
+	threatintel.ProcessTarGz(content.Bytes(), sourceRuleFile, outRuleFile, processSecretRules)
+}
+
+func processSecretRules(header *tar.Header, reader io.Reader, outPath string) error {
+
+	var fb threatintel.FeedsBundle
+	if err := json.NewDecoder(reader).Decode(&fb); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	if err := threatintel.ExportYaraRules(outPath, fb.ScannerFeeds.SecretRules, fb.Extra); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return nil
 }
