@@ -1,5 +1,5 @@
 export IMAGE_REPOSITORY?=quay.io/deepfenceio
-export DF_IMG_TAG?=3.0.0
+export DF_IMG_TAG?=2.5.0
 
 all: SecretScanner
 
