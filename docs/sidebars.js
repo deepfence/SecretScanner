@@ -30,8 +30,7 @@ const sidebars = {
       items: [
         'secretscanner/using/build',
         'secretscanner/using/scan',
-        'secretscanner/using/standalone',
-        'secretscanner/using/grpc',
+        'secretscanner/using/standalone'
       ]
     },
 

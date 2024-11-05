@@ -7,7 +7,7 @@ title: Command-Line Options
 Display the command line options:
 
 ```bash
-docker run -it --rm quay.io/deepfenceio/deepfence_secret_scanner_ce:2.3.0 --help
+docker run -it --rm quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.0 --help
 ```
 
 or, with a standalone build:
@@ -48,21 +48,6 @@ SecretScanner can write output as Table and JSON format
 
  * `-output`: Output format: json or table (default "table")
 
-### Configure GRPC Listener
-
-SocketScanner can run persistently, listening for scan requests over GRPC, either on an HTTP endpoint or a unix socket.
-
-:::info
-
-### Help needed!
-
-This functionality is out-of-date and needs refreshed
-:::
-
- * `--http-port string`: When set the http server will come up at port with df es as output
- * `--socket-path string`: The gRPC server unix socket path
-
- 
 ### Configure Scans
 
 Scans can be fine-tuned using settings in `config.yaml`:
