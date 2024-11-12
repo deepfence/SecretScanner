@@ -75,6 +75,7 @@ func buildClient() (*http.Client, error) {
 	tlsConfig := &tls.Config{RootCAs: x509.NewCertPool(), InsecureSkipVerify: true}
 	client := &http.Client{
 		Transport: &http.Transport{
+			Proxy:               http.ProxyFromEnvironment,
 			TLSClientConfig:     tlsConfig,
 			DisableKeepAlives:   false,
 			MaxIdleConnsPerHost: 1024,
