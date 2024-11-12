@@ -1,4 +1,4 @@
 [submodule "agent-plugins-grpc"]
 	path = agent-plugins-grpc
 	url = https://github.com/deepfence/agent-plugins-grpc
-	branch = main
+	branch = release-2.5
