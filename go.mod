@@ -5,15 +5,15 @@ go 1.23.2
 replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 
 require (
-	github.com/deepfence/YaraHunter v0.0.0-20241112093056-346816ab4553
+	github.com/deepfence/YaraHunter v0.0.0-20241220175410-f07b2ac891bb
 	github.com/deepfence/agent-plugins-grpc v0.0.0-00010101000000-000000000000
-	github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20241112090544-f42aabb5dc7f
-	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20241112090544-f42aabb5dc7f
+	github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20241220101350-67a37a759769
+	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20241220101350-67a37a759769
 	github.com/deepfence/match-scanner v0.0.0-20241104190155-00799508ab6c
 	github.com/fatih/color v1.16.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/sirupsen/logrus v1.9.3
-	google.golang.org/grpc v1.67.1
+	google.golang.org/grpc v1.69.2
 )
 
 require (
@@ -40,7 +40,7 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.6 // indirect
-	github.com/go-logr/logr v1.3.0 // indirect
+	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -69,15 +69,15 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0 // indirect
-	go.opentelemetry.io/otel v1.21.0 // indirect
-	go.opentelemetry.io/otel/metric v1.21.0 // indirect
-	go.opentelemetry.io/otel/trace v1.21.0 // indirect
+	go.opentelemetry.io/otel v1.31.0 // indirect
+	go.opentelemetry.io/otel/metric v1.31.0 // indirect
+	go.opentelemetry.io/otel/trace v1.31.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	google.golang.org/genproto v0.0.0-20231211222908-989df2bf70f3 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
