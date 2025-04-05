@@ -38,12 +38,12 @@ Install docker and run SecretScanner on a container image using the following in
 * Build SecretScanner:
 ```shell
 ./bootstrap.sh
-docker build --rm=true --tag=quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.2 -f Dockerfile .
+docker build --rm=true --tag=quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6 -f Dockerfile .
 ```
 
 * Or, pull the latest build from docker hub by doing:
 ```shell
-docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.2
+docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6
 ```
 
 ### Generate License Key
@@ -66,7 +66,7 @@ docker run -i --rm --name=deepfence-secretscanner \
     -e DEEPFENCE_PRODUCT=<ThreatMapper or ThreatStryker> \
     -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.2 \
+    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6 \
     --image-name node:8.11 \
     --output json > node.json
 ```
@@ -78,7 +78,7 @@ docker run -i --rm --name=deepfence-yarahunter \
      -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
      -v /var/run/docker.sock:/var/run/docker.sock \
      -v /tmp/rules:/tmp/rules \
-     quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.2 \
+     quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6 \
      --image-name node:8.11 \
      --rules-path=/tmp/rules \
      --output json > node.json

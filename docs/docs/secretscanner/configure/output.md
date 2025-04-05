@@ -13,7 +13,7 @@ docker run -it --rm --name=deepfence_secret_scanner \
     -e DEEPFENCE_PRODUCT=<ThreatMapper or ThreatStryker> \
     -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.2 \
+    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6 \
     --image-name node:latest \
 # highlight-next-line
     --output json > ./tmp/node-secret-scan.json

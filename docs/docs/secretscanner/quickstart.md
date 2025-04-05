@@ -9,7 +9,7 @@ Pull the latest SecretScanner image, and use it to scan a `node:latest` containe
 ## Pull the latest SecretScanner image
 
 ```bash
-docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.2
+docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6
 ```
 
 ## Generate License Key
@@ -30,7 +30,7 @@ docker run -i --rm --name=deepfence-secretscanner \
     -e DEEPFENCE_PRODUCT=<ThreatMapper or ThreatStryker> \
     -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
 	-v /var/run/docker.sock:/var/run/docker.sock \
-	quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.2 \
+	quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6 \
 	-image-name node:latest
 
 docker rmi node:latest
@@ -43,7 +43,7 @@ docker run -i --rm --name=deepfence-yarahunter \
      -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
      -v /var/run/docker.sock:/var/run/docker.sock \
      -v /tmp/rules:/tmp/rules \
-     quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.2 \
+     quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6 \
      --image-name node:8.11 \
      --rules-path=/tmp/rules \
      --output json > node.json
@@ -58,7 +58,7 @@ docker run -i --rm --name=deepfence-secretscanner \
     -e DEEPFENCE_PRODUCT=<ThreatMapper or ThreatStryker> \
     -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.2 \
+    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6 \
     --image-name node:latest \
     --output json > /tmp/node-secret-scan.json
 
