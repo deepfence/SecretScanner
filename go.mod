@@ -5,7 +5,7 @@ go 1.23.2
 replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 
 require (
-	github.com/deepfence/YaraHunter v0.0.0-20250405075318-04801d6218c1
+	github.com/deepfence/YaraHunter v0.0.0-20250410123229-ca2b40d5d431
 	github.com/deepfence/agent-plugins-grpc v0.0.0-00010101000000-000000000000
 	github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20241220101350-67a37a759769
 	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20241220101350-67a37a759769
