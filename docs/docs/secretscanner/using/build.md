@@ -8,11 +8,11 @@ SecretScanner is a self-contained docker-based tool. Clone the [SecretScanner re
 
 ```bash
 ./bootstrap.sh
-docker build --rm=true --tag=quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6 -f Dockerfile .
+docker build --rm=true --tag=quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.7 -f Dockerfile .
 ```
 
-Alternatively, you can pull the official Deepfence image at `quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6`:
+Alternatively, you can pull the official Deepfence image at `quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.7`:
 
 ```bash
-docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.6
+docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.7
 ```
