@@ -1,4 +1,5 @@
 # Secret Scanner Configuration File
 exclude_extensions: [ ".exe", ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".psd", ".xcf", ".zip", ".tar", ".tar.gz", ".ttf", ".lock", ".so", ".gz" ]
-exclude_paths: ["/var/lib/docker", "/var/lib/containerd", "/dev", "/proc", "/usr/lib", "/sys", "/boot", "/run", ".home/kubernetes", "/snap", "/usr/bin", "/usr/local"]
+exclude_paths: ["/var/lib/docker", "/var/lib/containerd", "/dev", "/proc", "/usr/lib", "/sys", "/boot", "/run", ".home/kubernetes", "/snap", "/usr/bin", "/usr/local", "/opt/deepfence", "/snap"]
 max_file_size: 1073741824
+skip_non_executable: false
