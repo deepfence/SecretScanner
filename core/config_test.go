@@ -11,10 +11,6 @@ import (
 
 func Test_ConfigMerge(t *testing.T) {
 	config := &core.Config{
-		BlacklistedStrings:           []string{"base"},
-		BlacklistedExtensions:        []string{"base"},
-		BlacklistedPaths:             []string{"base"},
-		BlacklistedEntropyExtensions: []string{"base"},
 		Signatures: []core.ConfigSignature{
 			{
 				Name:          "base",
@@ -42,10 +38,6 @@ func Test_ConfigMerge(t *testing.T) {
 	}
 
 	config.Merge(&core.Config{
-		BlacklistedStrings:           []string{"merge"},
-		BlacklistedExtensions:        []string{"merge", "base"},
-		BlacklistedPaths:             []string{"base", "merge"},
-		BlacklistedEntropyExtensions: []string{"base"},
 		Signatures: []core.ConfigSignature{
 			{
 				Name:          "merge",
@@ -73,10 +65,6 @@ func Test_ConfigMerge(t *testing.T) {
 	})
 
 	expected := &core.Config{
-		BlacklistedStrings:           []string{"base", "merge"},
-		BlacklistedExtensions:        []string{"base", "merge"},
-		BlacklistedPaths:             []string{"base", "merge"},
-		BlacklistedEntropyExtensions: []string{"base"},
 		Signatures: []core.ConfigSignature{
 			{
 				Name:          "base",

@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/deepfence/match-scanner/pkg/config"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 type Session struct {
@@ -45,12 +45,12 @@ func GetSession() *Session {
 		}
 
 		if session.Options, err = ParseOptions(); err != nil {
-			log.Error(err)
+			log.Error().Err(err).Msg("failed to parse options")
 			os.Exit(1)
 		}
 
 		if session.ExtractorConfig, err = loadExtractorConfigFile(session.Options); err != nil {
-			log.Error(err)
+			log.Error().Err(err).Msg("failed to load extractor config")
 			os.Exit(1)
 		}
 

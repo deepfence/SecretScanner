@@ -10,7 +10,7 @@ import (
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
 	"github.com/fatih/color"
 	tw "github.com/olekukonko/tablewriter"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -117,7 +117,7 @@ func (imageOutput *JSONDirSecretsOutput) AddSecret(secret SecretFound) {
 func printSecretsToJSON(secretsJSON interface{}) error {
 	file, err := json.MarshalIndent(secretsJSON, "", Indent)
 	if err != nil {
-		log.Errorf("printSecretsToJsonFile: Couldn't format json output: %s", err)
+		log.Error().Err(err).Msg("printSecretsToJsonFile: Couldn't format json output")
 		return err
 	}
 
@@ -134,9 +134,6 @@ func PrintColoredSecrets(secrets []SecretFound, isFirstSecret *bool) {
 }
 
 // Function to print json object with the matches secret string in color
-// @parameters
-// secret - Structure with details of the secret found
-// isFirstSecret - indicates if some secrets are already printed, used to properly format json
 func printColoredSecretJSONObject(secret SecretFound, isFirstSecret *bool) {
 	Indent3 := Indent + Indent + Indent
 
@@ -209,17 +206,9 @@ func SecretToSecretInfo(out output.IOCFound, matchIndex int) *pb.SecretInfo {
 }
 
 func WriteTableOutput(report *[]SecretFound) error {
-	table := tw.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Matched Part", "Rule Name", "Severity", "File Name", "Signature"})
-	table.SetHeaderLine(true)
-	table.SetBorder(true)
-	table.SetAutoWrapText(true)
-	table.SetAutoFormatHeaders(true)
-	table.SetColMinWidth(0, 10)
-	table.SetColMinWidth(1, 10)
-	table.SetColMinWidth(2, 10)
-	table.SetColMinWidth(3, 20)
-	table.SetColMinWidth(4, 20)
+	table := tw.NewTable(os.Stdout,
+		tw.WithHeader([]string{"MATCHED PART", "RULE NAME", "SEVERITY", "FILE NAME", "SIGNATURE"}),
+	)
 
 	for _, r := range *report {
 		table.Append([]string{r.PartToMatch, r.RuleName, r.Severity, r.CompleteFilename, r.Regex})
@@ -254,8 +243,7 @@ func CountBySeverity(report []SecretFound) SevCount {
 }
 
 func ExitOnSeverity(severity string, count int, failOnCount int) {
-	log.Debugf("ExitOnSeverity severity=%s count=%d failOnCount=%d",
-		severity, count, failOnCount)
+	log.Debug().Str("severity", severity).Int("count", count).Int("failOnCount", failOnCount).Msg("ExitOnSeverity")
 	if count >= failOnCount {
 		if len(severity) > 0 {
 			msg := "Exit secret scan. Number of %s secrets (%d) reached/exceeded the limit (%d).\n"
