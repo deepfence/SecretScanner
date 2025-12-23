@@ -7,13 +7,13 @@ replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 replace github.com/deepfence/YaraHunter => ../YaraHunter
 
 require (
-	github.com/deepfence/YaraHunter v0.0.0-20251222173909-c53ab2b74542
+	github.com/deepfence/YaraHunter v0.0.0-20251223175657-4ceef247193f
 	github.com/deepfence/agent-plugins-grpc v0.0.0-00010101000000-000000000000
 	github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20251220185839-eab97c9c3b76
 	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20251220185839-eab97c9c3b76
 	github.com/deepfence/match-scanner v0.0.0-20251221162150-7979dbfc1852
 	github.com/fatih/color v1.16.0
-	github.com/olekukonko/tablewriter v0.0.5
+	github.com/olekukonko/tablewriter v1.1.2
 	github.com/rs/zerolog v1.34.0
 	google.golang.org/grpc v1.77.0
 )
@@ -22,6 +22,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.14.0-rc.1 // indirect
 	github.com/VirusTotal/gyp v0.9.0 // indirect
+	github.com/clipperhouse/displaywidth v0.6.0 // indirect
 	github.com/clipperhouse/stringish v0.1.1 // indirect
 	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
 	github.com/containerd/cgroups/v3 v3.1.2 // indirect
@@ -65,6 +66,9 @@ require (
 	github.com/moby/sys/user v0.4.0 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/nlepage/go-tarfs v1.2.1 // indirect
+	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
+	github.com/olekukonko/errors v1.1.0 // indirect
+	github.com/olekukonko/ll v0.1.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/opencontainers/runtime-spec v1.3.0 // indirect
