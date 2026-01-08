@@ -7,7 +7,7 @@ replace github.com/deepfence/agent-plugins-grpc => ./agent-plugins-grpc
 replace github.com/deepfence/YaraHunter => ../YaraHunter
 
 require (
-	github.com/deepfence/YaraHunter v0.0.0-20251227063923-c7661011a975
+	github.com/deepfence/YaraHunter v0.0.0-20260108174254-6a98b59625ed
 	github.com/deepfence/agent-plugins-grpc v0.0.0-00010101000000-000000000000
 	github.com/deepfence/golang_deepfence_sdk/client v0.0.0-20251220185839-eab97c9c3b76
 	github.com/deepfence/golang_deepfence_sdk/utils v0.0.0-20251220185839-eab97c9c3b76

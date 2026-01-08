@@ -58,7 +58,7 @@ RUN make clean && make all
 
 # Download rules and convert to yar format
 RUN mkdir -p /home/deepfence/rules \
-    && curl -fsSL https://threat-intel.threatmapper.org/threat-intel/secret/secret_v2.5.8.tar.gz \
+    && curl -fsSL https://artifacts.threatmapper.org/threat-intel/secret/secret_v2.5.8.tar.gz \
     -o /tmp/secret_rules.tar.gz \
     && tar -xzf /tmp/secret_rules.tar.gz -C /home/deepfence/rules --strip-components=1 \
     && rm /tmp/secret_rules.tar.gz
