@@ -1,6 +1,6 @@
 # SecretScanner
 
-[![Documentation](https://img.shields.io/badge/documentation-read-green)](https://community.deepfence.io/docs/secretscanner/)
+[![Documentation](https://img.shields.io/badge/documentation-read-green)](https://threatmapper.org/docs/secretscanner/)
 [![GitHub license](https://img.shields.io/github/license/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/blob/master/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/issues)
@@ -27,7 +27,7 @@ Use SecretScanner if you need a lightweight, efficient method to scan container 
 
 ## Quick Start
 
-For full instructions, refer to the [SecretScanner Documentation](https://community.deepfence.io/docs/secretscanner/).
+For full instructions, refer to the [SecretScanner Documentation](https://threatmapper.org/docs/secretscanner/).
 
 ![SecretScanner QuickStart](docs/docs/secretscanner/img/secretscanner.svg)
 
@@ -68,11 +68,10 @@ We have built upon the configuration file from [shhgit](https://github.com/eth0i
 
 Thank you for using SecretScanner.
 
- * [<img src="https://img.shields.io/badge/documentation-read-green">](https://community.deepfence.io/docs/secretscanner/) Start with the documentation
+ * [<img src="https://img.shields.io/badge/documentation-read-green">](https://threatmapper.org/docs/secretscanner/) Start with the documentation
  * [<img src="https://img.shields.io/badge/slack-@deepfence-blue.svg?logo=slack">](https://join.slack.com/t/deepfence-community/shared_invite/zt-podmzle9-5X~qYx8wMaLt9bGWwkSdgQ) Got a question, need some help?  Find the Deepfence team on Slack
  * [![GitHub issues](https://img.shields.io/github/issues/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/issues) Got a feature request or found a bug? Raise an issue
  * [productsecurity *at* deepfence *dot* io](SECURITY.md): Found a security issue? Share it in confidence
- * Find out more at [deepfence.io](https://deepfence.io/)
 
 ## Security and Support
 
