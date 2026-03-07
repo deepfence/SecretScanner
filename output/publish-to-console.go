@@ -248,7 +248,6 @@ func (p *Publisher) IngestSecretScanResults(scanID string, secrets []SecretFound
 		severity.SetScore(float32(secret.SeverityScore))
 
 		s := dsc.NewIngestersSecret()
-		s.SetImageLayerId(secret.LayerID)
 		s.SetRule(*rule)
 		s.SetMatch(*match)
 		s.SetSeverity(*severity)
