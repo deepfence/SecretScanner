@@ -1,9 +1,6 @@
 package signature
 
 import (
-	// "regexp"
-	// "regexp/syntax"
-	// "strings"
 	"bufio"
 	"io"
 	"math"
@@ -12,8 +9,7 @@ import (
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/output"
-	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 // Constants representing different parts to be matched
@@ -37,7 +33,6 @@ var (
 
 // Initialize all the data structures
 func init() {
-	// log.Infof("Initializing Patterns....")
 	patternSignatureMap = make(map[string][]core.ConfigSignature)
 	signatureIDMap = make(map[int]core.ConfigSignature)
 	matchRegexpMap = make(map[string]*regexp.Regexp)
@@ -47,16 +42,7 @@ func init() {
 	}
 }
 
-// Scan to find complex pattern matches for the contents, path, filename and extension of this file
-// @parameters
-// contents - content of the file
-// path - Complete path of the file
-// filename - Name of the file
-// extension - Extension of the file
-// layerID - layer ID of this file in the container image
-// @returns
-// []output.SecretFound - List of all secrets found
-// Error - Errors if any. Otherwise, returns nil
+// MatchPatternSignatures Scan to find complex pattern matches for the contents, path, filename and extension of this file
 func MatchPatternSignatures(contents io.ReadSeeker, path string, filename string, extension string, layerID string) ([]output.SecretFound, error) {
 	var tempSecretsFound []output.SecretFound
 	var matchingStr io.ReadSeeker
@@ -82,7 +68,7 @@ func MatchPatternSignatures(contents io.ReadSeeker, path string, filename string
 				matchingStr.Seek(int64(indexes[0]), io.SeekStart)
 				_, err := matchingStr.Read(match)
 				if err != nil {
-					logrus.Infof("content read: %v", err)
+					log.Info().Err(err).Msg("content read error")
 				}
 				matchStr := string(match)
 				tempSecretsFound = append(tempSecretsFound, output.SecretFound{
@@ -133,7 +119,7 @@ func MatchSimpleSignatures(contents io.ReadSeeker, path string, filename string,
 			matchingStr.Seek(int64(indexes[0]), io.SeekStart)
 			_, err := matchingStr.Read(match)
 			if err != nil {
-				logrus.Infof("content read: %v", err)
+				log.Info().Err(err).Msg("content read error")
 			}
 			matchStr := string(match)
 			signature := matchSignatureMap[part][matchStr]
@@ -158,20 +144,13 @@ func MatchSimpleSignatures(contents io.ReadSeeker, path string, filename string,
 	return tempSecretsFound, nil
 }
 
-// Process all the extracted signatures from config file, add severity and severity scores, finally
+// ProcessSignatures Process all the extracted signatures from config file, add severity and severity scores, finally
 // store them in appropriate maps
-// @parameters
-// configSignatures - Extracted patterns from signature config file
 func ProcessSignatures(configSignatures []core.ConfigSignature) {
 	var simpleContentSignatures []string
 	var simpleExtSignatures []string
 	var simpleFilenameSignatures []string
 	var simplePathSignatures []string
-
-	var patternContentReg []string
-	var patternExtReg []string
-	var patternFilenameReg []string
-	var patternPathReg []string
 
 	var patternContentSignatures []core.ConfigSignature
 	var patternExtSignatures []core.ConfigSignature
@@ -187,8 +166,9 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 				signature.SeverityScore = 2.5
 			}
 
-			log.Debugf("Simple Signature %s %s %s %s %d", signature.Name,
-				signature.Part, signature.Match, signature.Severity, signature.ID)
+			log.Debug().Str("name", signature.Name).Str("part", signature.Part).
+				Str("match", signature.Match).Str("severity", signature.Severity).
+				Int("id", signature.ID).Msg("Simple Signature")
 
 			matchSignatureMap[signature.Part][signature.Match] = signature
 
@@ -217,24 +197,22 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 				}
 			}
 
-			log.Debugf("Pattern Signature %s %s %s %s %s %s %d", signature.Name, signature.Part,
-				signature.Match, signature.Regex, signature.RegexType, signature.Severity, signature.ID)
+			log.Debug().Str("name", signature.Name).Str("part", signature.Part).
+				Str("match", signature.Match).Str("regex", signature.Regex).
+				Str("regexType", signature.RegexType).Str("severity", signature.Severity).
+				Int("id", signature.ID).Msg("Pattern Signature")
 
 			signature.CompiledRegex = regexp.MustCompile(signature.Regex)
 
 			switch signature.Part {
 			case ContentsPart:
 				patternContentSignatures = append(patternContentSignatures, signature)
-				patternContentReg = append(patternContentReg, signature.Regex)
 			case ExtPart:
 				patternExtSignatures = append(patternExtSignatures, signature)
-				patternExtReg = append(patternExtReg, signature.Regex)
 			case FilenamePart:
 				patternFilenameSignatures = append(patternFilenameSignatures, signature)
-				patternFilenameReg = append(patternFilenameReg, signature.Regex)
 			case PathPart:
 				patternPathSignatures = append(patternPathSignatures, signature)
-				patternPathReg = append(patternPathReg, signature.Regex)
 			}
 		}
 
@@ -261,27 +239,17 @@ func ProcessSignatures(configSignatures []core.ConfigSignature) {
 	patternSignatureMap[PathPart] = patternPathSignatures
 
 	for _, part := range []string{ContentsPart, FilenamePart, PathPart, ExtPart} {
-		log.Debugf("Number of Complex Patterns for matching %s: %d", part, len(patternSignatureMap[part]))
-		log.Debugf("Number of Simple Patterns for matching %s: %d", part, len(matchSignatureMap[part]))
+		log.Debug().Str("part", part).Int("count", len(patternSignatureMap[part])).Msg("Number of Complex Patterns")
+		log.Debug().Str("part", part).Int("count", len(matchSignatureMap[part])).Msg("Number of Simple Patterns")
 	}
 }
 
-// Append one signature to the list of signatures
-// @parameters
-// signature - signature to be added
-// configSignatures - List of signatures
+// addToSignatures Append one signature to the list of signatures
 func addToSignatures(signature core.ConfigSignature, Signatures *[]core.ConfigSignature) {
 	*Signatures = append(*Signatures, signature)
 }
 
-// Update severity and score based on length of match
-// @parameters
-// inputMatch - Matched portion of the input
-// severity - Original Severity
-// severityScore - Original Severity Score
-// @returns
-// string - Updated Severity
-// float64 - Updated Severity Score
+// calculateSeverity Update severity and score based on length of match
 func calculateSeverity(inputMatch []byte, severity string, severityScore float64) (string, float64) {
 	updatedSeverity := "low"
 	lenMatch := len(inputMatch)
@@ -313,7 +281,7 @@ func calculateSeverity(inputMatch []byte, severity string, severityScore float64
 	return updatedSeverity, math.Round(updatedScore*100) / 100
 }
 
-// Find min of 2 int values
+// Min Find min of 2 int values
 func Min(value_0, value_1 int) int {
 	if value_0 < value_1 {
 		return value_0
@@ -321,7 +289,7 @@ func Min(value_0, value_1 int) int {
 	return value_1
 }
 
-// Find max of 2 int values
+// Max Find max of 2 int values
 func Max(value_0, value_1 int) int {
 	if value_0 > value_1 {
 		return value_0

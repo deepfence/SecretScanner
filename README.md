@@ -1,12 +1,10 @@
 # SecretScanner
 
-[![Documentation](https://img.shields.io/badge/documentation-read-green)](https://community.deepfence.io/docs/secretscanner/)
+[![Documentation](https://img.shields.io/badge/documentation-read-green)](https://threatmapper.org/docs/secretscanner/)
 [![GitHub license](https://img.shields.io/github/license/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/blob/master/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/stargazers)
-[![Hacktoberfest](https://img.shields.io/github/hacktoberfest/2022/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/issues)
 [![GitHub issues](https://img.shields.io/github/issues/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/issues)
 [![Slack](https://img.shields.io/badge/slack-@deepfence-blue.svg?logo=slack)](https://join.slack.com/t/deepfence-community/shared_invite/zt-podmzle9-5X~qYx8wMaLt9bGWwkSdgQ)
-[![Twitter](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Fgithub.com%2Fdeepfence%2FSecretScanner)](https://twitter.com/intent/tweet?text=Check%20this%20out%3A&url=https%3A%2F%2Fgithub.com%2Fdeepfence%2FSecretScanner)
 
 # SecretScanner
 
@@ -29,7 +27,7 @@ Use SecretScanner if you need a lightweight, efficient method to scan container 
 
 ## Quick Start
 
-For full instructions, refer to the [SecretScanner Documentation](https://community.deepfence.io/docs/secretscanner/).
+For full instructions, refer to the [SecretScanner Documentation](https://threatmapper.org/docs/secretscanner/).
 
 ![SecretScanner QuickStart](docs/docs/secretscanner/img/secretscanner.svg)
 
@@ -38,19 +36,12 @@ Install docker and run SecretScanner on a container image using the following in
 * Build SecretScanner:
 ```shell
 ./bootstrap.sh
-docker build --rm=true --tag=quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.7 -f Dockerfile .
+docker build --rm=true --tag=quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.8 -f Dockerfile .
 ```
 
 * Or, pull the latest build from docker hub by doing:
 ```shell
-docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.7
-```
-
-### Generate License Key
-
-Run this command to generate a license key. Work/official email id has to be used.
-```shell
-curl https://license.deepfence.io/threatmapper/generate-license?first_name=<FIRST_NAME>&last_name=<LAST_NAME>&email=<EMAIL>&company=<ORGANIZATION_NAME>&resend_email=true
+docker pull quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.8
 ```
 
 ### Scan
@@ -60,28 +51,13 @@ curl https://license.deepfence.io/threatmapper/generate-license?first_name=<FIRS
 docker pull node:8.11
 ```
 
-* Set Product and Licence and scan it::
+* Scan it:
 ```shell
 docker run -i --rm --name=deepfence-secretscanner \
-    -e DEEPFENCE_PRODUCT=<ThreatMapper or ThreatStryker> \
-    -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.7 \
+    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.8 \
     --image-name node:8.11 \
     --output json > node.json
-```
-
-Rules can also be cached to use next run by mounting a seperate path and passing `rules-path` argument
-```shell
-docker run -i --rm --name=deepfence-yarahunter \
-     -e DEEPFENCE_PRODUCT=<ThreatMapper or ThreatStryker> \
-     -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
-     -v /var/run/docker.sock:/var/run/docker.sock \
-     -v /tmp/rules:/tmp/rules \
-     quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.7 \
-     --image-name node:8.11 \
-     --rules-path=/tmp/rules \
-     --output json > node.json
 ```
 
 # Credits
@@ -92,11 +68,10 @@ We have built upon the configuration file from [shhgit](https://github.com/eth0i
 
 Thank you for using SecretScanner.
 
- * [<img src="https://img.shields.io/badge/documentation-read-green">](https://community.deepfence.io/docs/secretscanner/) Start with the documentation
+ * [<img src="https://img.shields.io/badge/documentation-read-green">](https://threatmapper.org/docs/secretscanner/) Start with the documentation
  * [<img src="https://img.shields.io/badge/slack-@deepfence-blue.svg?logo=slack">](https://join.slack.com/t/deepfence-community/shared_invite/zt-podmzle9-5X~qYx8wMaLt9bGWwkSdgQ) Got a question, need some help?  Find the Deepfence team on Slack
  * [![GitHub issues](https://img.shields.io/github/issues/deepfence/SecretScanner)](https://github.com/deepfence/SecretScanner/issues) Got a feature request or found a bug? Raise an issue
  * [productsecurity *at* deepfence *dot* io](SECURITY.md): Found a security issue? Share it in confidence
- * Find out more at [deepfence.io](https://deepfence.io/)
 
 ## Security and Support
 

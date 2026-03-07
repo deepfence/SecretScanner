@@ -15,7 +15,7 @@ import (
 
 	dsc "github.com/deepfence/golang_deepfence_sdk/client"
 	oahttp "github.com/deepfence/golang_deepfence_sdk/utils/http"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -38,7 +38,7 @@ func IngestSecretScanResults(secretScanMsg string, index string) error {
 	retryCount := 0
 	httpClient, err := buildClient()
 	if err != nil {
-		log.Errorf("Error building http client " + err.Error())
+		log.Error().Err(err).Msg("Error building http client")
 		return err
 	}
 	for {
@@ -71,7 +71,6 @@ func IngestSecretScanResults(secretScanMsg string, index string) error {
 }
 
 func buildClient() (*http.Client, error) {
-	// Set up our own certificate pool
 	tlsConfig := &tls.Config{RootCAs: x509.NewCertPool(), InsecureSkipVerify: true}
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -113,7 +112,6 @@ func NewPublisher(url string, port string, key string) (*Publisher, error) {
 }
 
 func (p *Publisher) SendReport(hostname, imageName, containerID, nodeType string) {
-
 	report := dsc.IngestersReportIngestionData{}
 
 	host := map[string]interface{}{
@@ -148,20 +146,19 @@ func (p *Publisher) SendReport(hostname, imageName, containerID, nodeType string
 		report.ContainerImageEdgeBatch = []map[string]interface{}{containerImageEdge}
 	}
 
-	log.Debugf("report: %+v", report)
+	log.Debug().Interface("report", report).Msg("sending report")
 
 	req := p.client.Client().TopologyAPI.IngestSyncAgentReport(context.Background())
 	req = req.IngestersReportIngestionData(report)
 
 	resp, err := p.client.Client().TopologyAPI.IngestSyncAgentReportExecute(req)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("failed to send report")
 	}
-	log.Debugf("report response %s", resp.Status)
+	log.Debug().Str("status", resp.Status).Msg("report response")
 }
 
 func (p *Publisher) StartScan(nodeID, nodeType string) string {
-
 	scanTrigger := dsc.ModelSecretScanTriggerReq{
 		Filters: *dsc.NewModelScanFilterWithDefaults(),
 		NodeIds: []dsc.ModelNodeIdentifier{},
@@ -178,14 +175,12 @@ func (p *Publisher) StartScan(nodeID, nodeType string) string {
 	req = req.ModelSecretScanTriggerReq(scanTrigger)
 	res, resp, err := p.client.Client().SecretScanAPI.StartSecretScanExecute(req)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("failed to start scan")
 		return ""
 	}
-	// defer resp.Body.Close()
-	// io.Copy(io.Discard, resp.Body)
 
-	log.Debugf("start scan response: %+v", res)
-	log.Debugf("start scan response status: %s", resp.Status)
+	log.Debug().Interface("response", res).Msg("start scan response")
+	log.Debug().Str("status", resp.Status).Msg("start scan response status")
 
 	return res.GetScanIds()[0]
 }
@@ -201,10 +196,10 @@ func (p *Publisher) PublishScanStatusMessage(scanID, message, status string) {
 
 	resp, err := p.client.Client().SecretScanAPI.IngestSecretScanStatusExecute(req)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("failed to publish scan status")
 	}
 
-	log.Debugf("publish scan status response: %v", resp)
+	log.Debug().Interface("response", resp).Msg("publish scan status response")
 }
 
 func (p *Publisher) PublishScanError(scanID, errMsg string) {
@@ -253,7 +248,6 @@ func (p *Publisher) IngestSecretScanResults(scanID string, secrets []SecretFound
 		severity.SetScore(float32(secret.SeverityScore))
 
 		s := dsc.NewIngestersSecret()
-		s.SetImageLayerId(secret.LayerID)
 		s.SetRule(*rule)
 		s.SetMatch(*match)
 		s.SetSeverity(*severity)
@@ -267,10 +261,10 @@ func (p *Publisher) IngestSecretScanResults(scanID string, secrets []SecretFound
 
 	resp, err := p.client.Client().SecretScanAPI.IngestSecretsExecute(req)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("failed to ingest secrets")
 	}
 
-	log.Debugf("publish scan results response: %v", resp)
+	log.Debug().Interface("response", resp).Msg("publish scan results response")
 
 	return nil
 }

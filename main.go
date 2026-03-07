@@ -33,16 +33,15 @@ import (
 	"io/fs"
 	"os"
 	"os/signal"
-	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 
 	"github.com/deepfence/SecretScanner/core"
 	"github.com/deepfence/SecretScanner/jobs"
 	"github.com/deepfence/SecretScanner/output"
 	"github.com/deepfence/SecretScanner/server"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"google.golang.org/grpc"
 
@@ -61,7 +60,6 @@ const (
 var (
 	socketPath     = flag.String("socket-path", "", "The gRPC server unix socket path")
 	version        string
-	checksumFile   = "checksum.txt"
 	sourceRuleFile = "df-secret.json"
 	secretRuleFile = "secret.yar"
 )
@@ -78,24 +76,20 @@ type SecretsWriter interface {
 }
 
 func main() {
-	log.SetOutput(os.Stderr)
-	log.SetLevel(log.InfoLevel)
-	log.SetReportCaller(true)
-	log.SetFormatter(&log.TextFormatter{
-		DisableColors: false,
-		ForceColors:   true,
-		FullTimestamp: true,
-		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-			return "", " " + path.Base(f.File) + ":" + strconv.Itoa(f.Line)
-		},
-	})
+	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
+		return filepath.Base(file) + ":" + strconv.Itoa(line)
+	}
+	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "2006-01-02T15:04:05Z07:00"}).
+		With().Timestamp().Caller().Logger()
 
-	log.Infof("version: %s", version)
+	log.Info().Str("version", version).Msg("starting")
 
 	flag.Parse()
 
 	if *core.GetSession().Options.Debug {
-		log.SetLevel(log.DebugLevel)
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -106,7 +100,6 @@ func main() {
 	runnerOpts := runner.RunnerOptions{
 		SocketPath:           *socketPath,
 		RulesPath:            *core.GetSession().Options.RulesPath,
-		RulesListingURL:      *core.GetSession().Options.RulesListingURL,
 		HostMountPath:        *core.GetSession().Options.HostMountPath,
 		FailOnCompileWarning: *core.GetSession().Options.FailOnCompileWarning,
 		Local:                *core.GetSession().Options.Local,
@@ -123,13 +116,9 @@ func main() {
 		InactiveThreshold:    *core.GetSession().Options.InactiveThreshold,
 	}
 
-	if *core.GetSession().Options.EnableUpdater {
-		go runner.ScheduleYaraHunterUpdater(ctx, runnerOpts)
-	}
-
-	// update rules required for cli mode
-	if *socketPath == "" {
-		updateRules(ctx, core.GetSession().Options)
+	// Download rules if updater is enabled and in CLI mode
+	if *socketPath == "" && *core.GetSession().Options.EnableUpdater {
+		downloadRules(ctx, core.GetSession().Options)
 	}
 
 	runner.StartYaraHunter(ctx, runnerOpts, core.GetSession().ExtractorConfig,
@@ -145,58 +134,48 @@ func main() {
 		})
 }
 
-func updateRules(ctx context.Context, opts *core.Options) {
-	log.Infof("check and update secret rules")
+func downloadRules(ctx context.Context, opts *core.Options) {
+	log.Info().Msg("downloading secret rules")
 
-	listing, err := threatintel.FetchThreatIntelListing(ctx, version, *opts.Product, *opts.License)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	rulesInfo, err := listing.GetLatest(version, threatintel.SecretDBType)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Debugf("rulesInfo: %+v", rulesInfo)
-
-	// make sure output rules directory exists
-	os.MkdirAll(*opts.RulesPath, fs.ModePerm)
-
-	// check if update required
-	if threatintel.SkipRulesUpdate(filepath.Join(*opts.RulesPath, checksumFile), rulesInfo.Checksum) {
-		log.Info("skip rules update")
+	// Check if rules already exist
+	rulesFile := filepath.Join(*opts.RulesPath, secretRuleFile)
+	if _, err := os.Stat(rulesFile); err == nil {
+		log.Info().Str("file", rulesFile).Msg("rules file already exists, skipping download")
 		return
 	}
 
-	log.Info("download new rules")
-	content, err := threatintel.DownloadFile(ctx, rulesInfo.URL)
+	// Make sure output rules directory exists
+	os.MkdirAll(*opts.RulesPath, fs.ModePerm)
+
+	// Download rules from versioned URL
+	rulesURL := threatintel.SecretRulesURL(version)
+	log.Info().Str("url", rulesURL).Msg("downloading rules")
+
+	content, err := threatintel.DownloadFile(ctx, rulesURL)
 	if err != nil {
-		log.Fatal(err)
+		log.Error().Err(err).Msg("failed to download rules, continuing with bundled rules if available")
+		return
 	}
 
-	log.Infof("rules file size: %d bytes", content.Len())
+	log.Info().Int("bytes", content.Len()).Msg("rules file size")
 
-	// write new checksum
-	if err := os.WriteFile(
-		filepath.Join(*opts.RulesPath, checksumFile), []byte(rulesInfo.Checksum), fs.ModePerm); err != nil {
-		log.Fatal(err)
-	}
-
-	// write rules file
+	// Process and write rules file
 	outRuleFile := filepath.Join(*opts.RulesPath, secretRuleFile)
-	threatintel.ProcessTarGz(content.Bytes(), sourceRuleFile, outRuleFile, processSecretRules)
+	err = threatintel.ProcessTarGz(content.Bytes(), sourceRuleFile, outRuleFile, processSecretRules)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to process rules")
+	}
 }
 
 func processSecretRules(header *tar.Header, reader io.Reader, outPath string) error {
-
 	var fb threatintel.FeedsBundle
 	if err := json.NewDecoder(reader).Decode(&fb); err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("failed to decode feeds bundle")
 		return err
 	}
 
 	if err := threatintel.ExportYaraRules(outPath, fb.ScannerFeeds.SecretRules, fb.Extra); err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("failed to export yara rules")
 		return err
 	}
 

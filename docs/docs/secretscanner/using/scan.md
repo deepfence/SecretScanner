@@ -14,10 +14,8 @@ Pull the image to your local repository, then scan it
 docker pull node:latest
 
 docker run -it --rm --name=deepfence-secretscanner \
-    -e DEEPFENCE_PRODUCT=<ThreatMapper or ThreatStryker> \
-    -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.7 \
+    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.8 \
 # highlight-next-line
     --image-name node:latest
 
@@ -30,11 +28,9 @@ Mount the filesystem within the SecretScanner container and scan it.  Here, we s
 
 ```bash
 docker run -it --rm --name=deepfence-secretscanner \
-    -e DEEPFENCE_PRODUCT=<ThreatMapper or ThreatStryker> \
-    -e DEEPFENCE_LICENSE=<ThreatMapper or ThreatStryker license key> \
 # highlight-next-line
     -v /tmp:/deepfence/mnt \
-    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.7 \
+    quay.io/deepfenceio/deepfence_secret_scanner_ce:2.5.8 \
 # highlight-next-line
     --host-mount-path /deepfence/mnt --local /deepfence/mnt 
 ```

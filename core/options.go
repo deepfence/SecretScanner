@@ -3,9 +3,6 @@ package core
 import (
 	"flag"
 	"os"
-	"strings"
-
-	"github.com/deepfence/YaraHunter/utils"
 )
 
 const (
@@ -13,11 +10,6 @@ const (
 	ExtractedImageFilesDir = "ExtractedFiles"
 	JSONOutput             = "json"
 	TableOutput            = "table"
-)
-
-var (
-	product string = utils.GetEnvOrDefault("DEEPFENCE_PRODUCT", "ThreatMapper")
-	license string = utils.GetEnvOrDefault("DEEPFENCE_LICENSE", "")
 )
 
 type Options struct {
@@ -29,7 +21,6 @@ type Options struct {
 	HostMountPath        *string
 	ConfigPath           *string
 	RulesPath            *string
-	RulesListingURL      *string
 	FailOnCompileWarning *bool
 	EnableUpdater        *bool
 	MergeConfigs         *bool
@@ -49,8 +40,6 @@ type Options struct {
 	FailOnHighCount      *int
 	FailOnMediumCount    *int
 	FailOnLowCount       *int
-	Product              *string
-	License              *string
 }
 
 type repeatableStringValue struct {
@@ -58,7 +47,7 @@ type repeatableStringValue struct {
 }
 
 func (v *repeatableStringValue) String() string {
-	return strings.Join(v.values, ", ")
+	return ""
 }
 
 func (v *repeatableStringValue) Set(s string) error {
@@ -80,9 +69,8 @@ func ParseOptions() (*Options, error) {
 		HostMountPath:        flag.String("host-mount-path", "", "If scanning the host, specify the host mount path for path exclusions to work correctly."),
 		ConfigPath:           flag.String("config-path", "", "yaml config path"),
 		RulesPath:            flag.String("rules-path", "/home/deepfence/usr", "yara rules path"),
-		RulesListingURL:      flag.String("rules-listing-url", "", "yara rules listing url"),
 		FailOnCompileWarning: flag.Bool("fail-warning", false, "fail if compilation warning"),
-		EnableUpdater:        flag.Bool("enable-updated", false, "Enable rule updater"),
+		EnableUpdater:        flag.Bool("enable-updater", false, "Download rules at runtime if not present (Default: false)"),
 		MergeConfigs:         flag.Bool("merge-configs", false, "Merge config files specified by --config-path into the default config"),
 		ImageName:            flag.String("image-name", "", "Name of the image along with tag to scan for secrets"),
 		MultipleMatch:        flag.Bool("multi-match", false, "Output multiple matches of same pattern in one file. By default, only one match of a pattern is output for a file for better performance"),
@@ -100,8 +88,6 @@ func ParseOptions() (*Options, error) {
 		FailOnHighCount:      flag.Int("fail-on-high-count", -1, "Exit with status 1 if number of high secrets found is >= this value (Default: -1)"),
 		FailOnMediumCount:    flag.Int("fail-on-medium-count", -1, "Exit with status 1 if number of medium secrets found is >= this value (Default: -1)"),
 		FailOnLowCount:       flag.Int("fail-on-low-count", -1, "Exit with status 1 if number of low secrets found is >= this value (Default: -1)"),
-		Product:              flag.String("product", product, "Deepfence Product type can be ThreatMapper or ThreatStryker, also supports env var DEEPFENCE_PRODUCT"),
-		License:              flag.String("license", license, "TheratMapper or ThreatStryker license, also supports env var DEEPFENCE_LICENSE"),
 	}
 	flag.Parse()
 	return options, nil

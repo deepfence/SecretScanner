@@ -8,7 +8,7 @@ import (
 	out "github.com/deepfence/YaraHunter/pkg/output"
 	"github.com/deepfence/YaraHunter/pkg/server"
 	pb "github.com/deepfence/agent-plugins-grpc/srcgo"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	//nolint:typecheck
 )
 
@@ -24,7 +24,7 @@ func (s *SecretGRPCServer) FindSecretInfo(c context.Context, r *pb.FindRequest) 
 	}
 
 	go func() {
-		logrus.Infof("request to scan %+v", r)
+		log.Info().Interface("request", r).Msg("request to scan")
 
 		namespace := ""
 		container := ""

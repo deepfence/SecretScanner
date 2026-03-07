@@ -11,24 +11,20 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 // CreateRecursiveDir Create directory structure recursively, if they do not exist
-// @parameters
-// completePath - Complete path of directory which needs to be created
-// @returns
-// Error - Errors if any. Otherwise, returns nil
 func CreateRecursiveDir(completePath string) error {
 	if _, err := os.Stat(completePath); os.IsNotExist(err) {
-		log.Debugf("Folder does not exist. Creating folder... %s", completePath)
+		log.Debug().Str("path", completePath).Msg("Folder does not exist. Creating folder...")
 		err = os.MkdirAll(completePath, os.ModePerm)
 		if err != nil {
-			log.Errorf("createRecursiveDir %q: %s", completePath, err)
+			log.Error().Err(err).Str("path", completePath).Msg("createRecursiveDir failed")
 		}
 		return err
 	} else if err != nil {
-		log.Errorf("createRecursiveDir %q: %s. Deleting temp dir", completePath, err)
+		log.Error().Err(err).Str("path", completePath).Msg("createRecursiveDir error, deleting temp dir")
 		_ = DeleteTmpDir(completePath)
 		return err
 	}
@@ -37,12 +33,7 @@ func CreateRecursiveDir(completePath string) error {
 }
 
 // Create a sanitized string from image name which can used as a filename
-// @parameters
-// imageName - Name of the container image
-// @returns
-// string - Sanitized string which can used as part of filename
 func getSanitizedString(imageName string) string {
-	//nolint:gocritic
 	reg, err := regexp.Compile("[^A-Za-z0-9]+")
 	if err != nil {
 		return "error"
@@ -51,28 +42,18 @@ func getSanitizedString(imageName string) string {
 	return sanitizedName
 }
 
-// GetTmpDir Create a temporrary directory to extract the conetents of container image
-// @parameters
-// imageName - Name of the container image
-// @returns
-// String - Complete path of the based directory where image will be extracted, empty string if error
-// Error - Errors if any. Otherwise, returns nil
+// GetTmpDir Create a temporary directory to extract the contents of container image
 func GetTmpDir(imageName string) (string, error) {
-
 	scanID := "df_" + getSanitizedString(imageName)
 
 	dir := *session.Options.TempDirectory
 	tempPath := filepath.Join(dir, "Deepfence", TempDirSuffix, scanID)
 
-	// if runtime.GOOS == "windows" {
-	//	tempPath = dir + "\temp\Deepfence\SecretScanning\df_" + scanId
-	//}
-
 	completeTempPath := path.Join(tempPath, ExtractedImageFilesDir)
 
 	err := CreateRecursiveDir(completeTempPath)
 	if err != nil {
-		log.Errorf("getTmpDir: Could not create temp dir %s", err)
+		log.Error().Err(err).Msg("getTmpDir: Could not create temp dir")
 		return "", err
 	}
 
@@ -80,18 +61,12 @@ func GetTmpDir(imageName string) (string, error) {
 }
 
 // DeleteTmpDir Delete the temporary directory
-// @parameters
-// outputDir - Directory which need to be deleted
-// @returns
-// Error - Errors if any. Otherwise, returns nil
 func DeleteTmpDir(outputDir string) error {
-	log.Infof("Deleting temporary dir %s", outputDir)
-	// Output dir will be empty string in case of error, don't delete
+	log.Info().Str("dir", outputDir).Msg("Deleting temporary dir")
 	if outputDir != "" {
-		// deleteFiles(outputDir+"/", "*")
 		err := os.RemoveAll(outputDir)
 		if err != nil {
-			log.Errorf("deleteTmpDir: Could not delete temp dir: %s", err)
+			log.Error().Err(err).Msg("deleteTmpDir: Could not delete temp dir")
 			return err
 		}
 	}
@@ -99,9 +74,6 @@ func DeleteTmpDir(outputDir string) error {
 }
 
 // DeleteFiles Delete all the files and dirs recursively in specified directory
-// @parameters
-// path - Directory whose contents need to be deleted
-// wildcard - patterns to match the filenames (e.g. '*')
 func DeleteFiles(path string, wildCard string) {
 	var val string
 	files, _ := filepath.Glob(path + wildCard)
@@ -111,21 +83,14 @@ func DeleteFiles(path string, wildCard string) {
 }
 
 // IsSymLink Check if input is a symLink, not normal file/dir
-// path - Pathname which needs to be checked for symbolic link
-// @returns
-// bool - Return true if input is a symLink
 func IsSymLink(path string) bool {
-	// can handle symbolic link, but will no follow the link
 	fileInfo, err := os.Lstat(path)
 
 	if err != nil {
-		// panic(err)
 		return false
 	}
 
-	// --- check if file is a symlink
 	if fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
-		// fmt.Println("File is a symbolic link")
 		return true
 	}
 
@@ -147,7 +112,7 @@ func PathExists(path string) bool {
 
 func LogIfError(text string, err error) {
 	if err != nil {
-		log.Errorf("%s (%s", text, err.Error())
+		log.Error().Err(err).Msg(text)
 	}
 }
 

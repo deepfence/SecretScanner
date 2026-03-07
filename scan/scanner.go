@@ -13,7 +13,7 @@ import (
 	genscan "github.com/deepfence/match-scanner/pkg/scanner"
 
 	cfg "github.com/deepfence/match-scanner/pkg/config"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 type ScanType int
@@ -96,10 +96,10 @@ func Scan(ctx *tasks.ScanContext,
 				return
 			}
 		}
-		logrus.Debugf("Scanning file: %v", f.Filename)
+		log.Debug().Str("file", f.Filename).Msg("Scanning file")
 		s, err := scanFile(f.Content, f.Filename, filepath.Base(f.Filename), filepath.Ext(f.Filename), "")
 		if err != nil {
-			logrus.Infof("file: %v, err: %v", f.Filename, err)
+			log.Info().Err(err).Str("file", f.Filename).Msg("error scanning file")
 		}
 
 		results <- s
